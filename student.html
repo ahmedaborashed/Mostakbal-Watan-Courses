@@ -729,10 +729,310 @@ select option{background:#06111f;color:#e9faff}
   .attendance-status{min-width:4.8rem}
 }
 
+
+/* =========================================================
+   📱 FINAL MOBILE SIDEBAR
+   Laptop/Desktop: Sidebar ثابت
+   Phone: Hamburger + Sidebar Slide
+   ========================================================= */
+
+.mobile-menu-toggle{
+  display:none;
+  position:fixed;
+  top:14px;
+  right:14px;
+  width:50px;
+  height:50px;
+  padding:0 !important;
+  margin:0 !important;
+
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  gap:5px;
+
+  border:1px solid rgba(34,211,238,.38) !important;
+  border-radius:15px !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(7,24,42,.98),
+      rgba(3,9,20,.98)
+    ) !important;
+
+  box-shadow:
+    0 10px 35px rgba(0,0,0,.5),
+    0 0 25px rgba(34,211,238,.15) !important;
+
+  z-index:100001 !important;
+  cursor:pointer;
+}
+
+.mobile-menu-toggle span{
+  display:block;
+  width:23px;
+  height:3px;
+  border-radius:20px;
+  background:#22d3ee;
+  box-shadow:0 0 10px rgba(34,211,238,.55);
+  transition:.3s cubic-bezier(.2,.8,.2,1);
+}
+
+.mobile-menu-toggle.active span:nth-child(1){
+  transform:translateY(8px) rotate(45deg);
+}
+
+.mobile-menu-toggle.active span:nth-child(2){
+  opacity:0;
+  transform:scaleX(0);
+}
+
+.mobile-menu-toggle.active span:nth-child(3){
+  transform:translateY(-8px) rotate(-45deg);
+}
+
+.mobile-menu-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.68);
+  backdrop-filter:blur(5px);
+  -webkit-backdrop-filter:blur(5px);
+  opacity:0;
+  z-index:99998;
+  transition:opacity .3s ease;
+}
+
+.mobile-menu-overlay.show{
+  display:block;
+  opacity:1;
+}
+
+/* =========================================================
+   📱 PHONE
+   ========================================================= */
+@media(max-width:850px){
+
+  .mobile-menu-toggle{
+    display:flex !important;
+  }
+
+  /* نلغي شكل الـsidebar الأفقي الموجود في CSS القديم */
+  .sidebar{
+    position:fixed !important;
+
+    left:0 !important;
+    right:auto !important;
+    top:0 !important;
+    bottom:0 !important;
+
+    width:min(300px,84vw) !important;
+    height:100vh !important;
+    min-height:100vh !important;
+
+    padding:1.15rem .9rem !important;
+    box-sizing:border-box !important;
+
+    display:flex !important;
+    flex-direction:column !important;
+    flex-wrap:nowrap !important;
+    gap:.55rem !important;
+
+    border-right:1px solid var(--line) !important;
+    border-bottom:0 !important;
+
+    background:
+      radial-gradient(
+        circle at 50% -5%,
+        rgba(34,211,238,.18),
+        transparent 30%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(2,8,22,.99),
+        rgba(3,15,29,.99)
+      ) !important;
+
+    box-shadow:
+      20px 0 70px rgba(0,0,0,.68),
+      0 0 35px rgba(34,211,238,.08) !important;
+
+    z-index:100000 !important;
+
+    transform:translateX(-110%) !important;
+    opacity:0 !important;
+    visibility:hidden !important;
+
+    transition:
+      transform .36s cubic-bezier(.2,.8,.2,1),
+      opacity .25s ease,
+      visibility .36s ease !important;
+
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+  }
+
+  .sidebar.mobile-open{
+    transform:translateX(0) !important;
+    opacity:1 !important;
+    visibility:visible !important;
+  }
+
+  /* اللوجو */
+  .sidebar .brand{
+    width:100% !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:.65rem !important;
+
+    padding:.35rem .2rem 1rem !important;
+    margin:0 0 .45rem !important;
+
+    border-bottom:1px solid rgba(34,211,238,.15) !important;
+    flex-shrink:0 !important;
+  }
+
+  .sidebar .brand-mark{
+    width:3rem !important;
+    height:3rem !important;
+    margin:0 !important;
+    flex-shrink:0 !important;
+    font-size:1.4rem !important;
+  }
+
+  .sidebar .brand h1{
+    font-size:1.12rem !important;
+    margin:0 !important;
+  }
+
+  .sidebar .brand p{
+    display:block !important;
+    font-size:.6rem !important;
+  }
+
+  /* بيانات الطالب */
+  .sidebar .user-box{
+    width:100% !important;
+    min-width:0 !important;
+    flex:none !important;
+    box-sizing:border-box !important;
+    margin:.15rem 0 .35rem !important;
+  }
+
+  .sidebar .menu-title{
+    display:block !important;
+    margin:.45rem .45rem .15rem !important;
+    flex:none !important;
+  }
+
+  /* أزرار القائمة */
+  .sidebar .side-btn{
+    width:100% !important;
+    flex:0 0 auto !important;
+    min-height:3.1rem !important;
+
+    justify-content:flex-start !important;
+    text-align:right !important;
+
+    padding:.72rem .8rem !important;
+    margin:.08rem 0 !important;
+
+    border-radius:.95rem !important;
+    box-sizing:border-box !important;
+  }
+
+  .sidebar .side-btn:hover{
+    transform:translateX(-4px) !important;
+  }
+
+  .sidebar .logout{
+    margin-top:auto !important;
+  }
+
+  /* المحتوى */
+  .main{
+    margin-left:0 !important;
+    width:100% !important;
+    min-height:100vh !important;
+  }
+
+  .section{
+    min-height:100vh !important;
+    padding:
+      5rem
+      .75rem
+      1rem
+      .75rem !important;
+  }
+
+  body.mobile-menu-open{
+    overflow:hidden !important;
+  }
+}
+
+@media(max-width:520px){
+
+  .mobile-menu-toggle{
+    top:11px;
+    right:11px;
+    width:48px;
+    height:48px;
+    border-radius:14px !important;
+  }
+
+  .mobile-menu-toggle span{
+    width:22px;
+  }
+
+  .sidebar{
+    width:86vw !important;
+    max-width:290px !important;
+  }
+
+  .section{
+    padding-left:.55rem !important;
+    padding-right:.55rem !important;
+  }
+}
+
+/* Desktop */
+@media(min-width:851px){
+  .mobile-menu-toggle,
+  .mobile-menu-overlay{
+    display:none !important;
+  }
+
+  .sidebar{
+    position:fixed !important;
+    transform:none !important;
+    opacity:1 !important;
+    visibility:visible !important;
+  }
+}
+
 </style>
 </head>
 
 <body>
+
+<!-- =========================
+     MOBILE HAMBURGER
+     ========================= -->
+<button class="mobile-menu-toggle" id="mobileMenuToggle"
+        type="button"
+        onclick="toggleMobileMenu()"
+        aria-label="فتح القائمة"
+        aria-expanded="false">
+  <span></span>
+  <span></span>
+  <span></span>
+</button>
+
+<div class="mobile-menu-overlay"
+     id="mobileMenuOverlay"
+     onclick="closeMobileMenu()"></div>
 
 <!-- =========================
      LEFT SIDEBAR
@@ -3009,6 +3309,80 @@ function escapeHtml(value){
     .replaceAll('"',"&quot;")
     .replaceAll("'","&#039;");
 }
+</script>
+
+
+<script>
+/* =========================================================
+   📱 MOBILE SIDEBAR CONTROLLER
+   ========================================================= */
+
+function openMobileMenu(){
+  const sidebar = document.querySelector(".sidebar");
+  const toggle = document.getElementById("mobileMenuToggle");
+  const overlay = document.getElementById("mobileMenuOverlay");
+
+  if(!sidebar) return;
+
+  sidebar.classList.add("mobile-open");
+  toggle?.classList.add("active");
+  toggle?.setAttribute("aria-expanded","true");
+  overlay?.classList.add("show");
+  document.body.classList.add("mobile-menu-open");
+}
+
+function closeMobileMenu(){
+  const sidebar = document.querySelector(".sidebar");
+  const toggle = document.getElementById("mobileMenuToggle");
+  const overlay = document.getElementById("mobileMenuOverlay");
+
+  sidebar?.classList.remove("mobile-open");
+  toggle?.classList.remove("active");
+  toggle?.setAttribute("aria-expanded","false");
+  overlay?.classList.remove("show");
+  document.body.classList.remove("mobile-menu-open");
+}
+
+function toggleMobileMenu(){
+  const sidebar = document.querySelector(".sidebar");
+
+  if(!sidebar) return;
+
+  if(sidebar.classList.contains("mobile-open")){
+    closeMobileMenu();
+  }else{
+    openMobileMenu();
+  }
+}
+
+/* أي اختيار من الـSidebar يقفلها تلقائيًا على الفون */
+document.addEventListener("click", function(event){
+
+  const btn = event.target.closest(".sidebar .side-btn");
+
+  if(!btn) return;
+
+  setTimeout(() => {
+    if(window.innerWidth <= 850){
+      closeMobileMenu();
+    }
+  }, 80);
+
+});
+
+/* ESC */
+document.addEventListener("keydown", function(event){
+  if(event.key === "Escape"){
+    closeMobileMenu();
+  }
+});
+
+/* لو رجعنا من Phone إلى Laptop */
+window.addEventListener("resize", function(){
+  if(window.innerWidth > 850){
+    closeMobileMenu();
+  }
+});
 </script>
 
 </body>
