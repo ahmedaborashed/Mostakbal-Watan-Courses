@@ -948,7 +948,7 @@ select option{background:#06111f;color:#e9faff}
   }
 
   .sidebar .logout{
-    margin-top:auto !important;
+    margin-top:.4rem !important;
   }
 
   /* المحتوى */
@@ -1282,8 +1282,9 @@ import {
 // 🔐 حماية صفحة الطالب
 protectPage("student");
 
-
-// 🔒 تأكيد إضافي: لازم يكون المستخدم Student
+/* =========================================================
+   🔐 AUTH + LOAD STUDENT
+   ========================================================= */
 onAuthStateChanged(auth, async (user) => {
 
   // ❌ مفيش Login
@@ -1292,9 +1293,9 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
+  // 🔒 تأكيد إن الحساب Student
   const email = (user.email || "").toLowerCase();
 
-  // ❌ الحساب مش طالب
   if (!email.endsWith("@student.local")) {
     await signOut(auth);
     window.location.replace("index.html");
@@ -1303,6 +1304,73 @@ onAuthStateChanged(auth, async (user) => {
 
   // ✅ طالب مسجل دخول
   console.log("✅ Student authenticated:", email);
+
+  try {
+
+    /* =========================================================
+       LOAD STUDENT
+       ========================================================= */
+
+    const username = (user.email || "").split("@")[0];
+
+    const snapshot = await getDocs(
+      collection(db, "students")
+    );
+
+    let found = null;
+
+    snapshot.forEach(studentDoc => {
+
+      const data = studentDoc.data();
+
+      if (
+        String(data.studentPhone || "") ===
+        String(username)
+      ) {
+        found = {
+          firestoreId: studentDoc.id,
+          ...data
+        };
+      }
+
+    });
+
+    // ❌ بيانات الطالب مش موجودة
+    if (!found) {
+
+      showToast(
+        settings().language === "ar"
+          ? "بيانات الطالب غير موجودة."
+          : "Student data was not found."
+      );
+
+      return;
+    }
+
+    // ✅ حفظ بيانات الطالب
+    currentStudent = found;
+
+    // تحديث الـSidebar
+    updateSidebar();
+
+    // عرض الحساب
+    showProfile();
+
+    // تحميل الداتا والامتحانات
+    await renderVideos();
+    await renderExams();
+
+  } catch (error) {
+
+    console.error("STUDENT LOAD ERROR:", error);
+
+    showToast(
+      settings().language === "ar"
+        ? "حصل خطأ في تحميل بيانات الطالب."
+        : "Could not load student data."
+    );
+
+  }
 
 });
 
@@ -1670,59 +1738,6 @@ window.show = (id)=>{
   if(id === "profile") showProfile();
   if(id === "settings") applySettings();
 };
-
-/* =========================================================
-   LOAD STUDENT
-   ========================================================= */
-onAuthStateChanged(auth, async(user)=>{
-  if(!user) return;
-
-  try{
-    const username = (user.email || "").split("@")[0];
-
-    const snapshot = await getDocs(
-      collection(db,"students")
-    );
-
-    let found = null;
-
-    snapshot.forEach(studentDoc=>{
-      const data = studentDoc.data();
-
-      if(String(data.studentPhone || "") === String(username)){
-        found = {
-          firestoreId:studentDoc.id,
-          ...data
-        };
-      }
-    });
-
-    if(!found){
-      showToast(
-        settings().language === "ar"
-          ? "بيانات الطالب غير موجودة."
-          : "Student data was not found."
-      );
-      return;
-    }
-
-    currentStudent = found;
-
-    updateSidebar();
-    showProfile();
-
-    await renderVideos();
-    await renderExams();
-
-  }catch(error){
-    console.error("STUDENT LOAD ERROR:",error);
-    showToast(
-      settings().language === "ar"
-        ? "حصل خطأ في تحميل بيانات الطالب."
-        : "Could not load student data."
-    );
-  }
-});
 
 /* =========================================================
    VIDEO / DATA
