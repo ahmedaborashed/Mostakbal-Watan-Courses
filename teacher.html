@@ -1485,6 +1485,170 @@ select option{background:#06111f!important;color:#e9faff!important;}
 .attendance-danger{border:1px solid rgba(239,68,68,.7) !important;box-shadow:0 0 30px rgba(239,68,68,.12) !important;}
 @media(max-width:700px){.attendance-session-search{grid-template-columns:1fr;}.attendance-history-row{align-items:flex-start;flex-direction:column;}.attendance-history-actions{width:100%;}.history-status-btn{flex:1 !important;}}
 
+
+
+/* =========================================================
+   📱 MOBILE DRAWER MENU
+   Desktop: sidebar ثابتة وظاهرة
+   Mobile: 3 خطوط تفتح القائمة كـ drawer
+   ========================================================= */
+.mobile-menu-toggle{
+  display:none;
+}
+.mobile-menu-overlay{
+  display:none;
+}
+
+@media(max-width:850px){
+  body{
+    overflow-x:hidden!important;
+  }
+
+  /* زر الـ 3 شرط */
+  .mobile-menu-toggle{
+    position:fixed!important;
+    top:14px!important;
+    right:14px!important;
+    width:50px!important;
+    height:50px!important;
+    min-width:50px!important;
+    min-height:50px!important;
+    padding:0!important;
+    margin:0!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    align-items:center!important;
+    gap:5px!important;
+    border:1px solid rgba(103,232,249,.38)!important;
+    border-radius:15px!important;
+    background:linear-gradient(145deg,rgba(7,24,42,.96),rgba(3,9,20,.98))!important;
+    box-shadow:0 10px 35px rgba(0,0,0,.45),0 0 25px rgba(34,211,238,.12)!important;
+    z-index:120000!important;
+    cursor:pointer!important;
+  }
+
+  .mobile-menu-toggle span{
+    display:block!important;
+    width:24px!important;
+    height:3px!important;
+    border-radius:99px!important;
+    background:#67e8f9!important;
+    box-shadow:0 0 10px rgba(34,211,238,.35)!important;
+    transition:.25s ease!important;
+  }
+
+  .mobile-menu-toggle.active span:nth-child(1){
+    transform:translateY(8px) rotate(45deg)!important;
+  }
+  .mobile-menu-toggle.active span:nth-child(2){
+    opacity:0!important;
+    transform:scaleX(0)!important;
+  }
+  .mobile-menu-toggle.active span:nth-child(3){
+    transform:translateY(-8px) rotate(-45deg)!important;
+  }
+
+  /* الخلفية الشفافة خلف القائمة */
+  .mobile-menu-overlay{
+    position:fixed!important;
+    inset:0!important;
+    display:block!important;
+    background:rgba(1,4,12,.72)!important;
+    backdrop-filter:blur(5px)!important;
+    -webkit-backdrop-filter:blur(5px)!important;
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+    transition:.25s ease!important;
+    z-index:110000!important;
+  }
+
+  .mobile-menu-overlay.show{
+    opacity:1!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+  }
+
+  /* القائمة على الموبايل Drawer من اليمين */
+  .sidebar{
+    position:fixed!important;
+    top:0!important;
+    right:0!important;
+    left:auto!important;
+    bottom:0!important;
+    width:min(310px,88vw)!important;
+    height:100vh!important;
+    min-height:100vh!important;
+    padding:1.1rem .9rem!important;
+    display:flex!important;
+    flex-direction:column!important;
+    flex-wrap:nowrap!important;
+    align-items:stretch!important;
+    gap:.55rem!important;
+    border-right:0!important;
+    border-left:1px solid rgba(34,211,238,.24)!important;
+    border-bottom:0!important;
+    transform:translateX(110%)!important;
+    transition:transform .3s cubic-bezier(.2,.8,.2,1)!important;
+    z-index:115000!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    box-shadow:-20px 0 70px rgba(0,0,0,.55)!important;
+  }
+
+  .sidebar.mobile-open{
+    transform:translateX(0)!important;
+  }
+
+  .sidebar .party-brand{
+    width:auto!important;
+    display:block!important;
+    text-align:center!important;
+    padding:.2rem .3rem .9rem!important;
+  }
+
+  .sidebar .teacher-mini{
+    order:initial!important;
+    flex:initial!important;
+    width:auto!important;
+    min-width:0!important;
+    margin:0 0 .15rem!important;
+  }
+
+  .sidebar button:not(.logout){
+    width:100%!important;
+    flex:0 0 auto!important;
+    min-height:3rem!important;
+    justify-content:flex-start!important;
+    text-align:right!important;
+  }
+
+  .sidebar .logout{
+    width:100%!important;
+    flex:0 0 auto!important;
+    margin-top:auto!important;
+  }
+
+  .main-content{
+    margin-left:0!important;
+    margin-right:0!important;
+    width:100%!important;
+    padding:4.5rem .7rem 1rem!important;
+  }
+
+  /* القائمة تقفل بعد اختيار أي قسم، والـ 3 شرط تفضل ظاهرة */
+  body.mobile-menu-open{
+    overflow:hidden!important;
+  }
+}
+
+@media(min-width:851px){
+  .mobile-menu-toggle,.mobile-menu-overlay{
+    display:none!important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1496,9 +1660,15 @@ opacity:0;transform:translateY(20px);transition:all .4s ease;pointer-events:none
 ✔️ تم بنجاح
 </div>
 
+<!-- 📱 MOBILE MENU -->
+<button id="mobileMenuToggle" class="mobile-menu-toggle" type="button" onclick="toggleMobileMenu()" aria-label="فتح القائمة" aria-expanded="false">
+  <span></span><span></span><span></span>
+</button>
+<div id="mobileMenuOverlay" class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+
 <div class="layout">
 
-  <aside class="sidebar">
+  <aside class="sidebar" id="teacherSidebar">
     <div class="party-brand">
       <div class="party-mark">🏛️</div>
       <div>
@@ -1840,6 +2010,7 @@ import {
 
 import {
   signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   updateEmail,
   updatePassword,
   reauthenticateWithCredential,
@@ -1921,6 +2092,47 @@ window.logout=async()=>{
   }
 };
 
+window.openMobileMenu=()=>{
+  const sidebar=document.getElementById("teacherSidebar");
+  const overlay=document.getElementById("mobileMenuOverlay");
+  const toggle=document.getElementById("mobileMenuToggle");
+  if(!sidebar || window.innerWidth > 850) return;
+
+  sidebar.classList.add("mobile-open");
+  overlay?.classList.add("show");
+  toggle?.classList.add("active");
+  toggle?.setAttribute("aria-expanded","true");
+  document.body.classList.add("mobile-menu-open");
+};
+
+window.closeMobileMenu=()=>{
+  const sidebar=document.getElementById("teacherSidebar");
+  const overlay=document.getElementById("mobileMenuOverlay");
+  const toggle=document.getElementById("mobileMenuToggle");
+
+  sidebar?.classList.remove("mobile-open");
+  overlay?.classList.remove("show");
+  toggle?.classList.remove("active");
+  toggle?.setAttribute("aria-expanded","false");
+  document.body.classList.remove("mobile-menu-open");
+};
+
+window.toggleMobileMenu=()=>{
+  const sidebar=document.getElementById("teacherSidebar");
+  if(!sidebar || window.innerWidth > 850) return;
+  sidebar.classList.contains("mobile-open")
+    ? closeMobileMenu()
+    : openMobileMenu();
+};
+
+window.addEventListener("resize",()=>{
+  if(window.innerWidth > 850) closeMobileMenu();
+});
+
+window.addEventListener("keydown",(e)=>{
+  if(e.key === "Escape") closeMobileMenu();
+});
+
 window.show=(id)=>{
   document.querySelectorAll(".section").forEach(s=>{
     s.classList.remove("active");
@@ -1937,6 +2149,9 @@ window.show=(id)=>{
   if(id==="assignments") loadAssignments();
   if(id==="attendance") loadAttendanceData();
   if(id==="settings") loadTeacherSettings();
+
+  // على الموبايل: أول ما تختار أي قسم، القائمة تختفي والـ 3 شرط يفضلوا ظاهرين
+  if(window.innerWidth <= 850) closeMobileMenu();
 };
 
 
