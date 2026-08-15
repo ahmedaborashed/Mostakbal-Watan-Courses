@@ -4375,7 +4375,7 @@ window.history.replaceState(
   document.title,
   "/Mostakbal-Watan-Courses/admin"
 );
-A
+
 window.closeResultModalOutside=(e)=>{
   if(e.target?.id==="resultModal") closeModal();
 };
@@ -4440,6 +4440,11 @@ function toggleMobileMenu(){
     openMobileMenu();
   }
 }
+
+// 📱 IMPORTANT: expose functions globally
+window.openMobileMenu = openMobileMenu;
+window.closeMobileMenu = closeMobileMenu;
+window.toggleMobileMenu = toggleMobileMenu;
 
 /* اختيار أي عنصر من الـMenu = افتح القسم ثم اقفل المنيو */
 document.addEventListener("click", function(e){
