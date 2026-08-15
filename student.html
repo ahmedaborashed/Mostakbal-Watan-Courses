@@ -1,0 +1,3015 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#06111f">
+<title>منصة حزب مستقبل الوطن - لوحة الطالب</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
+
+:root{
+  --accent:#22d3ee;
+  --accent2:#0ea5e9;
+  --purple:#8b5cf6;
+  --green:#22c55e;
+  --gold:#fbbf24;
+  --danger:#ef4444;
+  --bg:#020617;
+  --bg2:#06111f;
+  --panel:rgba(7,20,36,.86);
+  --panel2:rgba(4,13,25,.94);
+  --line:rgba(34,211,238,.22);
+  --text:#e9faff;
+  --muted:#7893a3;
+  --font-scale:1;
+}
+
+*{box-sizing:border-box}
+
+html{
+  font-size:calc(16px * var(--font-scale));
+  scroll-behavior:smooth;
+}
+
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:"Cairo",sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at 80% 5%,rgba(14,165,233,.15),transparent 28%),
+    radial-gradient(circle at 10% 90%,rgba(139,92,246,.12),transparent 30%),
+    linear-gradient(135deg,#01040a,#020617 45%,#031421);
+  overflow-x:hidden;
+  transition:background .35s,color .25s;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-2;
+  pointer-events:none;
+  opacity:.13;
+  background-image:
+    linear-gradient(rgba(34,211,238,.08) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(34,211,238,.08) 1px,transparent 1px);
+  background-size:42px 42px;
+  animation:gridMove 20s linear infinite;
+}
+@keyframes gridMove{
+  from{background-position:0 0}
+  to{background-position:42px 42px}
+}
+
+/* =========================
+   SIDEBAR - LEFT
+   ========================= */
+.sidebar{
+  position:fixed;
+  inset:0 auto 0 0;
+  width:17rem;
+  z-index:5000;
+  display:flex;
+  flex-direction:column;
+  gap:.55rem;
+  padding:1.25rem .9rem;
+  background:
+    radial-gradient(circle at 50% -5%,rgba(34,211,238,.17),transparent 30%),
+    linear-gradient(180deg,rgba(2,8,22,.98),rgba(3,15,29,.98));
+  border-right:1px solid var(--line);
+  box-shadow:18px 0 60px rgba(0,0,0,.45);
+  backdrop-filter:blur(24px);
+  direction:rtl;
+}
+
+.brand{
+  text-align:center;
+  padding:.2rem .3rem .9rem;
+}
+.brand-mark{
+  width:3.7rem;
+  height:3.7rem;
+  margin:auto;
+  display:grid;
+  place-items:center;
+  border-radius:1.15rem;
+  font-size:1.8rem;
+  background:linear-gradient(145deg,#0e7490,#0891b2);
+  border:1px solid rgba(103,232,249,.55);
+  box-shadow:0 0 28px rgba(34,211,238,.22),inset 0 1px 0 rgba(255,255,255,.2);
+}
+.brand h1{
+  margin:.45rem 0 .05rem;
+  font-size:1.35rem;
+  font-weight:900;
+}
+.brand p{
+  margin:0;
+  color:var(--muted);
+  font-size:.62rem;
+}
+
+.user-box{
+  display:flex;
+  align-items:center;
+  gap:.65rem;
+  padding:.75rem;
+  border:1px solid var(--line);
+  border-radius:1rem;
+  background:linear-gradient(145deg,rgba(10,35,54,.8),rgba(5,17,31,.92));
+}
+.avatar{
+  width:2.8rem;
+  height:2.8rem;
+  flex:0 0 2.8rem;
+  display:grid;
+  place-items:center;
+  border-radius:.9rem;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#03131b;
+  font-weight:900;
+  font-size:1.15rem;
+  box-shadow:0 0 20px rgba(34,211,238,.22);
+}
+.user-data{min-width:0}
+.user-data strong{
+  display:block;
+  color:#fff;
+  font-size:.88rem;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.user-data small{
+  display:block;
+  margin-top:.12rem;
+  color:#6e8b9b;
+  direction:ltr;
+  text-align:right;
+  font-size:.62rem;
+}
+
+.menu-title{
+  margin:.8rem .45rem .15rem;
+  color:#557686;
+  font-size:.62rem;
+  font-weight:800;
+}
+
+.side-btn{
+  position:relative;
+  width:100%;
+  min-height:3rem;
+  display:flex;
+  align-items:center;
+  gap:.7rem;
+  padding:.7rem .8rem;
+  border:1px solid transparent;
+  border-radius:.9rem;
+  background:transparent;
+  color:#a9c2cd;
+  font-family:inherit;
+  font-size:.82rem;
+  font-weight:800;
+  cursor:pointer;
+  transition:.22s;
+}
+.side-btn:hover{
+  transform:translateX(-3px);
+  color:#fff;
+  border-color:rgba(34,211,238,.2);
+  background:rgba(34,211,238,.07);
+}
+.side-btn.active{
+  color:#fff;
+  background:linear-gradient(90deg,rgba(34,211,238,.18),rgba(14,165,233,.05));
+  border-color:rgba(34,211,238,.25);
+  box-shadow:inset 3px 0 var(--accent);
+}
+.side-icon{
+  width:2rem;
+  height:2rem;
+  display:grid;
+  place-items:center;
+  border-radius:.65rem;
+  background:rgba(34,211,238,.08);
+}
+
+.logout{
+  margin-top:auto;
+  background:linear-gradient(135deg,#7f1d1d,#dc2626);
+  color:#fff;
+  border:1px solid rgba(248,113,113,.35);
+}
+
+/* =========================
+   MAIN
+   ========================= */
+.main{
+  margin-left:17rem;
+  min-height:100vh;
+}
+
+.section{
+  display:none;
+  min-height:100vh;
+  padding:2.2rem clamp(1rem,4vw,4.5rem);
+  animation:sectionIn .35s ease;
+}
+.section.active{display:block}
+@keyframes sectionIn{
+  from{opacity:0;transform:translateY(12px)}
+  to{opacity:1;transform:none}
+}
+
+.page{
+  max-width:68rem;
+  margin:auto;
+}
+.page-title{
+  margin:0 0 1.2rem;
+  color:var(--accent);
+  font-size:1.8rem;
+  font-weight:900;
+  text-shadow:0 0 24px rgba(34,211,238,.25);
+}
+
+.card{
+  position:relative;
+  margin:1rem auto;
+  padding:1.2rem;
+  border:1px solid var(--line);
+  border-radius:1.25rem;
+  background:linear-gradient(145deg,var(--panel),var(--panel2));
+  box-shadow:0 18px 55px rgba(0,0,0,.34);
+  overflow:hidden;
+  transition:.25s;
+}
+.card:hover{
+  transform:translateY(-2px);
+  border-color:rgba(34,211,238,.45);
+}
+.card::before{
+  content:"";
+  position:absolute;
+  width:10rem;
+  height:10rem;
+  top:-6rem;
+  left:-4rem;
+  border-radius:50%;
+  background:rgba(34,211,238,.08);
+  filter:blur(25px);
+  pointer-events:none;
+}
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:.3rem;
+  padding:.3rem .65rem;
+  border-radius:999px;
+  background:rgba(34,211,238,.09);
+  border:1px solid rgba(34,211,238,.18);
+  color:#bdf6ff;
+  font-size:.68rem;
+  font-weight:800;
+}
+
+.status-open{color:#4ade80}
+.status-closed{color:#f87171}
+.status-done{color:#4ade80}
+.status-wait{color:#fbbf24}
+
+.primary{
+  width:100%;
+  padding:.8rem 1rem;
+  border:0;
+  border-radius:.85rem;
+  background:linear-gradient(90deg,var(--accent),var(--accent2),var(--purple),var(--accent));
+  background-size:300% 100%;
+  color:#03131b;
+  font-family:inherit;
+  font-weight:900;
+  cursor:pointer;
+  animation:gradientRun 5s linear infinite;
+  transition:.2s;
+}
+.primary:hover{transform:translateY(-2px);box-shadow:0 0 28px rgba(34,211,238,.25)}
+@keyframes gradientRun{to{background-position:300%}}
+
+input,textarea,select{
+  width:100%;
+  margin:.45rem 0;
+  padding:.78rem .9rem;
+  border:1px solid rgba(71,109,133,.45);
+  border-radius:.8rem;
+  outline:none;
+  background:#06111f;
+  color:#e9faff;
+  font:inherit;
+  transition:.2s;
+}
+input:focus,textarea:focus,select:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(34,211,238,.08),0 0 22px rgba(34,211,238,.1);
+}
+input::placeholder,textarea::placeholder{color:#67818f}
+select option{background:#06111f;color:#e9faff}
+
+.video-card h3,.exam-card h3{
+  margin:.1rem 0 .45rem;
+  font-size:1.05rem;
+}
+.video-meta,.exam-meta{
+  color:var(--muted);
+  font-size:.72rem;
+}
+.opened{
+  color:#4ade80;
+  font-weight:800;
+  font-size:.75rem;
+}
+.not-opened{
+  color:#f87171;
+  font-weight:800;
+  font-size:.75rem;
+}
+
+.question{
+  margin:1rem 0;
+  padding:1rem;
+  border:1px solid rgba(34,211,238,.14);
+  border-radius:1rem;
+  background:rgba(2,10,20,.6);
+}
+.question p{
+  margin-top:0;
+  font-weight:800;
+}
+.choice{
+  display:block;
+  padding:.45rem .55rem;
+  border-radius:.6rem;
+  cursor:pointer;
+}
+.choice:hover{background:rgba(34,211,238,.06)}
+
+.timer{
+  position:sticky;
+  top:1rem;
+  z-index:20;
+  margin-bottom:1rem;
+  padding:.8rem;
+  text-align:center;
+  border:1px solid rgba(248,113,113,.35);
+  border-radius:1rem;
+  background:rgba(60,10,15,.86);
+  color:#fca5a5;
+  font-weight:900;
+  backdrop-filter:blur(12px);
+}
+
+.profile-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:.8rem;
+}
+.profile-item{
+  padding:1rem;
+  border:1px solid rgba(34,211,238,.14);
+  border-radius:.95rem;
+  background:rgba(2,10,20,.62);
+}
+.profile-label{
+  display:block;
+  margin-bottom:.25rem;
+  color:#708b9b;
+  font-size:.68rem;
+}
+.profile-value{
+  display:block;
+  color:#effcff;
+  font-weight:800;
+  word-break:break-word;
+}
+
+.settings-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:1rem;
+}
+.setting-card{
+  padding:1.15rem;
+  border:1px solid rgba(34,211,238,.15);
+  border-radius:1.1rem;
+  background:rgba(5,18,32,.78);
+}
+.setting-card h3{margin:0 0 .25rem;font-size:1rem}
+.setting-card p{margin:0 0 1rem;color:var(--muted);font-size:.7rem}
+.setting-wide{grid-column:1/-1}
+
+.colors{display:flex;gap:.7rem;flex-wrap:wrap}
+.color-btn{
+  width:2.5rem;
+  height:2.5rem;
+  padding:0;
+  border-radius:50%;
+  border:3px solid rgba(255,255,255,.14);
+  cursor:pointer;
+}
+.color-btn.active{
+  border-color:#fff;
+  box-shadow:0 0 0 3px rgba(255,255,255,.08),0 0 20px currentColor;
+}
+.font-row{
+  display:flex;
+  align-items:center;
+  gap:.7rem;
+}
+.font-row button{
+  width:2.7rem;
+  height:2.7rem;
+  padding:0;
+  border:1px solid var(--line);
+  border-radius:.7rem;
+  background:#071827;
+  color:var(--accent);
+  font:inherit;
+  font-weight:900;
+  cursor:pointer;
+}
+#fontValue{
+  min-width:4rem;
+  text-align:center;
+  color:var(--accent);
+  font-weight:900;
+}
+
+.modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:9000;
+  place-items:center;
+  padding:1rem;
+  background:rgba(0,0,0,.72);
+  backdrop-filter:blur(10px);
+}
+.modal.show{display:grid}
+.modal-box{
+  width:min(31rem,100%);
+  padding:1.35rem;
+  border:1px solid rgba(34,211,238,.3);
+  border-radius:1.35rem;
+  background:linear-gradient(145deg,#081a2c,#030b16);
+  box-shadow:0 30px 90px rgba(0,0,0,.65),0 0 40px rgba(34,211,238,.08);
+  animation:modalIn .25s ease;
+}
+@keyframes modalIn{
+  from{opacity:0;transform:scale(.95) translateY(12px)}
+  to{opacity:1;transform:none}
+}
+.modal-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+}
+.modal-head h3{margin:0;color:var(--accent)}
+.close{
+  width:2.3rem;
+  height:2.3rem;
+  padding:0;
+  border:1px solid rgba(248,113,113,.3);
+  border-radius:.7rem;
+  background:#2b1014;
+  color:#fca5a5;
+  cursor:pointer;
+}
+
+.toast{
+  position:fixed;
+  right:1rem;
+  bottom:1rem;
+  z-index:10000;
+  max-width:min(25rem,calc(100vw - 2rem));
+  padding:.85rem 1rem;
+  border:1px solid var(--line);
+  border-radius:.85rem;
+  background:#061525;
+  color:#e9faff;
+  box-shadow:0 15px 45px rgba(0,0,0,.45);
+  transform:translateY(1rem);
+  opacity:0;
+  pointer-events:none;
+  transition:.25s;
+}
+.toast.show{transform:none;opacity:1}
+
+.empty{
+  padding:2rem;
+  text-align:center;
+  color:var(--muted);
+}
+
+/* =========================
+   MOBILE
+   ========================= */
+@media(max-width:850px){
+  .sidebar{
+    position:sticky;
+    inset:auto;
+    width:100%;
+    height:auto;
+    padding:.55rem;
+    flex-direction:row;
+    flex-wrap:wrap;
+    border-right:0;
+    border-bottom:1px solid var(--line);
+  }
+  .brand{
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:.6rem;
+    padding:.1rem;
+  }
+  .brand-mark{width:2.5rem;height:2.5rem;font-size:1.2rem}
+  .brand h1{font-size:1.05rem;margin:0}
+  .brand p{display:none}
+  .user-box{order:2;flex:1;min-width:12rem}
+  .menu-title{display:none}
+  .side-btn{
+    width:auto;
+    flex:1 1 7rem;
+    justify-content:center;
+    min-height:2.7rem;
+  }
+  .logout{margin-top:0}
+  .main{margin-left:0}
+  .section{min-height:calc(100vh - 11rem);padding:1rem .7rem}
+  .settings-grid{grid-template-columns:1fr}
+  .setting-wide{grid-column:auto}
+}
+
+@media(max-width:520px){
+  .profile-grid{grid-template-columns:1fr}
+  .side-btn{flex-basis:45%}
+  .side-btn span:last-child{font-size:.72rem}
+  .section{padding:.8rem .55rem}
+  .page-title{font-size:1.45rem}
+}
+
+/* =========================================================
+   TASKS / ASSIGNMENTS - Student
+   ========================================================= */
+.task-card{
+  position:relative;
+  margin:1rem auto;
+  padding:1.25rem;
+  border:1px solid var(--line);
+  border-radius:1.25rem;
+  background:linear-gradient(145deg,var(--panel),var(--panel2));
+  box-shadow:0 18px 55px rgba(0,0,0,.34);
+  overflow:hidden;
+}
+.task-card::before{
+  content:"";
+  position:absolute;
+  width:10rem;height:10rem;
+  top:-6rem;left:-4rem;
+  border-radius:50%;
+  background:rgba(34,211,238,.08);
+  filter:blur(25px);
+  pointer-events:none;
+}
+.task-card h3{margin:.1rem 0 .55rem;color:#67e8f9;font-size:1.08rem}
+.task-desc{white-space:pre-wrap;line-height:1.9;color:#cbd5e1;margin:.5rem 0}
+.task-deadline{color:#fbbf24;font-weight:900;margin:.7rem 0}
+.task-submitted{color:#4ade80;font-weight:900;margin:.6rem 0}
+.task-under-review{
+  color:#fbbf24;font-weight:900;margin:.6rem 0;padding:.7rem .9rem;
+  border:1px solid rgba(251,191,36,.22);border-radius:.8rem;
+  background:rgba(251,191,36,.06);
+}
+.task-grade{
+  display:inline-flex;align-items:center;gap:.35rem;
+  margin:.35rem 0 .7rem;padding:.45rem .75rem;border-radius:999px;
+  color:#eafff0;font-weight:900;
+  border:1px solid rgba(74,222,128,.25);background:rgba(34,197,94,.08);
+}
+.task-file-link{display:inline-block;margin:.35rem 0 .7rem;color:var(--accent);font-weight:800;text-decoration:none}
+.task-file-link:hover{text-decoration:underline}
+.task-card textarea{min-height:7rem;resize:vertical}
+.task-status-note{color:var(--muted);font-size:.72rem;line-height:1.7}
+
+
+/* =========================================================
+   STUDENT ATTENDANCE
+   ========================================================= */
+.attendance-summary{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:.8rem;
+  margin-bottom:1rem;
+}
+.attendance-stat{
+  padding:1.15rem;
+  border:1px solid var(--line);
+  border-radius:1.1rem;
+  background:linear-gradient(145deg,var(--panel),var(--panel2));
+  text-align:center;
+}
+.attendance-stat .stat-icon{
+  font-size:1.45rem;
+  margin-bottom:.25rem;
+}
+.attendance-stat strong{
+  display:block;
+  font-size:1.65rem;
+  font-weight:900;
+}
+.attendance-stat span{
+  display:block;
+  margin-top:.15rem;
+  color:var(--muted);
+  font-size:.72rem;
+  font-weight:800;
+}
+.attendance-stat.present strong{color:#4ade80}
+.attendance-stat.absent strong{color:#f87171}
+
+.attendance-warning{
+  margin:0 0 1rem;
+  padding:1rem 1.1rem;
+  border:1px solid rgba(248,113,113,.42);
+  border-radius:1rem;
+  background:linear-gradient(135deg,rgba(127,29,29,.24),rgba(69,10,10,.45));
+  color:#fecaca;
+  box-shadow:0 12px 35px rgba(0,0,0,.25);
+}
+.attendance-warning strong{
+  display:block;
+  margin-bottom:.3rem;
+  color:#fca5a5;
+  font-size:.95rem;
+}
+.attendance-warning p{
+  margin:0;
+  color:#fecaca;
+  font-size:.74rem;
+  line-height:1.8;
+}
+
+.attendance-ok{
+  margin:0 0 1rem;
+  padding:.9rem 1rem;
+  border:1px solid rgba(74,222,128,.25);
+  border-radius:1rem;
+  background:rgba(34,197,94,.07);
+  color:#bbf7d0;
+  font-size:.74rem;
+  font-weight:800;
+}
+
+.attendance-session-list{
+  display:grid;
+  gap:.75rem;
+}
+.attendance-session{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  padding:1rem 1.05rem;
+  border:1px solid rgba(34,211,238,.15);
+  border-radius:1rem;
+  background:rgba(2,10,20,.68);
+}
+.attendance-session-info{
+  min-width:0;
+}
+.attendance-session-name{
+  color:#e9faff;
+  font-weight:900;
+  font-size:.88rem;
+}
+.attendance-session-date{
+  margin-top:.25rem;
+  color:var(--muted);
+  font-size:.7rem;
+}
+.attendance-status{
+  flex:0 0 auto;
+  min-width:5.4rem;
+  padding:.48rem .75rem;
+  border-radius:999px;
+  text-align:center;
+  font-size:.72rem;
+  font-weight:900;
+}
+.attendance-status.present{
+  color:#bbf7d0;
+  background:rgba(34,197,94,.10);
+  border:1px solid rgba(74,222,128,.3);
+}
+.attendance-status.absent{
+  color:#fecaca;
+  background:rgba(239,68,68,.10);
+  border:1px solid rgba(248,113,113,.32);
+}
+
+@media(max-width:520px){
+  .attendance-summary{grid-template-columns:1fr 1fr}
+  .attendance-session{align-items:flex-start}
+  .attendance-status{min-width:4.8rem}
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- =========================
+     LEFT SIDEBAR
+     ========================= -->
+<aside class="sidebar">
+
+  <div class="brand">
+    <div class="brand-mark">🏛️</div>
+    <h1>مستقبل الوطن</h1>
+    <p data-i18n="platform">منصة التعليم الرقمية</p>
+  </div>
+
+  <div class="user-box">
+    <div class="avatar" id="avatar">ط</div>
+    <div class="user-data">
+      <strong id="sidebarName">الطالب</strong>
+      <small id="sidebarPhone">—</small>
+    </div>
+  </div>
+
+  <div class="menu-title" data-i18n="mainMenu">القائمة الرئيسية</div>
+
+  <button class="side-btn active" data-section="videos">
+    <span class="side-icon">📚</span>
+    <span data-i18n="data">الداتا</span>
+  </button>
+
+  <button class="side-btn" data-section="exams">
+    <span class="side-icon">📝</span>
+    <span data-i18n="exams">الامتحانات</span>
+  </button>
+
+  <!-- 📋 التاسكات -->
+  <button class="side-btn" data-section="tasks">
+    <span class="side-icon">📋</span>
+    <span data-i18n="tasks">التاسكات</span>
+  </button>
+
+  <!-- 📊 غياب الطالب -->
+  <button class="side-btn" data-section="attendance">
+    <span class="side-icon">📊</span>
+    <span data-i18n="attendance">الغياب</span>
+  </button>
+
+  <button class="side-btn" data-section="profile">
+    <span class="side-icon">👤</span>
+    <span data-i18n="account">حسابي</span>
+  </button>
+
+  <button class="side-btn" data-section="settings">
+    <span class="side-icon">⚙️</span>
+    <span data-i18n="settings">الإعدادات</span>
+  </button>
+
+  <button class="side-btn logout" onclick="logout()">
+    <span>🚪</span>
+    <span data-i18n="logout">تسجيل الخروج</span>
+  </button>
+
+</aside>
+
+<main class="main">
+
+  <!-- =========================
+       DATA
+       ========================= -->
+  <section id="videos" class="section active">
+    <div class="page">
+      <h2 class="page-title" data-i18n="data"> الداتا</h2>
+      <div id="videoList"></div>
+    </div>
+  </section>
+
+  <!-- =========================
+       EXAMS
+       ========================= -->
+  <section id="exams" class="section">
+    <div class="page">
+      <h2 class="page-title" data-i18n="exams"> الامتحانات</h2>
+      <div id="examList"></div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       TASKS / ASSIGNMENTS
+       الطالب يشوف التاسكات الخاصة بمجموعته، الديدلاين،
+       يفتح ملف التاسك، ويسلم إجابة نصية.
+       ========================================================= -->
+  <section id="tasks" class="section">
+    <div class="page">
+      <h2 class="page-title" data-i18n="tasks"> التاسكات</h2>
+      <div id="taskList"></div>
+    </div>
+  </section>
+
+  <!-- =========================
+       ATTENDANCE
+       ========================= -->
+  <section id="attendance" class="section">
+    <div class="page">
+      <h2 class="page-title" data-i18n="attendance"> الغياب والحضور</h2>
+      <div id="attendanceBox"></div>
+    </div>
+  </section>
+
+  <!-- =========================
+       ACCOUNT
+       ========================= -->
+  <section id="profile" class="section">
+    <div class="page">
+      <h2 class="page-title" data-i18n="account"> حسابي</h2>
+      <div id="profileBox"></div>
+    </div>
+  </section>
+
+  <!-- =========================
+       SETTINGS
+       ========================= -->
+  <section id="settings" class="section">
+    <div class="page">
+
+      <h2 class="page-title" data-i18n="settings"> الإعدادات</h2>
+
+      <div class="card">
+        <div class="settings-grid">
+
+          <div class="setting-card">
+            <h3 data-i18n="themeColor">🎨 لون الواجهة</h3>
+            <p data-i18n="themeColorDesc">اختار اللون الأساسي للمنصة.</p>
+
+            <div class="colors">
+              <button class="color-btn active"
+                      style="background:#22d3ee;color:#22d3ee"
+                      onclick="setAccent('cyan',this)"></button>
+
+              <button class="color-btn"
+                      style="background:#8b5cf6;color:#8b5cf6"
+                      onclick="setAccent('purple',this)"></button>
+
+              <button class="color-btn"
+                      style="background:#22c55e;color:#22c55e"
+                      onclick="setAccent('green',this)"></button>
+
+              <button class="color-btn"
+                      style="background:#fbbf24;color:#fbbf24"
+                      onclick="setAccent('gold',this)"></button>
+            </div>
+          </div>
+
+          <div class="setting-card">
+            <h3 data-i18n="fontSize">🔤 حجم الخط</h3>
+            <p data-i18n="fontSizeDesc">كبر أو صغر الخط في المنصة.</p>
+
+            <div class="font-row">
+              <button onclick="changeFont(-1)">A−</button>
+              <span id="fontValue">100%</span>
+              <button onclick="changeFont(1)">A+</button>
+            </div>
+          </div>
+
+          <div class="setting-card setting-wide">
+            <h3 data-i18n="language">🌐 اللغة</h3>
+            <p data-i18n="languageDesc">اختار لغة واجهة المنصة.</p>
+
+            <select id="languageSelect" onchange="changeLanguage(this.value)">
+              <option value="ar">العربية</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- =========================
+     PASSWORD MODAL
+     ========================= -->
+<div id="passwordModal" class="modal" onclick="closeModalOutside(event)">
+  <div class="modal-box">
+
+    <div class="modal-head">
+      <h3 data-i18n="changePassword">🔐 تغيير كلمة السر</h3>
+      <button class="close" onclick="closePasswordModal()">×</button>
+    </div>
+
+    <p style="color:var(--muted);font-size:.72rem"
+       data-i18n="newPasswordHint">
+      اكتب كلمة السر الجديدة ثم أكد التغيير.
+    </p>
+
+    <input id="newPassword"
+           type="password"
+           autocomplete="new-password"
+           data-i18n-placeholder="newPassword">
+
+    <input id="confirmPassword"
+           type="password"
+           autocomplete="new-password"
+           data-i18n-placeholder="confirmPassword">
+
+    <button class="primary" onclick="changePassword()"
+            data-i18n="confirmChange">
+      تأكيد تغيير كلمة السر
+    </button>
+
+    <p id="passwordMessage"
+       style="margin:.7rem 0 0;font-size:.75rem"></p>
+
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script type="module">
+/* =========================================================
+   FIREBASE
+   ========================================================= */
+import { auth } from "./firebase.js";
+import { protectPage } from "./auth-guard.js";
+
+import {
+  onAuthStateChanged,
+  signOut,
+  updatePassword
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+import {
+  db
+} from "./firebase-db.js";
+
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  setDoc,
+  runTransaction,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+
+// 🔐 حماية صفحة الطالب
+protectPage("student");
+
+
+// 🔒 تأكيد إضافي: لازم يكون المستخدم Student
+onAuthStateChanged(auth, async (user) => {
+
+  // ❌ مفيش Login
+  if (!user) {
+    window.location.replace("index.html");
+    return;
+  }
+
+  const email = (user.email || "").toLowerCase();
+
+  // ❌ الحساب مش طالب
+  if (!email.endsWith("@student.local")) {
+    await signOut(auth);
+    window.location.replace("index.html");
+    return;
+  }
+
+  // ✅ طالب مسجل دخول
+  console.log("✅ Student authenticated:", email);
+
+});
+
+/* =========================================================
+   STATE
+   ========================================================= */
+let currentStudent = null;
+let currentExamTimer = null;
+let currentExamId = null;
+let currentExamData = null;
+/* يمنع الضغط المتكرر على زر نفس الامتحان أثناء فتحه. */
+const examOpening = new Set();
+
+/*
+  الـID ده هو Firestore Document ID للطالب.
+  ثابت حتى لو المدرس غيّر رقم الهاتف.
+*/
+function studentKey(){
+  return currentStudent?.firestoreId ||
+         currentStudent?.studentPhone ||
+         "";
+}
+
+/* =========================================================
+   UI SETTINGS
+   ========================================================= */
+const SETTINGS_KEY = "future_watan_student_settings";
+
+const translations = {
+  ar:{
+    platform:"منصة التعليم الرقمية",
+    mainMenu:"القائمة الرئيسية",
+    data:" الداتا",
+    exams:" الامتحانات",
+    account:" حسابي",
+    settings:" الإعدادات",
+    logout:" تسجيل الخروج",
+    themeColor:" لون الواجهة",
+    themeColorDesc:"اختار اللون الأساسي للمنصة.",
+    fontSize:"🔤 حجم الخط",
+    fontSizeDesc:"كبر أو صغر الخط في المنصة.",
+    language:"🌐 اللغة",
+    languageDesc:"اختار لغة واجهة المنصة.",
+    changePassword:"🔐 تغيير كلمة السر",
+    newPasswordHint:"اكتب كلمة السر الجديدة ثم أكد التغيير.",
+    newPassword:"كلمة السر الجديدة",
+    confirmPassword:"تأكيد كلمة السر",
+    confirmChange:"تأكيد تغيير كلمة السر",
+    passwordMismatch:"كلمتا السر غير متطابقتين.",
+    passwordShort:"كلمة السر لازم تكون 6 أحرف على الأقل.",
+    passwordChanged:"تم تغيير كلمة السر بنجاح ✅",
+    passwordError:"حصل خطأ أثناء تغيير كلمة السر.",
+    recentLogin:"لازم تسجل خروج وتدخل تاني ثم تحاول تغيير كلمة السر.",
+    name:"الاسم",
+    nationalId:"الرقم القومي",
+    phone:"رقم الهاتف / Username",
+    address:"العنوان",
+    group:"المجموعة",
+    resetPassword:"تغيير كلمة السر",
+    opened:"✅ تم الفتح",
+    notOpened:"❌ لم يتم الفتح",
+    open:"▶️ فتح المحاضرة",
+    openedBefore:"تم فتحها من قبل",
+    newItem:"🔥 جديد",
+    noData:"لا توجد محاضرات متاحة حاليًا.",
+    available:"🟢 متاح",
+    locked:"🔒 مقفول",
+    notStarted:"⏰ لم يبدأ",
+    ended:"⛔ انتهى",
+    start:"🚀 ابدأ الامتحان",
+    started:"⚠️ تم بدء الامتحان بالفعل",
+    continueExam:"▶️ استكمال الامتحان",
+    backHome:"🏠 العودة للصفحة الرئيسية",
+    solved:"✅ تم الحل",
+    score:"🎯 درجتك",
+    essayPending:"⏳ جاري تصحيح المقالي",
+    submit:"📤 تسليم الامتحان",
+    examSubmitted:"تم تسليم الامتحان بالفعل.",
+    timeEnded:"انتهى وقت الامتحان.",
+    examUnavailable:"الامتحان غير متاح حاليًا.",
+    examAlreadyOpened:"معذرة، تم فتح الامتحان من قبل ❌",
+    emptyExams:"لا توجد امتحانات متاحة حاليًا.",
+    loading:"⏳ جاري التحميل...",
+    confirmSubmit:"هل أنت متأكد من تسليم الامتحان؟",
+    tasks:" التاسكات",
+    attendance:" الغياب والحضور",
+    submitTask:"📤 تسليم التاسك",
+    submittedTask:"✅ تم التسليم",
+    grade:"🎯 درجتك",
+    deadline:"الديدلاين",
+    answerText:"اكتب إجابتك هنا...",
+    deadlinePassed:"انتهى موعد تسليم التاسك.",
+    taskSubmitted:"تم تسليم التاسك بنجاح ✅",
+    alreadySubmitted:"تم تسليم التاسك من قبل.",
+    submitError:"فشل تسليم التاسك ❌",
+    underReview:"⏳ برجاء الانتظار، التاسك لسه تحت المراجعة.",
+    addressMissing:"-"
+  },
+  en:{
+    platform:"Digital Education Platform",
+    mainMenu:"MAIN MENU",
+    data:" Data",
+    exams:" Exams",
+    account:" My Account",
+    settings:" Settings",
+    logout:" Logout",
+    themeColor:"🎨 Theme Color",
+    themeColorDesc:"Choose the main platform color.",
+    fontSize:"🔤 Font Size",
+    fontSizeDesc:"Increase or decrease the platform font.",
+    language:"🌐 Language",
+    languageDesc:"Choose the interface language.",
+    changePassword:"🔐 Change Password",
+    newPasswordHint:"Enter the new password and confirm the change.",
+    newPassword:"New password",
+    confirmPassword:"Confirm password",
+    confirmChange:"Confirm Password Change",
+    passwordMismatch:"Passwords do not match.",
+    passwordShort:"Password must be at least 6 characters.",
+    passwordChanged:"Password changed successfully ✅",
+    passwordError:"An error occurred while changing the password.",
+    recentLogin:"Please sign out, sign in again, then try changing the password.",
+    name:"Name",
+    nationalId:"National ID",
+    phone:"Phone / Username",
+    address:"Address",
+    group:"Group",
+    resetPassword:"Change Password",
+    opened:"✅ Opened",
+    notOpened:"❌ Not opened",
+    open:"▶️ Open lecture",
+    openedBefore:"Opened before",
+    newItem:"🔥 New",
+    noData:"No lectures are available right now.",
+    available:"🟢 Available",
+    locked:"🔒 Locked",
+    notStarted:"⏰ Not started",
+    ended:"⛔ Ended",
+    start:"🚀 Start exam",
+    started:"⚠️ Exam already started",
+    continueExam:"▶️ Continue exam",
+    backHome:"🏠 Back to home",
+    solved:"✅ Completed",
+    score:"🎯 Score",
+    essayPending:"⏳ Essay is being graded",
+    submit:"📤 Submit exam",
+    examSubmitted:"This exam has already been submitted.",
+    timeEnded:"Exam time has ended.",
+    examUnavailable:"Exam is not available now.",
+    examAlreadyOpened:"Sorry, this exam has already been opened before.",
+    emptyExams:"No exams are available right now.",
+    loading:"⏳ Loading...",
+    confirmSubmit:"Are you sure you want to submit the exam?",
+    tasks:" Tasks",
+    attendance:" Attendance",
+    submitTask:"📤 Submit Task",
+    submittedTask:"✅ Submitted",
+    grade:"🎯 Grade",
+    deadline:"Deadline",
+    answerText:"Write your answer here...",
+    deadlinePassed:"The task deadline has passed.",
+    taskSubmitted:"Task submitted successfully ✅",
+    alreadySubmitted:"This task was already submitted.",
+    submitError:"Task submission failed ❌",
+    underReview:"⏳ Please wait, the task is still under review.",
+    addressMissing:"-"
+  }
+};
+
+function settings(){
+  try{
+    return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {
+      accent:"cyan",
+      fontScale:1,
+      language:"ar"
+    };
+  }catch{
+    return {accent:"cyan",fontScale:1,language:"ar"};
+  }
+}
+
+function t(key){
+  const lang = settings().language;
+  return translations[lang][key] ?? translations.ar[key] ?? key;
+}
+
+function applySettings(){
+  const s = settings();
+
+  document.documentElement.style.setProperty(
+    "--font-scale",
+    String(s.fontScale)
+  );
+
+  document.body.classList.remove(
+    "accent-cyan",
+    "accent-purple",
+    "accent-green",
+    "accent-gold"
+  );
+
+  document.body.classList.add("accent-" + s.accent);
+
+  const colors = {
+    cyan:["#22d3ee","#0ea5e9"],
+    purple:["#a78bfa","#7c3aed"],
+    green:["#4ade80","#16a34a"],
+    gold:["#fbbf24","#d97706"]
+  };
+
+  const pair = colors[s.accent] || colors.cyan;
+  document.documentElement.style.setProperty("--accent",pair[0]);
+  document.documentElement.style.setProperty("--accent2",pair[1]);
+
+  document.documentElement.lang = s.language;
+  document.documentElement.dir = s.language === "ar" ? "rtl" : "ltr";
+  document.body.dir = s.language === "ar" ? "rtl" : "ltr";
+
+  const langSelect = document.getElementById("languageSelect");
+  if(langSelect) langSelect.value = s.language;
+
+  const fontValue = document.getElementById("fontValue");
+  if(fontValue) fontValue.textContent = Math.round(s.fontScale * 100) + "%";
+
+  document.querySelectorAll(".color-btn").forEach(btn=>{
+    btn.classList.remove("active");
+  });
+
+  const colorBtn = document.querySelector(
+    `.color-btn[onclick*="'${s.accent}'"]`
+  );
+  if(colorBtn) colorBtn.classList.add("active");
+
+  document.querySelectorAll("[data-i18n]").forEach(el=>{
+    const key = el.dataset.i18n;
+    if(translations[s.language][key]){
+      el.textContent = translations[s.language][key];
+    }
+  });
+
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(el=>{
+    const key = el.dataset.i18nPlaceholder;
+    el.placeholder = translations[s.language][key] || "";
+  });
+}
+
+window.setAccent = (accent,button)=>{
+  const s = settings();
+  s.accent = accent;
+  localStorage.setItem(SETTINGS_KEY,JSON.stringify(s));
+  applySettings();
+
+  if(button){
+    document.querySelectorAll(".color-btn")
+      .forEach(b=>b.classList.remove("active"));
+    button.classList.add("active");
+  }
+};
+
+window.changeFont = (direction)=>{
+  const s = settings();
+  let scale = Number(s.fontScale || 1);
+
+  scale += direction * .05;
+  scale = Math.max(.85,Math.min(1.3,scale));
+
+  s.fontScale = Number(scale.toFixed(2));
+
+  localStorage.setItem(SETTINGS_KEY,JSON.stringify(s));
+  applySettings();
+};
+
+window.changeLanguage = (language)=>{
+  const s = settings();
+  s.language = language;
+  localStorage.setItem(SETTINGS_KEY,JSON.stringify(s));
+
+  applySettings();
+
+  // نعيد رسم البيانات الديناميكية باللغة الجديدة.
+  renderVideos();
+
+  // لو الطالب داخل امتحان، نعيد رسم نفس الامتحان بدل ما نخرجه منه.
+  if(currentExamId && currentExamData){
+    renderExamScreen(currentExamData,currentExamId);
+  }else{
+    renderExams();
+  }
+
+  showProfile();
+  renderAttendance();
+};
+
+applySettings();
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+function showToast(message){
+  const toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.classList.add("show");
+
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(()=>{
+    toast.classList.remove("show");
+  },2800);
+}
+
+/* =========================================================
+   SIDEBAR USER
+   ========================================================= */
+function updateSidebar(){
+  if(!currentStudent) return;
+
+  const name = currentStudent.name || "الطالب";
+  const phone = currentStudent.studentPhone || "—";
+
+  document.getElementById("sidebarName").textContent = name;
+  document.getElementById("sidebarPhone").textContent = phone;
+
+  const first = name.trim().charAt(0);
+  document.getElementById("avatar").textContent = first || "ط";
+}
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+window.show = (id)=>{
+  document.querySelectorAll(".section").forEach(section=>{
+    section.classList.remove("active");
+  });
+
+  const section = document.getElementById(id);
+  if(!section) return;
+
+  section.classList.add("active");
+
+  document.querySelectorAll(".side-btn[data-section]").forEach(btn=>{
+    btn.classList.toggle(
+      "active",
+      btn.dataset.section === id
+    );
+  });
+
+  if(id === "videos") renderVideos();
+
+  /*
+    لو الطالب داخل امتحان حاليًا، الضغط على "الامتحانات"
+    لا يخرجه إلى القائمة ولا يمسح الأسئلة.
+    نعيد عرض نفس الامتحان فقط.
+  */
+  if(id === "exams"){
+    if(currentExamId && currentExamData){
+      renderExamScreen(currentExamData,currentExamId);
+    }else{
+      renderExams();
+    }
+  }
+
+  if(id === "tasks") renderTasks();
+
+  if(id === "attendance") renderAttendance();
+
+  if(id === "profile") showProfile();
+  if(id === "settings") applySettings();
+};
+
+/* =========================================================
+   LOAD STUDENT
+   ========================================================= */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user) return;
+
+  try{
+    const username = (user.email || "").split("@")[0];
+
+    const snapshot = await getDocs(
+      collection(db,"students")
+    );
+
+    let found = null;
+
+    snapshot.forEach(studentDoc=>{
+      const data = studentDoc.data();
+
+      if(String(data.studentPhone || "") === String(username)){
+        found = {
+          firestoreId:studentDoc.id,
+          ...data
+        };
+      }
+    });
+
+    if(!found){
+      showToast(
+        settings().language === "ar"
+          ? "بيانات الطالب غير موجودة."
+          : "Student data was not found."
+      );
+      return;
+    }
+
+    currentStudent = found;
+
+    updateSidebar();
+    showProfile();
+
+    await renderVideos();
+    await renderExams();
+
+  }catch(error){
+    console.error("STUDENT LOAD ERROR:",error);
+    showToast(
+      settings().language === "ar"
+        ? "حصل خطأ في تحميل بيانات الطالب."
+        : "Could not load student data."
+    );
+  }
+});
+
+/* =========================================================
+   VIDEO / DATA
+   ========================================================= */
+async function renderVideos(){
+  if(!currentStudent) return;
+
+  const div = document.getElementById("videoList");
+  div.innerHTML = `<div class="card empty">${t("loading")}</div>`;
+
+  try{
+    const snapshot = await getDocs(collection(db,"videos"));
+
+    let html = "";
+    let found = false;
+
+    for(const videoDoc of snapshot.docs){
+
+      const data = videoDoc.data();
+
+      const groups = Array.isArray(data.groups)
+        ? data.groups
+        : (data.group ? [data.group] : []);
+
+      const allowed =
+        groups.includes("ALL") ||
+        groups.includes("كل المجموعات") ||
+        groups.includes(currentStudent.group);
+
+      if(!allowed) continue;
+
+      found = true;
+
+      const videoId = data.videoId || videoDoc.id;
+
+      const logSnap = await getDoc(
+        doc(db,"video_logs",studentKey()+"_"+videoId)
+      );
+
+      const opened = logSnap.exists();
+
+      html += `
+        <div class="card video-card">
+
+          <span class="badge">📚 ${escapeHtml(data.name || "Lecture")}</span>
+
+          <h3>${escapeHtml(data.name || "Lecture")}</h3>
+
+          <div class="video-meta">
+            ${escapeHtml(currentStudent.group || "")}
+          </div>
+
+          <p class="${opened ? "opened" : "not-opened"}">
+            ${opened ? t("opened") : t("notOpened")}
+          </p>
+
+          <button
+            class="primary js-open-video"
+            data-video-url="${escapeHtml(data.videoUrl || "")}"
+            data-video-id="${escapeHtml(videoId)}">
+            ${t("open")}
+          </button>
+
+        </div>
+      `;
+    }
+
+    div.innerHTML = found
+      ? html
+      : `<div class="card empty">${t("noData")}</div>`;
+
+  }catch(error){
+    console.error("VIDEOS ERROR:",error);
+    div.innerHTML = `
+      <div class="card empty">
+        ❌ ${settings().language === "ar" ? "تعذر تحميل الداتا." : "Could not load data."}
+      </div>
+    `;
+  }
+}
+
+window.openVideo = async(url,videoId)=>{
+  if(!currentStudent || !url) return;
+
+  /*
+    مهم جدًا:
+    window.open لازم يحصل مباشرة مع ضغطة الطالب.
+    لو عملنا await قبل window.open، المتصفح ممكن يعتبرها Popup
+    غير مسموح بها ويمنع فتح المحاضرة.
+  */
+  const lectureWindow = window.open("about:blank","_blank");
+
+  if(!lectureWindow){
+    showToast(
+      settings().language === "ar"
+        ? "اسمح بالنوافذ المنبثقة للموقع ثم حاول مرة أخرى."
+        : "Please allow pop-ups for this site and try again."
+    );
+    return;
+  }
+
+  try{
+    /*
+      تسجيل فتح المحاضرة في Firestore.
+      التسجيل لا يمنع الطالب من فتح نفس المحاضرة مرة ثانية.
+      هو فقط لمعرفة أن الطالب فتحها قبل كده.
+    */
+    await setDoc(
+      doc(db,"video_logs",studentKey()+"_"+videoId),
+      {
+        studentId:studentKey(),
+        videoId,
+        opened:true,
+        openedAt:serverTimestamp()
+      },
+      {merge:true}
+    );
+
+    /* تحديث حالة المحاضرة في الصفحة. */
+    await renderVideos();
+
+    /* بعد نجاح التسجيل، نضع رابط المحاضرة في التاب الذي فتحناه. */
+    lectureWindow.location.href = url;
+
+  }catch(error){
+    console.error("OPEN VIDEO ERROR:",error);
+
+    /* لو حصل خطأ، نقفل التاب الفاضي بدل ما يفضل مفتوح. */
+    try{ lectureWindow.close(); }catch{}
+
+    showToast(
+      settings().language === "ar"
+        ? "تعذر فتح المحاضرة."
+        : "Could not open the lecture."
+    );
+  }
+};
+
+/* =========================================================
+   📋 TASKS / ASSIGNMENTS
+   الطالب يشوف التاسكات الخاصة بمجموعته أو كل المجموعات.
+   يقدر يشوف الديدلاين، يفتح ملف التاسك، ويسلم إجابة نصية.
+   بعد التسليم:
+   - لو المدرس لسه ماقيّمش: "برجاء الانتظار، لسه تحت المراجعة"
+   - لو اتقيّم: تظهر الدرجة للطالب.
+   ========================================================= */
+async function renderTasks(){
+  if(!currentStudent) return;
+
+  const list=document.getElementById("taskList");
+  if(!list) return;
+
+  list.innerHTML=`<div class="card empty">${t("loading")}</div>`;
+
+  try{
+    const [assignmentsSnap,submissionsSnap]=await Promise.all([
+      getDocs(collection(db,"assignments")),
+      getDocs(collection(db,"submissions"))
+    ]);
+
+    const submissions=submissionsSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const tasks=[];
+
+    assignmentsSnap.forEach(taskDoc=>{
+      const task=taskDoc.data();
+      const groups=Array.isArray(task.groups)
+        ? task.groups
+        : (task.group ? [task.group] : []);
+
+      const allowed=
+        groups.length===0 ||
+        groups.includes("ALL") ||
+        groups.includes("كل المجموعات") ||
+        groups.includes(currentStudent.group);
+
+      if(allowed){
+        tasks.push({id:taskDoc.id,...task});
+      }
+    });
+
+    // الأحدث أولًا حسب createdAt، والـdeadline ظاهر داخل كل كارت.
+    tasks.sort((a,b)=>{
+      const toTime=value=>{
+        try{
+          if(value?.toDate) return value.toDate().getTime();
+          const n=new Date(value).getTime();
+          return Number.isFinite(n)?n:0;
+        }catch{return 0}
+      };
+      return toTime(b.createdAt||b.created_at||b.createdDate||b.date)
+           - toTime(a.createdAt||a.created_at||a.createdDate||a.date);
+    });
+
+    if(!tasks.length){
+      list.innerHTML=`<div class="card empty">${t("noTasks")}</div>`;
+      return;
+    }
+
+    list.innerHTML=tasks.map(task=>{
+      const sub=submissions.find(x=>
+        x.assignmentId===task.id &&
+        String(x.studentId)===String(studentKey())
+      );
+
+      const deadline=task.deadline?.toDate
+        ? task.deadline.toDate()
+        : new Date(task.deadline);
+
+      const deadlineTime=deadline.getTime();
+      const validDeadline=Number.isFinite(deadlineTime);
+      const passed=validDeadline && Date.now()>deadlineTime;
+      const locale=settings().language==="ar"?"ar-EG":"en-US";
+      const deadlineText=validDeadline
+        ? deadline.toLocaleString(locale)
+        : "-";
+
+      let action="";
+
+      if(sub){
+        const hasGrade=sub.grade!==null && sub.grade!==undefined && sub.grade!=="";
+
+        action=`
+          <div class="task-submitted">${t("submittedTask")}</div>
+          ${hasGrade
+            ? `<div class="task-grade">${t("grade")}: ${escapeHtml(String(sub.grade))}</div>`
+            : `<div class="task-under-review">${t("underReview")}</div>`}
+          ${sub.answerText
+            ? `<div class="task-status-note">✍️ ${escapeHtml(sub.answerText)}</div>`
+            : ""}`;
+      }else if(passed){
+        action=`<div style="color:#f87171;font-weight:900">⛔ ${t("deadlinePassed")}</div>`;
+      }else{
+        action=`
+          <textarea id="taskText_${task.id}" placeholder="${t("answerText")}"></textarea>
+
+          <button class="primary task-submit-btn" data-task-id="${escapeHtml(task.id)}">
+            📤 تسليم التاسك
+          </button>`;
+      }
+
+      return `
+        <div class="task-card">
+          <span class="badge">📋 ${escapeHtml(task.title||task.name||"Task")}</span>
+          <h3>${escapeHtml(task.title||task.name||"Task")}</h3>
+          <div class="task-desc">${escapeHtml(task.description||"")}</div>
+          <p class="task-deadline">⏰ ${t("deadline")}: ${escapeHtml(deadlineText)}</p>
+          ${task.fileUrl
+            ? `<p><a class="task-file-link" href="${escapeHtml(task.fileUrl)}" target="_blank" rel="noopener noreferrer">📎 فتح ملف التاسك</a></p>`
+            : ""}
+          ${action}
+        </div>`;
+    }).join("");
+
+  }catch(error){
+    console.error("TASKS ERROR:",error);
+    list.innerHTML=`<div class="card empty">❌ ${settings().language==="ar"?"تعذر تحميل التاسكات.":"Could not load tasks."}</div>`;
+  }
+}
+
+async function submitTask(taskId){
+  if(!currentStudent || !taskId) return;
+
+  const text=document.getElementById("taskText_"+taskId)?.value.trim()||"";
+
+  if(!text){
+    showToast(settings().language==="ar"
+      ? "اكتب إجابتك أولًا ❗"
+      : "Write your answer first ❗");
+    return;
+  }
+
+  try{
+    const taskSnap=await getDoc(doc(db,"assignments",taskId));
+    if(!taskSnap.exists()){
+      showToast(settings().language==="ar"?"التاسك غير موجود.":"Task not found.");
+      return;
+    }
+
+    const task=taskSnap.data();
+    const deadline=task.deadline?.toDate
+      ? task.deadline.toDate()
+      : new Date(task.deadline);
+
+    if(Number.isFinite(deadline.getTime()) && Date.now()>deadline.getTime()){
+      showToast(t("deadlinePassed"));
+      return;
+    }
+
+    const submissionRef=doc(db,"submissions",studentKey()+"_"+taskId);
+    const existing=await getDoc(submissionRef);
+
+    if(existing.exists()){
+      showToast(t("alreadySubmitted"));
+      await renderTasks();
+      return;
+    }
+
+    await setDoc(submissionRef,{
+      assignmentId:taskId,
+      studentId:studentKey(),
+      studentName:currentStudent.name||"",
+      studentPhone:currentStudent.studentPhone||"",
+      group:currentStudent.group||"",
+      answerText:text,
+      grade:null,
+      submittedAt:serverTimestamp()
+    });
+
+    showToast(t("taskSubmitted"));
+    await renderTasks();
+
+  }catch(error){
+    console.error("SUBMIT TASK ERROR:",error);
+    showToast(t("submitError"));
+  }
+}
+
+/* =========================================================
+   EXAMS
+   ========================================================= */
+async function renderExams(){
+  if(!currentStudent) return;
+
+  const div = document.getElementById("examList");
+  div.innerHTML = `<div class="card empty">${t("loading")}</div>`;
+
+  try{
+    const snapshot = await getDocs(collection(db,"exams"));
+
+    /*
+      ترتيب الامتحانات:
+      - الجديد فوق والقديم تحت.
+      - الأولوية لـ createdAt لأنه تاريخ إنشاء الامتحان.
+      - لو createdAt غير موجود نستخدم startAt / date / timestamp كبدائل.
+      - لو مفيش تاريخ، نحافظ على ترتيب Firestore الحالي.
+      - الترتيب لا يعتمد على اسم الامتحان.
+    */
+    const exams = snapshot.docs.map((examDoc,index)=>({
+      examDoc,
+      data:examDoc.data(),
+      originalIndex:index
+    }));
+
+    const getDateValue = (data)=>{
+      const candidates = [
+        data.createdAt,
+        data.created_at,
+        data.createdDate,
+        data.createdOn,
+        data.timestamp,
+        data.date,
+        data.startAt,
+        data.updatedAt
+      ];
+
+      for(const value of candidates){
+        if(value == null) continue;
+
+        try{
+          const date = value?.toDate
+            ? value.toDate()
+            : new Date(value);
+
+          const time = date.getTime();
+
+          if(Number.isFinite(time)) return time;
+        }catch{}
+      }
+
+      return 0;
+    };
+
+    exams.sort((a,b)=>{
+      const dateA = getDateValue(a.data);
+      const dateB = getDateValue(b.data);
+
+      if(dateA !== dateB) return dateB - dateA;
+
+      return a.originalIndex - b.originalIndex;
+    });
+
+    let html = "";
+    let found = false;
+
+    for(const item of exams){
+
+      const examDoc = item.examDoc;
+      const data = item.data;
+
+      const groups = Array.isArray(data.groups)
+        ? data.groups
+        : (data.group ? [data.group] : []);
+
+      const allowed =
+        groups.includes("ALL") ||
+        groups.includes("كل المجموعات") ||
+        groups.includes(currentStudent.group);
+
+      if(!allowed) continue;
+
+      found = true;
+
+      const resultRef = doc(
+        db,
+        "results",
+        studentKey()+"_"+examDoc.id
+      );
+
+      const attemptRef = doc(
+        db,
+        "exam_attempts",
+        studentKey()+"_"+examDoc.id
+      );
+
+      /*
+        نقرأ النتيجة والمحاولة معًا بدل تنفيذ طلبين متتاليين.
+        ده يقلل التقطيع أثناء تحميل قائمة الامتحانات.
+      */
+      const [resultSnap,attemptSnap] = await Promise.all([
+        getDoc(resultRef),
+        getDoc(attemptRef)
+      ]);
+
+      const alreadySubmitted = resultSnap.exists();
+      const alreadyStarted = attemptSnap.exists();
+
+      let status = t("available");
+      let canStart = true;
+
+      if(data.active === false){
+        status = t("locked");
+        canStart = false;
+      }
+
+      let start = null;
+      let end = null;
+
+      if(data.startAt){
+        start = data.startAt.toDate
+          ? data.startAt.toDate()
+          : new Date(data.startAt);
+      }
+
+      if(data.endAt){
+        end = data.endAt.toDate
+          ? data.endAt.toDate()
+          : new Date(data.endAt);
+      }
+
+      const now = new Date();
+
+      if(start && now < start){
+        status = t("notStarted");
+        canStart = false;
+      }
+
+      if(end && now > end){
+        status = t("ended");
+        canStart = false;
+      }
+
+      /*
+        لو الطالب سلّم الامتحان بالفعل:
+        ممنوع الدخول نهائيًا.
+      */
+      if(alreadySubmitted){
+        canStart = false;
+      }
+
+      /*
+        لو بدأ الامتحان ولم يسلّمه:
+        مسموح له يدخل ويكمل من نفس المحاولة.
+        لا نمنعه ولا نعتبرها محاولة جديدة.
+      */
+      if(alreadyStarted && !alreadySubmitted){
+        status = t("continueExam");
+        canStart = true;
+      }
+
+      let resultHtml = "";
+
+      if(alreadySubmitted){
+        const result = resultSnap.data();
+
+        const hasEssay = Array.isArray(data.questions) &&
+          data.questions.some(q=>q.type === "essay");
+
+        const essayScores = Array.isArray(result.essayScores)
+          ? result.essayScores
+          : [];
+
+        if(hasEssay && essayScores.length === 0){
+          resultHtml = `<p class="status-wait">${t("essayPending")}</p>`;
+        }else{
+          resultHtml = `
+            <p class="status-done">
+              ${t("score")}: ${Number(result.total ?? result.score ?? 0)}
+            </p>
+          `;
+        }
+      }
+
+      let buttonHtml = "";
+
+      if(alreadySubmitted){
+        buttonHtml = `
+          <button class="primary" disabled>
+            ${t("solved")}
+          </button>
+        `;
+      }else if(alreadyStarted && canStart){
+        /*
+          زر استكمال نفس المحاولة.
+          الضغط عليه لا ينشئ attempt جديد.
+        */
+        buttonHtml = `
+          <button class="primary js-start-exam"
+            data-exam-id="${escapeHtml(examDoc.id)}">
+            ${t("continueExam")}
+          </button>
+        `;
+      }else if(canStart){
+        buttonHtml = `
+          <button class="primary js-start-exam"
+            data-exam-id="${escapeHtml(examDoc.id)}">
+            ${t("start")}
+          </button>
+        `;
+      }else{
+        buttonHtml = `
+          <button class="primary" disabled>
+            ${status}
+          </button>
+        `;
+      }
+
+      html += `
+        <div class="card exam-card">
+
+          <span class="badge">
+            📝 ${escapeHtml(data.name || "Exam")}
+          </span>
+
+          <h3>${escapeHtml(data.name || "Exam")}</h3>
+
+          <div class="exam-meta">
+            ${escapeHtml(currentStudent.group || "")}
+          </div>
+
+          <p>${status}</p>
+
+          ${resultHtml}
+
+          ${buttonHtml}
+
+        </div>
+      `;
+    }
+
+    div.innerHTML = found
+      ? html
+      : `<div class="card empty">${t("emptyExams")}</div>`;
+
+  }catch(error){
+    console.error("EXAMS ERROR:",error);
+
+    div.innerHTML = `
+      <div class="card empty">
+        ❌ ${settings().language === "ar"
+          ? "تعذر تحميل الامتحانات."
+          : "Could not load exams."}
+      </div>
+    `;
+  }
+}
+
+/*
+  بمجرد الضغط على "ابدأ":
+  1) نتحقق من عدم وجود result.
+  2) نتحقق من عدم وجود attempt.
+  3) ننشئ attempt دائم.
+  4) لا نحذفه عند إغلاق الصفحة.
+  وبالتالي لا يمكن للطالب دخول الامتحان مرة ثانية.
+*/
+window.startExam = async(examId)=>{
+  if(!currentStudent || !examId) return;
+
+  /*
+    منع الضغط المكرر:
+    لو الطالب ضغط على نفس الامتحان أكثر من مرة بسرعة،
+    الطلب الثاني يتجاهل بدل ما يعمل Race Condition أو يغيّر الشاشة.
+  */
+  if(examOpening.has(examId)) return;
+
+  examOpening.add(examId);
+
+  try{
+
+    const resultRef = doc(
+      db,
+      "results",
+      studentKey()+"_"+examId
+    );
+
+    const attemptRef = doc(
+      db,
+      "exam_attempts",
+      studentKey()+"_"+examId
+    );
+
+    /*
+      النتيجة هي الحكم النهائي:
+      لو موجودة، الطالب سلّم الامتحان بالفعل وممنوع يعيده.
+    */
+    const resultSnap = await getDoc(resultRef);
+
+    if(resultSnap.exists()){
+      showToast(t("examSubmitted"));
+      return;
+    }
+
+    /*
+      نجيب بيانات الامتحان أولًا.
+    */
+    const examSnap = await getDoc(
+      doc(db,"exams",examId)
+    );
+
+    if(!examSnap.exists()){
+      showToast(t("examUnavailable"));
+      return;
+    }
+
+    const exam = examSnap.data();
+
+    if(exam.active === false){
+      showToast(t("locked"));
+      return;
+    }
+
+    const now = new Date();
+
+    if(exam.startAt){
+      const start = exam.startAt.toDate
+        ? exam.startAt.toDate()
+        : new Date(exam.startAt);
+
+      if(now < start){
+        showToast(t("notStarted"));
+        return;
+      }
+    }
+
+    if(exam.endAt){
+      const end = exam.endAt.toDate
+        ? exam.endAt.toDate()
+        : new Date(exam.endAt);
+
+      if(now > end){
+        showToast(t("ended"));
+        return;
+      }
+    }
+
+    /*
+      لو عنده attempt بالفعل ولم يسلّم:
+      لا ننشئ محاولة جديدة.
+      نفتح نفس الامتحان ونخليه يكمل.
+    */
+    const attemptSnap = await getDoc(attemptRef);
+
+    if(attemptSnap.exists()){
+      currentExamId = examId;
+      currentExamData = exam;
+
+      // مهم: لا نستدعي show("exams") هنا لأنه سيعيد renderExams
+      // ويقدر يعمل Race Condition مع شاشة الامتحان.
+      await renderExamScreen(exam,examId);
+
+      return;
+    }
+
+    /*
+      أول دخول فقط:
+      نستخدم Transaction لضمان إنشاء محاولة واحدة فقط.
+    */
+    await runTransaction(db,async(transaction)=>{
+
+      const existingAttempt =
+        await transaction.get(attemptRef);
+
+      if(existingAttempt.exists()){
+        /*
+          لو ضغطين حصلوا في نفس اللحظة،
+          الضغط الثاني لا ينشئ محاولة ثانية.
+          وسيتم التعامل معه بعد الـTransaction كـ Resume.
+        */
+        return;
+      }
+
+      transaction.set(attemptRef,{
+        studentId:studentKey(),
+        examId,
+        startTime:serverTimestamp(),
+        started:true,
+        locked:true
+      });
+    });
+
+    /*
+      بعد الـTransaction نقرأ المحاولة مرة ثانية.
+      لو موجودة، ندخل على نفس الامتحان.
+    */
+    const finalAttemptSnap = await getDoc(attemptRef);
+
+    if(!finalAttemptSnap.exists()){
+      showToast(t("examUnavailable"));
+      return;
+    }
+
+    currentExamId = examId;
+    currentExamData = exam;
+
+    await renderExamScreen(exam,examId);
+
+  }catch(error){
+
+    console.error("START EXAM ERROR:",error);
+
+    showToast(
+      settings().language === "ar"
+        ? "تعذر بدء/استكمال الامتحان."
+        : "Could not start/resume the exam."
+    );
+
+  }finally{
+    /*
+      نفتح الـlock مرة أخرى بعد انتهاء عملية الفتح.
+      وجود attempt هو الذي يحافظ على المحاولة، وليس هذا الـlock.
+    */
+    examOpening.delete(examId);
+  }
+};
+
+async function renderExamScreen(exam,examId){
+
+  currentExamId = examId;
+  currentExamData = exam;
+
+  const div = document.getElementById("examList");
+
+  /*
+    نفعّل قسم الامتحانات مباشرة بدون استدعاء show().
+    show("exams") كان يعيد تشغيل renderExams أثناء فتح الامتحان
+    وده كان ممكن يعمل Race Condition ويخرج الطالب من شاشة الامتحان.
+  */
+  document.querySelectorAll(".section").forEach(section=>{
+    section.classList.remove("active");
+  });
+
+  const examSection = document.getElementById("exams");
+  if(examSection) examSection.classList.add("active");
+
+  document.querySelectorAll(".side-btn[data-section]").forEach(btn=>{
+    btn.classList.toggle(
+      "active",
+      btn.dataset.section === "exams"
+    );
+  });
+
+  div.innerHTML = `
+    <div class="card">
+      <span class="badge">📝 ${escapeHtml(exam.name || "")}</span>
+      <h2>${escapeHtml(exam.name || "")}</h2>
+      <div id="examTimer" class="timer">⏳ ...</div>
+    </div>
+  `;
+
+  if(currentExamTimer){
+    clearInterval(currentExamTimer);
+  }
+
+  const questions = Array.isArray(exam.questions)
+    ? exam.questions
+    : [];
+
+  questions.forEach((q,index)=>{
+
+    const question = document.createElement("div");
+    question.className = "card question";
+
+    const title = document.createElement("p");
+    title.textContent = `${index+1}) ${q.text || ""}`;
+    question.appendChild(title);
+
+    if(q.type === "mcq"){
+
+      (q.choices || []).forEach((choice,choiceIndex)=>{
+
+        const label = document.createElement("label");
+        label.className = "choice";
+
+        const input = document.createElement("input");
+        input.type = "radio";
+        input.name = "q"+index;
+        input.value = choiceIndex;
+
+        label.appendChild(input);
+        label.appendChild(
+          document.createTextNode(" " + choice)
+        );
+
+        question.appendChild(label);
+      });
+
+    }else{
+
+      const textarea = document.createElement("textarea");
+      textarea.id = "essay"+index;
+      textarea.placeholder =
+        settings().language === "ar"
+          ? "اكتب إجابتك..."
+          : "Write your answer...";
+
+      question.appendChild(textarea);
+    }
+
+    div.appendChild(question);
+  });
+
+  const submit = document.createElement("button");
+  submit.className = "primary";
+  submit.textContent = t("submit");
+  submit.onclick = ()=>submitExam(examId);
+
+  div.appendChild(submit);
+
+  // استرجاع وقت البداية من attempt.
+  const attemptSnap = await getDoc(
+    doc(db,"exam_attempts",studentKey()+"_"+examId)
+  );
+
+  let startTime = new Date();
+
+  if(attemptSnap.exists() && attemptSnap.data().startTime){
+    const value = attemptSnap.data().startTime;
+
+    startTime = value.toDate
+      ? value.toDate()
+      : new Date(value);
+  }
+
+  const durationSeconds =
+    Number(exam.duration || 0) * 60;
+
+  currentExamTimer = setInterval(()=>{
+
+    const now = new Date();
+
+    let remaining =
+      durationSeconds -
+      Math.floor((now-startTime)/1000);
+
+    if(exam.endAt){
+
+      const end = exam.endAt.toDate
+        ? exam.endAt.toDate()
+        : new Date(exam.endAt);
+
+      const globalRemaining =
+        Math.floor((end-now)/1000);
+
+      remaining = Math.min(
+        remaining,
+        globalRemaining
+      );
+    }
+
+    const timer = document.getElementById("examTimer");
+    if(!timer) return;
+
+    if(remaining <= 0){
+
+      clearInterval(currentExamTimer);
+
+      timer.textContent = t("timeEnded");
+
+      submitExam(examId,true);
+      return;
+    }
+
+    const minutes =
+      Math.floor(remaining/60);
+
+    const seconds =
+      remaining%60;
+
+    timer.textContent =
+      `⏳ ${minutes}:${String(seconds).padStart(2,"0")}`;
+
+  },1000);
+}
+
+async function submitExam(examId,autoSubmit=false){
+
+  if(!currentStudent) return;
+
+  try{
+
+    if(!autoSubmit){
+      if(!confirm(t("confirmSubmit"))) return;
+    }
+
+    const resultRef = doc(
+      db,
+      "results",
+      studentKey()+"_"+examId
+    );
+
+    const existing = await getDoc(resultRef);
+
+    if(existing.exists()){
+      showToast(t("examSubmitted"));
+      return;
+    }
+
+    const examSnap = await getDoc(
+      doc(db,"exams",examId)
+    );
+
+    if(!examSnap.exists()) return;
+
+    const exam = examSnap.data();
+
+    const answers = [];
+    let score = 0;
+
+    (exam.questions || []).forEach((q,index)=>{
+
+      if(q.type === "mcq"){
+
+        const selected =
+          document.querySelector(
+            `input[name="q${index}"]:checked`
+          );
+
+        const answer =
+          selected ? Number(selected.value) : -1;
+
+        answers.push(answer);
+
+        if(answer === Number(q.correct)){
+          score += Number(q.degree || 0);
+        }
+
+      }else{
+
+        const text =
+          document.getElementById("essay"+index)?.value || "";
+
+        answers.push(text);
+      }
+    });
+
+    await setDoc(resultRef,{
+      examId,
+      studentId:studentKey(),
+      answers,
+      score,
+      total:score,
+      essayScores:[],
+      submittedAt:serverTimestamp()
+    });
+
+    /*
+      لا نحذف exam_attempts بعد التسليم.
+
+      السبب:
+      حتى لو النتيجة موجودة، الاحتفاظ بالمحاولة كـ سجل دائم
+      يمنع إعادة فتح الامتحان بعد أي Refresh أو Logout/Login.
+    */
+
+    if(currentExamTimer){
+      clearInterval(currentExamTimer);
+      currentExamTimer = null;
+    }
+
+    /*
+      الامتحان انتهى.
+      نصفر حالة الامتحان الحالي حتى تقدر أزرار المنيو تشتغل طبيعي.
+    */
+    currentExamId = null;
+    currentExamData = null;
+
+    /* عرض النتيجة فقط، بدون إعادة رسم قائمة الامتحانات حتى يظل زر العودة ظاهرًا. */
+    divSafeExamResult(score);
+
+  }catch(error){
+
+    console.error("SUBMIT EXAM ERROR:",error);
+
+    showToast(
+      settings().language === "ar"
+        ? "حصل خطأ أثناء تسليم الامتحان."
+        : "Could not submit the exam."
+    );
+  }
+}
+
+function divSafeExamResult(score){
+  const div = document.getElementById("examList");
+
+  div.innerHTML = `
+    <div class="card" style="text-align:center">
+      <div style="font-size:3rem">✅</div>
+      <h2>${t("solved")}</h2>
+      <p style="color:var(--accent);font-size:1.2rem;font-weight:900">
+        ${t("score")}: ${score}
+      </p>
+
+      <button
+        class="primary"
+        style="margin-top:1rem"
+        onclick="returnToHome()">
+        ${t("backHome")}
+      </button>
+    </div>
+  `;
+}
+
+window.returnToHome = ()=>{
+  if(currentExamTimer){
+    clearInterval(currentExamTimer);
+    currentExamTimer = null;
+  }
+
+  currentExamId = null;
+  currentExamData = null;
+  show("videos");
+};
+
+
+document.addEventListener("click", (event)=>{
+  const navButton = event.target.closest(".side-btn[data-section]");
+  if(!navButton) return;
+
+  event.preventDefault();
+  show(navButton.dataset.section);
+});
+
+/* =========================================================
+   DYNAMIC BUTTONS
+   =========================================================
+   بنستخدم Event Delegation بدل onclick داخل HTML.
+   ده يمنع مشاكل علامات الاقتباس داخل الـ attributes،
+   وبيخلي أزرار المحاضرات والامتحانات تشتغل حتى بعد إعادة الرسم.
+*/
+document.addEventListener("click", (event)=>{
+  const taskButton = event.target.closest(".task-submit-btn");
+  if(taskButton){
+    event.preventDefault();
+    event.stopPropagation();
+    const taskId = taskButton.dataset.taskId || "";
+    if(taskId) submitTask(taskId);
+    return;
+  }
+
+  const videoButton = event.target.closest(".js-open-video");
+  if(videoButton){
+    event.preventDefault();
+    event.stopPropagation();
+
+    const url = videoButton.dataset.videoUrl || "";
+    const videoId = videoButton.dataset.videoId || "";
+
+    openVideo(url, videoId);
+    return;
+  }
+
+  const examButton = event.target.closest(".js-start-exam");
+  if(examButton){
+    event.preventDefault();
+    event.stopPropagation();
+
+    const examId = examButton.dataset.examId || "";
+    if(examId) startExam(examId);
+  }
+});
+
+
+/* =========================================================
+   📊 ATTENDANCE / ABSENCE FOR CURRENT STUDENT
+   مصدر البيانات: attendance_sessions
+   كل Session تحتوي records[]، وpresent:false = غائب.
+   ========================================================= */
+async function renderAttendance(){
+  const box = document.getElementById("attendanceBox");
+  if(!box || !currentStudent) return;
+
+  box.innerHTML = `<div class="card empty">${t("loading")}</div>`;
+
+  try{
+    const snapshot = await getDocs(collection(db,"attendance_sessions"));
+
+    const normalize = value =>
+      String(value ?? "").trim().toLowerCase().replace(/\s+/g,"");
+
+    const studentKeys = [
+      currentStudent.firestoreId,
+      currentStudent.id,
+      currentStudent.uid,
+      currentStudent.userId,
+      currentStudent.authUid,
+      currentStudent.studentId,
+      currentStudent.studentID,
+      currentStudent.student_id,
+      currentStudent.studentPhone,
+      currentStudent.phone,
+      currentStudent.mobile,
+      currentStudent.phoneNumber,
+      currentStudent.username,
+      currentStudent.userName,
+      currentStudent.email,
+      currentStudent.emailAddress,
+      currentStudent.nationalId,
+      currentStudent.nationalID,
+      currentStudent.national_id,
+      currentStudent.name,
+      currentStudent.fullName,
+      currentStudent.studentName
+    ].map(normalize).filter(Boolean);
+
+    const getRecordKeys = record => {
+      const nested = record?.student && typeof record.student === "object"
+        ? record.student
+        : {};
+
+      return [
+        record?.uid,
+        record?.userId,
+        record?.authUid,
+        record?.user_id,
+        record?.auth_uid,
+        record?.studentId,
+        record?.studentID,
+        record?.student_id,
+        record?.studentUid,
+        record?.studentUID,
+        record?.studentPhone,
+        record?.phone,
+        record?.mobile,
+        record?.phoneNumber,
+        record?.username,
+        record?.userName,
+        record?.email,
+        record?.emailAddress,
+        record?.nationalId,
+        record?.nationalID,
+        record?.national_id,
+        record?.studentName,
+        record?.name,
+        record?.fullName,
+        nested?.id,
+        nested?.uid,
+        nested?.userId,
+        nested?.studentId,
+        nested?.studentPhone,
+        nested?.phone,
+        nested?.username,
+        nested?.email,
+        nested?.nationalId,
+        nested?.name
+      ].map(normalize).filter(Boolean);
+    };
+
+    const findStudentRecord = records => {
+      for(const record of records){
+        const recordKeys = getRecordKeys(record);
+        if(recordKeys.some(key => studentKeys.includes(key))){
+          return record;
+        }
+      }
+      return null;
+    };
+
+    const dateText = value => {
+      try{
+        if(value?.toDate){
+          const d = value.toDate();
+          return Number.isNaN(d.getTime())
+            ? String(value)
+            : d.toLocaleDateString(settings().language==="ar" ? "ar-EG" : "en-US");
+        }
+
+        const d = new Date(value);
+        if(!Number.isNaN(d.getTime())){
+          return d.toLocaleDateString(
+            settings().language==="ar" ? "ar-EG" : "en-US"
+          );
+        }
+      }catch{}
+
+      return String(value ?? "-");
+    };
+
+    const sessions = [];
+
+    snapshot.forEach(sessionDoc=>{
+      const session = sessionDoc.data();
+      const records = Array.isArray(session.records) ? session.records : [];
+      const record = findStudentRecord(records);
+
+      // السيشن لا تدخل في حساب الطالب إلا لو له Record فعلي فيها.
+      if(!record) return;
+
+      sessions.push({
+        id:sessionDoc.id,
+        name:session.name || "بدون اسم",
+        date:session.date,
+        present:record.present !== false
+      });
+    });
+
+    sessions.sort((a,b)=>{
+      const getTime = value => {
+        try{
+          if(value?.toDate) return value.toDate().getTime();
+          const n = new Date(value).getTime();
+          return Number.isFinite(n) ? n : 0;
+        }catch{
+          return 0;
+        }
+      };
+      return getTime(b.date) - getTime(a.date);
+    });
+
+    const presentCount = sessions.filter(x=>x.present).length;
+    const absentCount = sessions.filter(x=>!x.present).length;
+
+    const ar = settings().language === "ar";
+
+    if(!sessions.length){
+      box.innerHTML = `
+        <div class="card">
+          <div class="empty">
+            ${ar ? "لا يوجد سجل حضور أو غياب مسجل لك حتى الآن." : "No attendance record is available for you yet."}
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const warning = absentCount > 1
+      ? `
+        <div class="attendance-warning">
+          <strong>🚨 تنويه مهم</strong>
+          <p>
+            لقد غبت أكثر من مرة (${absentCount} غيابات).
+            حسب نظام المنصة، إذا غبت أكثر من مرة <b>لن تحصل على الشهادة برجاء التواصل مع الحزب</b>.
+          </p>
+        </div>
+      `
+      : `
+        <div class="attendance-ok">
+          ✅ موقف الحضور جيد حاليًا — عدد الغيابات: ${absentCount}
+        </div>
+      `;
+
+    box.innerHTML = `
+      <div class="card">
+        <div style="margin-bottom:1rem">
+          <span class="badge">👤 ${escapeHtml(currentStudent.name || "الطالب")}</span>
+        </div>
+
+        ${warning}
+
+        <div class="attendance-summary">
+          <div class="attendance-stat present">
+            <div class="stat-icon">✅</div>
+            <strong>${presentCount}</strong>
+            <span>${ar ? "مرات الحضور" : "Present"}</span>
+          </div>
+
+          <div class="attendance-stat absent">
+            <div class="stat-icon">❌</div>
+            <strong>${absentCount}</strong>
+            <span>${ar ? "مرات الغياب" : "Absent"}</span>
+          </div>
+        </div>
+
+        <h3 style="margin:1.2rem 0 .8rem;color:var(--accent)">
+          ${ar ? "📅 سجل السيشنات" : "📅 Session History"}
+        </h3>
+
+        <div class="attendance-session-list">
+          ${sessions.map(session=>`
+            <div class="attendance-session">
+              <div class="attendance-session-info">
+                <div class="attendance-session-name">
+                  ${escapeHtml(session.name)}
+                </div>
+                <div class="attendance-session-date">
+                  📅 ${escapeHtml(dateText(session.date))}
+                </div>
+              </div>
+
+              <div class="attendance-status ${session.present ? "present" : "absent"}">
+                ${session.present
+                  ? (ar ? "✔ حاضر" : "✔ Present")
+                  : (ar ? "✖ غائب" : "✖ Absent")}
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+
+  }catch(error){
+    console.error("ATTENDANCE ERROR:",error);
+
+    box.innerHTML = `
+      <div class="card empty">
+        ❌ ${settings().language==="ar"
+          ? "تعذر تحميل سجل الغياب والحضور."
+          : "Could not load attendance."}
+      </div>
+    `;
+  }
+}
+
+/* =========================================================
+   ACCOUNT
+   ========================================================= */
+function showProfile(){
+
+  if(!currentStudent) return;
+
+  const div = document.getElementById("profileBox");
+
+  div.innerHTML = `
+    <div class="card">
+
+      <div class="profile-grid">
+
+        <div class="profile-item">
+          <span class="profile-label">${t("name")}</span>
+          <span class="profile-value">
+            ${escapeHtml(currentStudent.name || "-")}
+          </span>
+        </div>
+
+        <div class="profile-item">
+          <span class="profile-label">${t("nationalId")}</span>
+          <span class="profile-value">
+            ${escapeHtml(currentStudent.nationalId || "-")}
+          </span>
+        </div>
+
+        <div class="profile-item">
+          <span class="profile-label">${t("phone")}</span>
+          <span class="profile-value" dir="ltr">
+            ${escapeHtml(currentStudent.studentPhone || "-")}
+          </span>
+        </div>
+
+        <div class="profile-item">
+          <span class="profile-label">${t("address")}</span>
+          <span class="profile-value">
+            ${escapeHtml(currentStudent.address || "-")}
+          </span>
+        </div>
+
+        <div class="profile-item">
+          <span class="profile-label">${t("group")}</span>
+          <span class="profile-value">
+            ${escapeHtml(currentStudent.group || "-")}
+          </span>
+        </div>
+
+      </div>
+
+      <div style="margin-top:1rem">
+        <button class="primary" onclick="openPasswordModal()">
+          ${t("resetPassword")}
+        </button>
+      </div>
+
+    </div>
+  `;
+}
+
+window.openPasswordModal = ()=>{
+  document.getElementById("passwordModal")
+    .classList.add("show");
+
+  document.getElementById("newPassword").value = "";
+  document.getElementById("confirmPassword").value = "";
+  document.getElementById("passwordMessage").textContent = "";
+};
+
+window.closePasswordModal = ()=>{
+  document.getElementById("passwordModal")
+    .classList.remove("show");
+};
+
+window.closeModalOutside = (event)=>{
+  if(event.target.id === "passwordModal"){
+    closePasswordModal();
+  }
+};
+
+window.changePassword = async()=>{
+
+  const password =
+    document.getElementById("newPassword").value;
+
+  const confirm =
+    document.getElementById("confirmPassword").value;
+
+  const msg =
+    document.getElementById("passwordMessage");
+
+  if(password.length < 6){
+    msg.textContent = t("passwordShort");
+    msg.style.color = "#f87171";
+    return;
+  }
+
+  if(password !== confirm){
+    msg.textContent = t("passwordMismatch");
+    msg.style.color = "#f87171";
+    return;
+  }
+
+  try{
+
+    await updatePassword(
+      auth.currentUser,
+      password
+    );
+
+    msg.textContent = t("passwordChanged");
+    msg.style.color = "#4ade80";
+
+    setTimeout(()=>{
+      closePasswordModal();
+    },900);
+
+  }catch(error){
+
+    console.error(error);
+
+    msg.textContent =
+      error.code === "auth/requires-recent-login"
+        ? t("recentLogin")
+        : t("passwordError");
+
+    msg.style.color = "#f87171";
+  }
+};
+
+/* =========================================================
+   EXAM ALREADY OPENED MODAL
+   ========================================================= */
+function showExamAlreadyOpenedModal(){
+  let modal = document.getElementById("examAlreadyOpenedModal");
+
+  if(!modal){
+    modal = document.createElement("div");
+    modal.id = "examAlreadyOpenedModal";
+    modal.className = "modal";
+    modal.innerHTML = `
+      <div class="modal-box" style="text-align:center;max-width:26rem">
+
+        <div style="
+          width:4.5rem;
+          height:4.5rem;
+          margin:0 auto 1rem;
+          display:grid;
+          place-items:center;
+          border-radius:50%;
+          background:rgba(239,68,68,.10);
+          border:1px solid rgba(248,113,113,.35);
+          box-shadow:0 0 30px rgba(239,68,68,.15);
+          font-size:2.1rem;
+        ">🔒</div>
+
+        <h2 style="
+          margin:.2rem 0 .5rem;
+          color:#fca5a5;
+          font-size:1.2rem;
+        ">${t("examAlreadyOpened")}</h2>
+
+        <p style="
+          margin:0 0 1.2rem;
+          color:var(--muted);
+          font-size:.75rem;
+        ">
+          ${
+            settings().language === "ar"
+              ? "لا يمكن إعادة فتح نفس الامتحان مرة أخرى."
+              : "The same exam cannot be opened again."
+          }
+        </p>
+
+        <button class="primary" onclick="closeExamAlreadyOpenedModal()">
+          ${
+            settings().language === "ar"
+              ? "حسنًا"
+              : "OK"
+          }
+        </button>
+
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    modal.addEventListener("click",(event)=>{
+      if(event.target === modal){
+        closeExamAlreadyOpenedModal();
+      }
+    });
+  }else{
+    const title = modal.querySelector("h2");
+    const desc = modal.querySelector("p");
+    const button = modal.querySelector("button");
+
+    if(title) title.textContent = t("examAlreadyOpened");
+    if(desc){
+      desc.textContent =
+        settings().language === "ar"
+          ? "يمكنك استكمال نفس الامتحان من مكانك."
+          : "You can continue the same exam from where you stopped.";
+    }
+    if(button){
+      button.textContent =
+        settings().language === "ar"
+          ? "استكمال"
+          : "Continue";
+    }
+  }
+
+  modal.classList.add("show");
+}
+
+window.closeExamAlreadyOpenedModal = ()=>{
+  const modal = document.getElementById("examAlreadyOpenedModal");
+  if(modal) modal.classList.remove("show");
+};
+
+/* =========================================================
+   LOGOUT
+   ========================================================= */
+window.logout = async()=>{
+  try{
+    await signOut(auth);
+    window.location.href = "index.html";
+  }catch(error){
+    console.error(error);
+    showToast(
+      settings().language === "ar"
+        ? "حصل خطأ أثناء تسجيل الخروج."
+        : "Logout failed."
+    );
+  }
+};
+
+// إخفاء اسم الصفحة من الـ URL
+  window.history.replaceState(
+  {},
+  document.title,
+  "/Mostakbal-Watan-Courses/student"
+);
+  
+/* =========================================================
+   HELPERS
+   ========================================================= */
+function escapeHtml(value){
+  return String(value ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+</script>
+
+</body>
+</html>

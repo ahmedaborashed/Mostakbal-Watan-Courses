@@ -1,0 +1,2083 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#06140d">
+  <title>حزب مستقبل وطن | أول المحلة الكبرى</title>
+
+  <!--
+    ============================================================
+    صفحة هبوط تعليمية
+    - هوية بصرية: أخضر داكن + ذهبي + أبيض
+    - الكورس: Python مجاني
+    - رابط الحزب الرسمي موجود في شريط التنقل وقسم التواصل
+    - تم الحفاظ على IDs الخاصة بتسجيل الدخول لتعمل مع script.js
+    ============================================================
+  -->
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
+
+    :root{
+      --bg:#020a06;
+      --bg2:#06140d;
+      --panel:#071b12;
+      --panel2:#0a2417;
+      --green:#00e676;
+      --green2:#12c96b;
+      --gold:#d8ad55;
+      --gold2:#f2d27b;
+      --white:#f5f8f6;
+      --muted:#a6b8ad;
+      --line:rgba(0,230,118,.18);
+      --shadow:0 25px 70px rgba(0,0,0,.45);
+    }
+
+    *{
+      box-sizing:border-box;
+      margin:0;
+      padding:0;
+    }
+
+    html{
+      scroll-behavior:smooth;
+    }
+
+    body{
+      font-family:'Cairo',sans-serif;
+      color:var(--white);
+      background:
+        radial-gradient(circle at 50% 10%, rgba(0,230,118,.09), transparent 28%),
+        radial-gradient(circle at 85% 55%, rgba(216,173,85,.07), transparent 25%),
+        linear-gradient(135deg,#010604,#06140d 45%,#020a06);
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      opacity:.22;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+      background-size:50px 50px;
+      mask-image:linear-gradient(to bottom,#000,transparent 80%);
+    }
+
+    a{
+      color:inherit;
+      text-decoration:none;
+    }
+
+    button,
+    input{
+      font:inherit;
+    }
+
+    .container{
+      width:min(1240px,calc(100% - 34px));
+      margin:auto;
+    }
+
+    /* ============================================================
+       NAVBAR
+       ============================================================ */
+
+    .navbar{
+      position:sticky;
+      top:14px;
+      z-index:100;
+      width:min(1390px,calc(100% - 24px));
+      margin:14px auto 0;
+      padding:13px 20px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:20px;
+      border:1px solid rgba(0,230,118,.18);
+      border-radius:25px;
+      background:rgba(2,12,7,.78);
+      backdrop-filter:blur(18px);
+      box-shadow:0 15px 45px rgba(0,0,0,.35);
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:13px;
+      min-width:max-content;
+    }
+
+    .brand-logo{
+      width:58px;
+      height:58px;
+      display:grid;
+      place-items:center;
+      border-radius:50%;
+      border:1px solid var(--gold);
+      background:
+        radial-gradient(circle,#1b4029,#07170d 70%);
+      box-shadow:0 0 25px rgba(216,173,85,.13);
+      font-size:28px;
+    }
+
+    .brand-title{
+      font-size:21px;
+      font-weight:900;
+      line-height:1.1;
+    }
+
+    .brand-title span{
+      display:block;
+      color:var(--gold2);
+      font-size:13px;
+      margin-top:4px;
+      font-weight:700;
+    }
+
+    .nav-links{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      flex:1;
+    }
+
+    .nav-links a{
+      padding:11px 16px;
+      border-radius:13px;
+      color:#dce7e0;
+      font-weight:700;
+      font-size:14px;
+      transition:.25s ease;
+      position:relative;
+    }
+
+    .nav-links a::after{
+      content:"";
+      position:absolute;
+      bottom:3px;
+      right:18px;
+      left:18px;
+      height:2px;
+      transform:scaleX(0);
+      background:var(--gold);
+      transition:.25s ease;
+      box-shadow:0 0 12px rgba(216,173,85,.7);
+    }
+
+    .nav-links a:hover{
+      color:var(--gold2);
+      background:rgba(255,255,255,.035);
+      transform:translateY(-2px);
+    }
+
+    .nav-links a:hover::after{
+      transform:scaleX(1);
+    }
+
+    .login-top{
+      min-width:max-content;
+      padding:12px 20px;
+      border-radius:14px;
+      border:1px solid var(--green);
+      color:white;
+      background:rgba(0,230,118,.07);
+      font-weight:800;
+      cursor:pointer;
+      transition:.25s ease;
+    }
+
+    .login-top:hover{
+      background:var(--green);
+      color:#001a0b;
+      box-shadow:0 0 28px rgba(0,230,118,.28);
+      transform:translateY(-2px);
+    }
+
+    /* ============================================================
+       HERO
+       ============================================================ */
+
+    .hero{
+      position:relative;
+      min-height:760px;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      overflow:hidden;
+      padding:120px 20px 100px;
+      isolation:isolate;
+
+      /* صورة المسجد + علم مصر كخلفية للـ Hero */
+      background:
+        linear-gradient(
+          180deg,
+          rgba(1,8,5,.50) 0%,
+          rgba(1,10,6,.28) 35%,
+          rgba(1,8,5,.78) 100%
+        ),
+        url("back.png") center center / cover no-repeat;
+    }
+
+    .hero::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      z-index:-1;
+      background:
+        radial-gradient(circle at 50% 48%, rgba(0,230,118,.18), transparent 34%),
+        linear-gradient(90deg, rgba(0,0,0,.20), transparent 45%, rgba(0,0,0,.24));
+      pointer-events:none;
+    }
+
+    .hero::after{
+      content:"";
+      position:absolute;
+      left:0;
+      right:0;
+      bottom:0;
+      height:190px;
+      z-index:-1;
+      background:linear-gradient(to bottom, transparent, #020a06);
+      pointer-events:none;
+    }
+
+    .hero-content{
+      position:relative;
+      z-index:2;
+      width:min(1000px,100%);
+    }
+
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:9px;
+      padding:9px 18px;
+      border-radius:999px;
+      border:1px solid rgba(0,230,118,.35);
+      background:rgba(0,230,118,.045);
+      color:#8ff2b9;
+      font-weight:700;
+      font-size:14px;
+      box-shadow:0 0 28px rgba(0,230,118,.05);
+      margin-bottom:25px;
+    }
+
+    .hero h1{
+      font-size:clamp(42px,6.5vw,82px);
+      line-height:1.08;
+      font-weight:900;
+      letter-spacing:-2px;
+      margin-bottom:20px;
+    }
+
+    .hero h1 .gold{
+      color:var(--gold2);
+    }
+
+    .hero h1 .green{
+      color:var(--green);
+      text-shadow:0 0 28px rgba(0,230,118,.16);
+    }
+
+    .hero p{
+      max-width:850px;
+      margin:0 auto 32px;
+      color:#c1cec6;
+      font-size:clamp(16px,2vw,20px);
+      line-height:2;
+    }
+
+    .python-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:12px;
+      padding:11px 20px;
+      border-radius:14px;
+      color:#f7faf8;
+      background:linear-gradient(135deg,rgba(0,230,118,.10),rgba(216,173,85,.08));
+      border:1px solid rgba(216,173,85,.32);
+      margin-bottom:28px;
+      font-weight:800;
+    }
+
+    .hero-actions{
+      display:flex;
+      justify-content:center;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+
+    .btn{
+      border:0;
+      cursor:pointer;
+      padding:16px 30px;
+      border-radius:15px;
+      font-weight:900;
+      transition:.28s ease;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:9px;
+    }
+
+    .btn-primary{
+      color:#001a0b;
+      background:linear-gradient(135deg,#37f58d,#00c968);
+      box-shadow:0 0 35px rgba(0,230,118,.20);
+    }
+
+    .btn-primary:hover{
+      transform:translateY(-4px) scale(1.02);
+      box-shadow:0 0 48px rgba(0,230,118,.34);
+    }
+
+    .btn-secondary{
+      color:#fff;
+      background:rgba(255,255,255,.025);
+      border:1px solid rgba(216,173,85,.6);
+    }
+
+    .btn-secondary:hover{
+      transform:translateY(-4px);
+      background:rgba(216,173,85,.08);
+      box-shadow:0 0 30px rgba(216,173,85,.12);
+    }
+
+    /* ============================================================
+       STATS STRIP
+       ============================================================ */
+
+    .stats{
+      position:relative;
+      z-index:4;
+      margin-top:-55px;
+    }
+
+    .stats-grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      border:1px solid var(--line);
+      border-radius:25px;
+      overflow:hidden;
+      background:rgba(4,24,14,.86);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(12px);
+    }
+
+    .stat{
+      padding:25px 18px;
+      text-align:center;
+      border-left:1px solid rgba(255,255,255,.07);
+    }
+
+    .stat:last-child{
+      border-left:0;
+    }
+
+    .stat strong{
+      display:block;
+      color:var(--green);
+      font-size:28px;
+      font-weight:900;
+      margin-bottom:4px;
+    }
+
+    .stat span{
+      color:#b7c7bd;
+      font-size:13px;
+    }
+
+    /* ============================================================
+       SECTIONS
+       ============================================================ */
+
+    .section{
+      padding:100px 0;
+    }
+
+    .section-head{
+      text-align:center;
+      margin-bottom:45px;
+    }
+
+    .section-head .mini{
+      color:var(--green);
+      font-weight:800;
+      font-size:14px;
+      margin-bottom:8px;
+    }
+
+    .section-head h2{
+      font-size:clamp(30px,4vw,48px);
+      margin-bottom:10px;
+    }
+
+    .section-head p{
+      color:var(--muted);
+      max-width:720px;
+      margin:auto;
+      line-height:1.9;
+    }
+
+    .cards{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:20px;
+    }
+
+    .card{
+      position:relative;
+      padding:34px 28px;
+      min-height:260px;
+      border:1px solid rgba(0,230,118,.16);
+      border-radius:25px;
+      background:
+        linear-gradient(145deg,rgba(8,34,21,.92),rgba(3,17,10,.92));
+      box-shadow:0 18px 55px rgba(0,0,0,.25);
+      overflow:hidden;
+      transition:.3s ease;
+    }
+
+    .card::before{
+      content:"";
+      position:absolute;
+      width:160px;
+      height:160px;
+      border-radius:50%;
+      top:-90px;
+      left:-70px;
+      background:rgba(0,230,118,.08);
+      filter:blur(15px);
+    }
+
+    .card:hover{
+      transform:translateY(-8px);
+      border-color:rgba(0,230,118,.38);
+      box-shadow:
+        0 25px 65px rgba(0,0,0,.34),
+        0 0 30px rgba(0,230,118,.06);
+    }
+
+    .card-icon{
+      width:62px;
+      height:62px;
+      display:grid;
+      place-items:center;
+      border-radius:18px;
+      font-size:28px;
+      background:rgba(0,230,118,.07);
+      border:1px solid rgba(0,230,118,.25);
+      margin-bottom:22px;
+    }
+
+    .card h3{
+      font-size:21px;
+      margin-bottom:12px;
+    }
+
+    .card p{
+      color:#aebeb5;
+      line-height:2;
+      font-size:14px;
+    }
+
+    /* ============================================================
+       ABOUT / COURSE
+       ============================================================ */
+
+    .about-grid{
+      display:grid;
+      grid-template-columns:1fr 1.2fr;
+      gap:25px;
+      align-items:stretch;
+    }
+
+    .about-box{
+      border:1px solid rgba(216,173,85,.18);
+      border-radius:27px;
+      padding:35px;
+      background:linear-gradient(145deg,#0a2115,#04100a);
+    }
+
+    .about-box h3{
+      color:var(--gold2);
+      font-size:25px;
+      margin-bottom:17px;
+    }
+
+    .about-box p{
+      color:#bdc9c2;
+      line-height:2.1;
+      font-size:15px;
+    }
+
+    .course-box{
+      border:1px solid rgba(0,230,118,.22);
+      border-radius:27px;
+      padding:35px;
+      background:
+        radial-gradient(circle at 85% 10%,rgba(0,230,118,.11),transparent 30%),
+        linear-gradient(145deg,#082619,#03100a);
+      box-shadow:0 25px 70px rgba(0,0,0,.28);
+    }
+
+    .course-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:15px;
+      margin-bottom:25px;
+    }
+
+    .course-top h3{
+      font-size:28px;
+    }
+
+    .free{
+      padding:7px 13px;
+      border-radius:999px;
+      background:rgba(0,230,118,.10);
+      color:#7ff0ad;
+      border:1px solid rgba(0,230,118,.25);
+      font-weight:900;
+      white-space:nowrap;
+    }
+
+    .course-list{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:12px;
+      margin:25px 0;
+    }
+
+    .course-item{
+      padding:14px;
+      border-radius:14px;
+      background:rgba(255,255,255,.025);
+      border:1px solid rgba(255,255,255,.06);
+      color:#c9d6ce;
+      font-size:14px;
+    }
+
+    /* ============================================================
+       CONTACT
+       ============================================================ */
+
+    .contact{
+      padding-bottom:120px;
+    }
+
+    .contact-box{
+      position:relative;
+      overflow:hidden;
+      border-radius:30px;
+      padding:45px;
+      text-align:center;
+      border:1px solid rgba(0,230,118,.25);
+      background:
+        radial-gradient(circle at 50% 0,rgba(0,230,118,.12),transparent 40%),
+        linear-gradient(135deg,#092619,#03100a);
+      box-shadow:var(--shadow);
+    }
+
+    .contact-box h2{
+      font-size:clamp(28px,4vw,44px);
+      margin-bottom:12px;
+    }
+
+    .contact-box p{
+      color:#b9c8bf;
+      line-height:2;
+      margin-bottom:25px;
+    }
+
+    .contact-actions{
+      display:flex;
+      justify-content:center;
+      flex-wrap:wrap;
+      gap:12px;
+    }
+
+    .phone-placeholder{
+      color:#00150a;
+      border:1px solid #00e676;
+      border-radius:15px;
+      padding:14px 24px;
+      background:linear-gradient(135deg,#37f58d,#00c968);
+      font-weight:900;
+      cursor:pointer;
+      box-shadow:
+        0 0 18px rgba(0,230,118,.25),
+        0 0 35px rgba(0,230,118,.10);
+      transition:.3s ease;
+    }
+
+    .phone-placeholder:hover{
+      transform:translateY(-4px) scale(1.03);
+      box-shadow:
+        0 0 25px rgba(0,230,118,.45),
+        0 0 55px rgba(0,230,118,.20);
+    }
+
+    .phone-placeholder:active{
+      transform:scale(.97);
+    }
+
+    footer{
+      border-top:1px solid rgba(255,255,255,.07);
+      padding:25px 15px;
+      text-align:center;
+      color:#7f9287;
+      font-size:12px;
+    }
+
+    footer a{
+      color:#a9d8bb;
+    }
+
+    /* ============================================================
+       LOGIN MODAL
+       ============================================================ */
+
+    .modal{
+      display:none;
+      position:fixed;
+      inset:0;
+      z-index:999;
+      padding:18px;
+      background:rgba(0,0,0,.72);
+      backdrop-filter:blur(12px);
+      align-items:center;
+      justify-content:center;
+    }
+
+    .modal.show{
+      display:flex;
+      animation:fadeIn .22s ease;
+    }
+
+    .form-box{
+      position:relative;
+      width:min(450px,100%);
+      padding:38px 32px 30px;
+      border-radius:28px;
+      border:1px solid rgba(0,230,118,.24);
+      background:
+        radial-gradient(circle at 50% 0,rgba(0,230,118,.10),transparent 32%),
+        #06170e;
+      box-shadow:0 35px 100px rgba(0,0,0,.55);
+      animation:modalIn .3s ease;
+    }
+
+    .close-btn{
+      position:absolute;
+      top:14px;
+      left:14px;
+      width:40px;
+      height:40px;
+      display:grid;
+      place-items:center;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.035);
+      color:#dbe8df;
+      font-size:24px;
+      cursor:pointer;
+      transition:.2s ease;
+    }
+
+    .close-btn:hover{
+      color:#fff;
+      background:rgba(239,68,68,.18);
+      border-color:rgba(239,68,68,.45);
+      transform:rotate(90deg);
+    }
+
+    .login-icon{
+      width:76px;
+      height:76px;
+      margin:0 auto 16px;
+      display:grid;
+      place-items:center;
+      border-radius:22px;
+      background:rgba(0,230,118,.07);
+      border:1px solid rgba(0,230,118,.28);
+      font-size:36px;
+    }
+
+    .login-head{
+      text-align:center;
+      margin-bottom:25px;
+    }
+
+    .login-head h2{
+      font-size:29px;
+      margin-bottom:6px;
+      color:#fff;
+    }
+
+    .login-head p{
+      color:#8fa499;
+      font-size:12px;
+    }
+
+    .input-group{
+      position:relative;
+      margin:16px 0;
+    }
+
+    .input-group input{
+      width:100%;
+      height:60px;
+      padding:18px 18px;
+      color:#fff;
+      outline:none;
+      border-radius:16px;
+      border:1px solid rgba(0,230,118,.18);
+      background:#031009;
+      transition:.2s ease;
+    }
+
+    .input-group input:focus{
+      border-color:rgba(0,230,118,.58);
+      box-shadow:0 0 0 4px rgba(0,230,118,.06);
+    }
+
+    .input-group label{
+      position:absolute;
+      right:16px;
+      top:50%;
+      transform:translateY(-50%);
+      color:#80958a;
+      pointer-events:none;
+      transition:.2s ease;
+      font-size:12px;
+    }
+
+    .input-group input:focus + label,
+    .input-group input:not(:placeholder-shown) + label{
+      top:0;
+      right:13px;
+      padding:0 7px;
+      background:#06170e;
+      color:#76e7a2;
+      font-size:10px;
+    }
+
+    .password-box input{
+      padding-left:58px;
+    }
+
+    .toggle-pass{
+      position:absolute;
+      left:13px;
+      top:50%;
+      transform:translateY(-50%);
+      width:36px;
+      height:36px;
+      display:grid;
+      place-items:center;
+      border-radius:10px;
+      cursor:pointer;
+      background:rgba(0,230,118,.06);
+      border:1px solid rgba(0,230,118,.12);
+      font-size:19px;
+      z-index:2;
+    }
+
+    .remember-row{
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      gap:8px;
+      color:#8ea198;
+      font-size:12px;
+      margin:13px 2px 20px;
+    }
+
+    .remember-row input{
+      accent-color:var(--green);
+    }
+
+    #loginBtn{
+      width:100%;
+      min-height:57px;
+      border:0;
+      border-radius:16px;
+      cursor:pointer;
+      font-weight:900;
+      color:#00150a;
+      background:linear-gradient(135deg,#35ed89,#00c968);
+      transition:.25s ease;
+      box-shadow:0 0 30px rgba(0,230,118,.14);
+    }
+
+    #loginBtn:hover{
+      transform:translateY(-2px);
+      box-shadow:0 0 38px rgba(0,230,118,.25);
+    }
+
+    .login-note{
+      text-align:center;
+      color:#70857a;
+      font-size:11px;
+      margin-top:15px;
+    }
+
+    .loader{
+      display:none;
+      width:18px;
+      height:18px;
+      margin-right:7px;
+      border:2px solid rgba(0,0,0,.25);
+      border-top-color:#00150a;
+      border-radius:50%;
+      animation:spin .7s linear infinite;
+      vertical-align:middle;
+    }
+
+    /* ============================================================
+       ANIMATIONS
+       ============================================================ */
+
+    @keyframes fadeIn{
+      from{opacity:0}
+      to{opacity:1}
+    }
+
+    @keyframes modalIn{
+      from{opacity:0;transform:translateY(18px) scale(.97)}
+      to{opacity:1;transform:none}
+    }
+
+    @keyframes spin{
+      to{transform:rotate(360deg)}
+    }
+
+
+    /* ============================================================
+       LOADING SCREEN
+       شاشة تحميل احترافية في منتصف الشاشة
+       ============================================================ */
+
+    .loading-screen{
+      position:fixed !important;
+      inset:0 !important;
+      width:100vw !important;
+      height:100vh !important;
+      z-index:999999 !important;
+
+      display:none;
+      align-items:center !important;
+      justify-content:center !important;
+
+      direction:rtl;
+      overflow:hidden;
+
+      background:
+        radial-gradient(circle at 50% 42%,
+          rgba(0,230,118,.16),
+          transparent 26%),
+        radial-gradient(circle at 18% 82%,
+          rgba(216,173,85,.09),
+          transparent 28%),
+        linear-gradient(135deg,#010604,#04130b 50%,#010604);
+
+      backdrop-filter:blur(16px);
+      -webkit-backdrop-filter:blur(16px);
+      box-sizing:border-box;
+    }
+
+    .loading-screen::before{
+      content:"";
+      position:absolute;
+      width:430px;
+      height:430px;
+      border-radius:50%;
+      background:radial-gradient(circle,
+        rgba(0,230,118,.13),
+        transparent 67%);
+      filter:blur(15px);
+      animation:loadingAura 3s ease-in-out infinite alternate;
+      pointer-events:none;
+    }
+
+    .loading-content{
+      position:relative;
+      z-index:2;
+      width:min(92vw,430px);
+      min-height:330px;
+      padding:34px 24px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      animation:loadingEnter .55s ease-out;
+    }
+
+    .loading-logo{
+      width:70px;
+      height:70px;
+      display:grid;
+      place-items:center;
+      margin-bottom:22px;
+      border-radius:21px;
+      font-size:34px;
+      background:linear-gradient(
+        145deg,
+        rgba(0,230,118,.17),
+        rgba(216,173,85,.10)
+      );
+      border:1px solid rgba(216,173,85,.42);
+      box-shadow:
+        0 0 24px rgba(0,230,118,.16),
+        0 0 38px rgba(216,173,85,.08),
+        inset 0 0 20px rgba(255,255,255,.025);
+      animation:loadingFloat 2.4s ease-in-out infinite;
+    }
+
+    .loading-spinner{
+      position:relative;
+      width:88px;
+      height:88px;
+      display:grid;
+      place-items:center;
+      margin-bottom:22px;
+    }
+
+    .spinner-ring{
+      position:absolute;
+      width:78px;
+      height:78px;
+      border-radius:50%;
+      border:4px solid rgba(0,230,118,.10);
+      border-top-color:#00e676;
+      border-right-color:#12c96b;
+      border-bottom-color:#d8ad55;
+      animation:loadingSpin .9s linear infinite;
+      box-shadow:
+        0 0 15px rgba(0,230,118,.35),
+        0 0 34px rgba(0,230,118,.12);
+    }
+
+    .spinner-core{
+      width:16px;
+      height:16px;
+      border-radius:50%;
+      background:#00e676;
+      box-shadow:
+        0 0 10px #00e676,
+        0 0 26px rgba(0,230,118,.75),
+        0 0 45px rgba(0,230,118,.25);
+      animation:loadingPulse 1.1s ease-in-out infinite;
+    }
+
+    #loadingText{
+      margin:0;
+      color:#fff;
+      font-size:clamp(23px,5vw,31px);
+      font-weight:900;
+      line-height:1.4;
+      text-shadow:
+        0 0 10px rgba(0,230,118,.30),
+        0 0 26px rgba(0,230,118,.13);
+      animation:loadingTextGlow 1.8s ease-in-out infinite alternate;
+    }
+
+    #loadingSubtitle{
+      margin:7px 0 14px;
+      color:#a9bbb0;
+      font-size:13px;
+      font-weight:700;
+    }
+
+    #loadingCount{
+      width:42px;
+      height:42px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      margin:4px 0 19px;
+      border-radius:50%;
+      color:#00e676;
+      font-size:17px;
+      font-weight:900;
+      background:rgba(0,230,118,.06);
+      border:1px solid rgba(0,230,118,.25);
+      box-shadow:0 0 16px rgba(0,230,118,.12);
+    }
+
+    .loading-progress{
+      width:min(300px,75vw);
+      height:5px;
+      overflow:hidden;
+      border-radius:100px;
+      background:rgba(255,255,255,.08);
+      box-shadow:inset 0 0 8px rgba(0,0,0,.55);
+    }
+
+    .loading-progress-bar{
+      width:0%;
+      height:100%;
+      border-radius:inherit;
+      background:linear-gradient(
+        90deg,
+        #00c853,
+        #00e676,
+        #d8ad55
+      );
+      box-shadow:
+        0 0 10px rgba(0,230,118,.8),
+        0 0 24px rgba(0,230,118,.28);
+    }
+
+    .loading-screen.loading-hide{
+      animation:loadingFadeOut .4s ease forwards;
+    }
+
+    @keyframes loadingSpin{
+      to{transform:rotate(360deg)}
+    }
+
+    @keyframes loadingPulse{
+      0%,100%{transform:scale(.72);opacity:.65}
+      50%{transform:scale(1.25);opacity:1}
+    }
+
+    @keyframes loadingAura{
+      from{
+        transform:translate(-35px,-15px) scale(.9);
+        opacity:.5;
+      }
+      to{
+        transform:translate(35px,20px) scale(1.12);
+        opacity:.9;
+      }
+    }
+
+    @keyframes loadingEnter{
+      from{
+        opacity:0;
+        transform:translateY(18px) scale(.95);
+      }
+      to{
+        opacity:1;
+        transform:none;
+      }
+    }
+
+    @keyframes loadingFloat{
+      0%,100%{transform:translateY(0) rotate(0)}
+      50%{transform:translateY(-6px) rotate(2deg)}
+    }
+
+    @keyframes loadingTextGlow{
+      from{
+        text-shadow:0 0 8px rgba(0,230,118,.22);
+      }
+      to{
+        text-shadow:
+          0 0 13px rgba(0,230,118,.65),
+          0 0 28px rgba(0,230,118,.20);
+      }
+    }
+
+    @keyframes loadingFadeOut{
+      from{opacity:1}
+      to{opacity:0}
+    }
+
+    @keyframes loadingProgress{
+      from{width:0%}
+      to{width:100%}
+    }
+
+    @media(max-width:600px){
+      .loading-content{
+        width:94vw;
+        padding:25px 15px;
+      }
+
+      .loading-logo{
+        width:62px;
+        height:62px;
+        font-size:30px;
+        margin-bottom:17px;
+      }
+
+      .loading-spinner{
+        width:78px;
+        height:78px;
+        margin-bottom:17px;
+      }
+
+      .spinner-ring{
+        width:68px;
+        height:68px;
+      }
+
+      #loadingText{
+        font-size:24px;
+      }
+    }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+
+    @media(max-width:900px){
+      .navbar{
+        position:relative;
+        flex-wrap:wrap;
+      }
+
+      .nav-links{
+        order:3;
+        width:100%;
+        overflow-x:auto;
+        justify-content:flex-start;
+      }
+
+      .stats-grid{
+        grid-template-columns:repeat(2,1fr);
+      }
+
+      .stat:nth-child(2){
+        border-left:0;
+      }
+
+      .cards,
+      .about-grid{
+        grid-template-columns:1fr;
+      }
+    }
+
+    @media(max-width:600px){
+      .container{
+        width:min(100% - 22px,1240px);
+      }
+
+      .navbar{
+        width:calc(100% - 14px);
+        top:7px;
+        margin-top:7px;
+        padding:11px;
+        border-radius:19px;
+      }
+
+      .brand-title{
+        font-size:16px;
+      }
+
+      .brand-logo{
+        width:48px;
+        height:48px;
+        font-size:23px;
+      }
+
+      .login-top{
+        padding:10px 13px;
+        font-size:12px;
+      }
+
+      .nav-links a{
+        font-size:12px;
+        padding:9px 11px;
+      }
+
+      .hero{
+        min-height:650px;
+        padding-top:80px;
+      }
+
+      .hero h1{
+        letter-spacing:-1px;
+      }
+
+      .stats-grid{
+        grid-template-columns:1fr 1fr;
+        border-radius:19px;
+      }
+
+      .stat{
+        padding:18px 10px;
+      }
+
+      .stat strong{
+        font-size:22px;
+      }
+
+      .section{
+        padding:75px 0;
+      }
+
+      .course-list{
+        grid-template-columns:1fr;
+      }
+
+      .contact-box,
+      .about-box,
+      .course-box{
+        padding:26px 20px;
+      }
+    }
+
+/* 📞 Contact Popup */
+
+.contact-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:99999;
+
+  align-items:center;
+  justify-content:center;
+
+  padding:20px;
+
+  background:rgba(0,0,0,.75);
+  backdrop-filter:blur(12px);
+}
+
+.contact-modal.show{
+  display:flex;
+  animation:contactFade .25s ease;
+}
+
+.contact-modal-box{
+  position:relative;
+
+  width:min(390px,100%);
+
+  padding:35px 25px;
+
+  text-align:center;
+
+  border-radius:28px;
+
+  background:
+    radial-gradient(
+      circle at 50% 0,
+      rgba(0,230,118,.13),
+      transparent 40%
+    ),
+    #06170e;
+
+  border:1px solid rgba(0,230,118,.25);
+
+  box-shadow:
+    0 30px 90px rgba(0,0,0,.65),
+    0 0 35px rgba(0,230,118,.08);
+
+  animation:contactPopup .3s ease;
+}
+
+.contact-close{
+  position:absolute;
+
+  top:12px;
+  left:12px;
+
+  width:38px;
+  height:38px;
+
+  border-radius:11px;
+
+  border:1px solid rgba(255,255,255,.1);
+
+  background:rgba(255,255,255,.04);
+
+  color:white;
+
+  font-size:25px;
+
+  cursor:pointer;
+
+  transition:.25s;
+}
+
+.contact-close:hover{
+  background:rgba(239,68,68,.2);
+  transform:rotate(90deg);
+}
+
+.contact-icon{
+  width:70px;
+  height:70px;
+
+  margin:0 auto 15px;
+
+  display:grid;
+  place-items:center;
+
+  border-radius:20px;
+
+  font-size:34px;
+
+  background:rgba(0,230,118,.08);
+
+  border:1px solid rgba(0,230,118,.25);
+
+  box-shadow:0 0 25px rgba(0,230,118,.12);
+}
+
+.contact-modal-box h3{
+  color:white;
+  font-size:25px;
+  margin-bottom:8px;
+}
+
+.contact-modal-box p{
+  color:#9eb1a6;
+  font-size:13px;
+  margin-bottom:25px;
+}
+
+.contact-buttons{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+.contact-btn{
+  display:flex;
+
+  align-items:center;
+  justify-content:center;
+
+  min-height:55px;
+
+  border-radius:15px;
+
+  text-decoration:none;
+
+  font-weight:900;
+
+  transition:.25s;
+}
+
+.call-btn{
+  color:#00150a;
+
+  background:linear-gradient(
+    135deg,
+    #35ed89,
+    #00c968
+  );
+}
+
+.whatsapp-btn{
+  color:white;
+
+  background:linear-gradient(
+    135deg,
+    #128c7e,
+    #075e54
+  );
+
+  border:1px solid rgba(255,255,255,.12);
+}
+
+.contact-btn:hover{
+  transform:translateY(-4px) scale(1.02);
+  box-shadow:0 12px 30px rgba(0,0,0,.3);
+}
+
+@keyframes contactFade{
+  from{
+    opacity:0;
+  }
+  to{
+    opacity:1;
+  }
+}
+
+@keyframes contactPopup{
+  from{
+    opacity:0;
+    transform:translateY(20px) scale(.94);
+  }
+
+  to{
+    opacity:1;
+    transform:none;
+  }
+}
+
+@media(max-width:450px){
+
+  .contact-buttons{
+    grid-template-columns:1fr;
+  }
+
+}
+  </style>
+</head>
+
+<body>
+
+  <!-- ============================================================
+       NAVBAR
+       ============================================================ -->
+  <header class="navbar">
+
+    <a class="brand" href="#home" aria-label="حزب مستقبل وطن - أول المحلة الكبرى">
+      <div class="brand-logo">🏛️</div>
+      <div class="brand-title">
+        حزب مستقبل وطن
+        <span>أول المحلة الكبرى</span>
+      </div>
+    </a>
+
+    <nav class="nav-links">
+      <a href="#home">⌂ الرئيسية</a>
+      <a href="#about">عن الحزب</a>
+      <a href="#course">الدورة التعليمية</a>
+      <a href="#contact">تواصل معنا</a>
+    </nav>
+
+    <button class="login-top" onclick="showLogin()">
+      🔐 تسجيل الدخول
+    </button>
+
+  </header>
+
+
+  <!-- ============================================================
+       HERO
+       ============================================================ -->
+  <main id="home">
+
+    <section class="hero">
+
+      <div class="hero-content">
+
+        <div class="eyebrow">
+          🏛️ حزب مستقبل وطن • أمانة أول المحلة الكبرى
+        </div>
+
+        <div class="python-badge">
+          🐍 Python
+          <span>دورة تعليمية مجانية</span>
+        </div>
+
+        <h1>
+          <span class="gold">تعليم</span>
+          <span> يفتح </span>
+          <span class="green">المستقبل</span>
+        </h1>
+
+        <p>
+          منصة تعليمية رقمية تقدم دورة Python مجانية،
+          من أساسيات البرمجة إلى بناء تطبيقات عملية،
+          في تجربة تعليمية منظمة ومناسبة للمبتدئين.
+        </p>
+
+        <div class="hero-actions">
+
+          <a
+            class="btn btn-primary"
+            href="#course"
+          >
+            🐍 ابدأ كورس Python مجانًا
+          </a>
+
+          <a
+            class="btn btn-secondary"
+            href="https://web.facebook.com/MostqbalwatanGharbia"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            🌐 الموقع الرسمي للحزب
+          </a>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         STATS
+         ============================================================ -->
+    <section class="stats">
+      <div class="container">
+        <div class="stats-grid">
+
+          <div class="stat">
+            <strong>مجاني</strong>
+            <span>بالكامل</span>
+          </div>
+
+          <div class="stat">
+            <strong>Python</strong>
+            <span>لغة البرمجة الأساسية</span>
+          </div>
+
+          <div class="stat">
+            <strong>100%</strong>
+            <span>محتوى رقمي</span>
+          </div>
+
+          <div class="stat">
+            <strong>متابعه</strong>
+            <span>اوفلاين واونلاين</span>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ============================================================
+         FEATURES
+         ============================================================ -->
+    <section class="section">
+
+      <div class="container">
+
+        <div class="section-head">
+          <div class="mini">ماذا ستجد في المنصة؟</div>
+          <h2>تجربة تعليمية منظمة</h2>
+          <p>
+            محتوى واضح وأدوات تساعد الطالب على التعلم والمتابعة
+            والتدريب خطوة بخطوة.
+          </p>
+        </div>
+
+        <div class="cards">
+
+          <article class="card">
+            <div class="card-icon">🐍</div>
+
+            <h3>Python Programming</h3>
+
+            <p>
+              كورس Python مجاني 100% للمبتدئين، يبدأ معاك من الصفر
+              ويوصلك لمرحلة تنفيذ مشاريع وبرامج حقيقية.
+            </p>
+
+            <p>
+              📚 <strong>المستوى الأول:</strong>
+              أساسيات البرمجة، حل المشكلات، OOP ومشاريع عملية.
+            </p>
+
+            <p>
+              🖥️ <strong>المستوى الثاني:</strong>
+              تصميم واجهات باستخدام Tkinter، وربط البرامج بقاعدة بيانات SQLite
+              وتنفيذ تطبيقات كاملة.
+            </p>
+
+            <p>
+              🔐 <strong>المستوى الثالث:</strong>
+              Python للشبكات والأمن السيبراني، Socket Programming،
+              APIs، Port Scanner وPacket Sniffer.
+            </p>
+
+            <p>
+              ⭐ مناسب للمبتدئين تمامًا ولا يحتاج خبرة سابقة،
+              مع شرح عملي ومشاريع وتطبيقات بعد كل مستوى.
+            </p>
+
+            <p>
+              📅 يومان أسبوعيًا (الأحد – الأربعاء)
+              <br>
+              ⏰ مدة المحاضرة: ساعة ونصف
+            </p>
+
+            <p>
+              🎓 تحت رعاية حزب مستقبل وطن
+            </p>
+
+            <p>
+              <strong>أمانة شباب أول المحلة</strong>
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="card-icon">📝</div>
+            <h3>اختبارات ومهام</h3>
+            <p>
+              تدريبات واختبارات لمراجعة ما تم دراسته وقياس مستوى
+              الاستيعاب بصورة عملية.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="card-icon">📊</div>
+            <h3>متابعة التقدم</h3>
+            <p>
+              متابعة المحاضرات والنتائج والمهام من خلال حساب الطالب
+              داخل المنصة.
+            </p>
+          </article>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         ABOUT PARTY - صياغة معلوماتية غير دعائية
+         ============================================================ -->
+    <section id="about" class="section">
+
+      <div class="container">
+
+        <div class="section-head">
+          <div class="mini">عن الجهة المنظمة</div>
+          <h2>حزب مستقبل وطن</h2>
+          <p>
+            معلومات مختصرة وروابط مباشرة للتعرف على الحزب ومصادره الرسمية.
+          </p>
+        </div>
+
+        <div class="about-grid">
+
+          <div class="about-box">
+            <h3>🏛️ حزب مستقبل وطن</h3>
+            <p>
+              هذه المنصة التعليمية مقدمة تحت رعاية حزب مستقبل وطن أمانة أول المحلة
+              وتهدف إلى دعم الشباب وتوفير فرص تعليمية وتدريبية تساعدهم على اكتساب
+              المهارات والمعرفة اللازمة لبناء مستقبل أفضل والمشاركة بصورة إيجابية في المجتمع
+            </p>
+
+            <br>
+
+            <a
+              class="btn btn-secondary"
+              href="https://web.facebook.com/MostqbalwatanGharbia/about"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              قراءة نبذة رسمية عن الحزب ↗
+            </a>
+          </div>
+
+          <div id="course" class="course-box">
+
+            <div class="course-top">
+              <div>
+                <div class="mini" style="color:#73efa5;margin-bottom:5px">
+                  الدورة التعليمية
+                </div>
+                <h3>🐍 كورس Python مجاني</h3>
+              </div>
+
+              <div class="free">مجاني</div>
+            </div>
+
+            <p style="color:#b9c9bf;line-height:2">
+              دورة مناسبة للمبتدئين الراغبين في دخول عالم البرمجة
+              والتعرف على أساسيات Python بطريقة عملية ومنظمة.
+            </p>
+
+            <div class="course-list">
+
+              <div class="course-item">✓ مقدمة في Python</div>
+              <div class="course-item">✓ Variables & Data Types</div>
+              <div class="course-item">✓ Conditions</div>
+              <div class="course-item">✓ Loops</div>
+              <div class="course-item">✓ Functions</div>
+              <div class="course-item">✓ تدريبات عملية</div>
+
+            </div>
+
+            <button class="btn btn-primary" onclick="showLogin()">
+              🔐 الدخول إلى المنصة
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         CONTACT
+         ============================================================ -->
+    <section id="contact" class="section contact">
+
+      <div class="container">
+
+        <div class="contact-box">
+
+          <div class="section-head" style="margin-bottom:20px">
+            <div class="mini">تواصل معنا</div>
+            <h2>للاستفسارات والدعم</h2>
+            <p>
+              يمكنك التواصل مع الجهة المنظمة أو زيارة الموقع الرسمي
+              لحزب مستقبل وطن. أضف رقم التواصل المحلي في المكان المحدد.
+            </p>
+          </div>
+
+          <div class="contact-actions">
+
+            <!-- ضع رقم التواصل هنا -->
+            <button
+              class="phone-placeholder"
+              type="button"
+              onclick="openContactOptions()"
+            >
+              📞 رقم التواصل: +201099959133
+            </button>
+
+            <a
+              class="btn btn-primary"
+              href="https://www.facebook.com/share/1C4Mnb6GjP/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              🌐 زيارة الموقع الرسمي
+            </a>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- ============================================================
+       FOOTER
+       ============================================================ -->
+  <footer>
+    <div class="container">
+      حزب مستقبل وطن • أول المحلة الكبرى
+      <br>
+      <a
+        href="https://web.facebook.com/MostqbalwatanGharbia"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        الموقع الرسمي لحزب مستقبل وطن
+      </a>
+    </div>
+  </footer>
+
+
+  <!-- ============================================================
+       LOGIN MODAL
+       IDs متوافقة مع login logic الموجود في script.js
+       ============================================================ -->
+  <div id="login" class="modal">
+
+    <div class="form-box">
+
+      <button
+        class="close-btn"
+        type="button"
+        onclick="closeLogin()"
+        aria-label="إغلاق"
+      >
+        ×
+      </button>
+
+      <div class="login-icon">💻</div>
+
+      <div class="login-head">
+        <h2>تسجيل الدخول</h2>
+        <p>منصة كورسات Python • حسابك التعليمي</p>
+      </div>
+
+      <div class="input-group">
+
+        <input
+          id="loginUsername"
+          type="text"
+          placeholder=" "
+          autocomplete="username"
+        >
+
+        <label>رقم الهاتف / اسم المستخدم</label>
+
+      </div>
+
+
+      <div class="input-group password-box">
+
+        <input
+          id="loginPassword"
+          type="password"
+          placeholder=" "
+          autocomplete="current-password"
+        >
+
+        <label>كلمة المرور</label>
+
+        <!--
+          🙈 عندما تكون كلمة المرور مخفية
+          👁️ عندما تكون كلمة المرور ظاهرة
+        -->
+        <span
+          id="passwordToggle"
+          class="toggle-pass"
+          onclick="togglePassword()"
+          role="button"
+          aria-label="إظهار كلمة المرور"
+          title="إظهار كلمة المرور"
+        >🙈</span>
+
+      </div>
+
+
+      <label class="remember-row">
+        <input id="rememberMe" type="checkbox">
+        <span>تذكرني على هذا الجهاز</span>
+      </label>
+
+
+      <button id="loginBtn" type="button" onclick="login()">
+
+        <span id="btnText">دخول</span>
+        <span id="loader" class="loader"></span>
+
+      </button>
+
+
+      <p class="login-note">
+        <span id="noteText">ابدأ التعلم مع Python 🚀</span>
+        <span id="countdown"></span>
+      </p>
+
+    </div>
+
+  </div>
+  <!-- ============================================================
+       LOADING SCREEN
+       ============================================================ -->
+  <div id="loadingScreen" class="loading-screen" aria-hidden="true">
+
+    <div class="loading-content">
+
+      <div class="loading-logo">🏛️</div>
+
+      <div class="loading-spinner" aria-hidden="true">
+        <div class="spinner-ring"></div>
+        <div class="spinner-core"></div>
+      </div>
+
+      <h2 id="loadingText">أهلاً بيك 🚀</h2>
+
+      <p id="loadingSubtitle">
+        منصة التعليم الرقمية
+      </p>
+
+      <div id="loadingCount">3</div>
+
+      <div class="loading-progress" aria-hidden="true">
+        <div class="loading-progress-bar"></div>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!--
+    ============================================================
+    JavaScript بسيط للواجهة.
+
+    منطق Firebase / login الأساسي يظل في script.js.
+    ============================================================
+  -->
+
+  <script>
+
+
+    /* ============================================================
+       LOADING LOGIC
+       - يظهر بعد تحميل الصفحة.
+       - يدعم تشغيله يدويًا من أي مكان.
+       - لا يعتمد على display:block أو grid.
+       ============================================================ */
+
+    let loadingTimer = null;
+
+    function showLoading(text = "أهلاً بيك 🚀", seconds = 3){
+      const screen = document.getElementById("loadingScreen");
+      const title = document.getElementById("loadingText");
+      const subtitle = document.getElementById("loadingSubtitle");
+      const count = document.getElementById("loadingCount");
+      const progress = document.querySelector(".loading-progress-bar");
+
+      if(!screen) return;
+
+      if(loadingTimer){
+        clearInterval(loadingTimer);
+        loadingTimer = null;
+      }
+
+      title.textContent = text;
+      subtitle.textContent = "منصة التعليم الرقمية";
+      screen.style.display = "flex";
+      screen.classList.remove("loading-hide");
+      screen.setAttribute("aria-hidden","false");
+
+      let remaining = Math.max(1, Number(seconds) || 3);
+      count.textContent = remaining;
+
+      if(progress){
+        progress.style.animation = "none";
+        progress.style.width = "0%";
+
+        void progress.offsetWidth;
+
+        progress.style.animation =
+          `loadingProgress ${remaining}s linear forwards`;
+      }
+
+      loadingTimer = setInterval(() => {
+        remaining--;
+
+        if(remaining > 0){
+          count.textContent = remaining;
+        }else{
+          clearInterval(loadingTimer);
+          loadingTimer = null;
+          count.textContent = "";
+          hideLoading();
+        }
+      },1000);
+    }
+
+    function hideLoading(){
+      const screen = document.getElementById("loadingScreen");
+      if(!screen) return;
+
+      if(loadingTimer){
+        clearInterval(loadingTimer);
+        loadingTimer = null;
+      }
+
+      screen.classList.add("loading-hide");
+      screen.setAttribute("aria-hidden","true");
+
+      setTimeout(() => {
+        screen.style.display = "none";
+        screen.classList.remove("loading-hide");
+      },400);
+    }
+
+    /* تشغيل شاشة التحميل مرة واحدة عند فتح الصفحة. */
+    window.addEventListener("load",() => {
+      setTimeout(() => {
+        showLoading("أهلاً بيك 🚀",3);
+      },150);
+    });
+
+
+    // فتح نافذة تسجيل الدخول.
+    function showLogin(){
+      const modal = document.getElementById("login");
+      if(modal) modal.classList.add("show");
+    }
+
+    // إغلاق نافذة تسجيل الدخول.
+    function closeLogin(){
+      const modal = document.getElementById("login");
+      if(modal) modal.classList.remove("show");
+    }
+
+    // إغلاق الـ Modal عند الضغط خارج صندوق الدخول.
+    window.addEventListener("click", function(event){
+      const modal = document.getElementById("login");
+
+      if(event.target === modal){
+        closeLogin();
+      }
+    });
+
+    // تبديل ظهور كلمة المرور + تغيير الإيموجي.
+    function togglePassword(){
+
+      const input = document.getElementById("loginPassword");
+      const toggle = document.getElementById("passwordToggle");
+
+      if(!input || !toggle) return;
+
+      const hidden = input.type === "password";
+
+      input.type = hidden ? "text" : "password";
+
+      toggle.textContent = hidden ? "👁️" : "🙈";
+
+      toggle.title = hidden
+        ? "إخفاء كلمة المرور"
+        : "إظهار كلمة المرور";
+
+      toggle.setAttribute(
+        "aria-label",
+        hidden
+          ? "إخفاء كلمة المرور"
+          : "إظهار كلمة المرور"
+      );
+    }
+
+  </script>
+
+
+
+  <script type="module" src="script.js"></script>
+<!-- 📞 خيارات التواصل -->
+<div id="contactModal" class="contact-modal">
+
+  <div class="contact-modal-box">
+
+    <button
+      class="contact-close"
+      onclick="closeContactOptions()"
+    >
+      ×
+    </button>
+
+    <div class="contact-icon">📞</div>
+
+    <h3>تواصل معنا</h3>
+
+    <p>اختار طريقة التواصل المناسبة ليك</p>
+
+    <div class="contact-buttons">
+
+      <!-- اتصال -->
+      <a
+        href="tel:+201099959133"
+        class="contact-btn call-btn"
+      >
+        📞 اتصال
+      </a>
+
+      <!-- WhatsApp -->
+      <a
+        href="https://wa.me/201099959133"
+        target="_blank"
+        class="contact-btn whatsapp-btn"
+      >
+        💬 WhatsApp
+      </a>
+
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>
