@@ -2003,6 +2003,16 @@ opacity:0;transform:translateY(20px);transition:all .4s ease;pointer-events:none
       <div class="section-card">
         <div class="title">👥 الطلاب</div>
 
+        <select id="studentGroupFilter" onchange="loadStudents()">
+          <option value="ALL">👥 كل الطلاب</option>
+          <option value="مجموعة الأحد والأربعاء | 7:00 - 8:30">
+            مجموعة الأحد والأربعاء | 7:00 - 8:30
+          </option>
+          <option value="مجموعة الأحد والأربعاء | 9:00 - 10:30">
+            مجموعة الأحد والأربعاء | 9:00 - 10:30
+          </option>
+        </select>
+
         <input id="searchStudent" placeholder="🔍 ابحث بالاسم أو رقم الطالب..." onkeyup="searchStudent()">
 
         <div id="studentList"></div>
@@ -3120,6 +3130,7 @@ window.loadStudents = async () => {
     if (!attendanceStudentsCache.length || !attendanceSessionsCache.length) {
       await loadAttendanceData();
     }
+
     const snapshot = await getDocs(collection(db, "students"));
     div.innerHTML = "";
 
@@ -3129,37 +3140,119 @@ window.loadStudents = async () => {
     }
 
     const students = [];
-    snapshot.forEach(s => students.push({ firestoreId: s.id, ...s.data() }));
 
-    students.sort((a, b) => {
+    snapshot.forEach(s => {
+      students.push({
+        firestoreId: s.id,
+        ...s.data()
+      });
+    });
+
+    // 👥 المجموعة المختارة من الـ Combo Box
+    const selectedGroup =
+      document.getElementById("studentGroupFilter")?.value || "ALL";
+
+    // 🔎 فلترة الطلاب حسب المجموعة
+    const filteredStudents =
+      selectedGroup === "ALL"
+        ? students
+        : students.filter(student =>
+            String(student.group || "").trim() === selectedGroup
+          );
+
+    // ترتيب الطلاب حسب المجموعة ثم الاسم
+    filteredStudents.sort((a, b) => {
       const ga = GROUPS.indexOf(a.group);
       const gb = GROUPS.indexOf(b.group);
-      return ga - gb || String(a.name || "").localeCompare(String(b.name || ""), "ar");
+
+      return ga - gb ||
+        String(a.name || "").localeCompare(
+          String(b.name || ""),
+          "ar"
+        );
     });
 
-    students.forEach(d => {
+    // لو مفيش طلاب في المجموعة المختارة
+    if (!filteredStudents.length) {
+      div.innerHTML = `
+        <div class="card">
+          ❌ لا يوجد طلاب في المجموعة المختارة
+        </div>
+      `;
+      return;
+    }
+
+    // عرض الطلاب
+    filteredStudents.forEach(d => {
       const absentCount = attendanceStudentAbsentCount(d);
       const warning = absentCount > 1;
+
       div.innerHTML += `
         <div class="card ${warning ? "student-attendance-warning-card" : ""}">
+          
           <h3>👤 ${escapeHtml(d.name || "-")}</h3>
-          📱 رقم الهاتف: ${escapeHtml(d.studentPhone || "-")}<br>
-          🪪 الرقم القومي: ${escapeHtml(d.nationalId || "-")}<br>
-          📍 العنوان: ${escapeHtml(d.address || "-")}<br>
-          👥 ${escapeHtml(d.group || "-")}<br>
-          ${warning ? `<div class="student-attendance-warning-badge">🚨 إنذار: ${absentCount} غيابات</div>` : `<div style="color:#86efac;font-size:12px;margin-top:7px">غيابات: ${absentCount}</div>`}
+
+          📱 رقم الهاتف:
+          ${escapeHtml(d.studentPhone || "-")}
+          <br>
+
+          🪪 الرقم القومي:
+          ${escapeHtml(d.nationalId || "-")}
+          <br>
+
+          📍 العنوان:
+          ${escapeHtml(d.address || "-")}
+          <br>
+
+          👥 ${escapeHtml(d.group || "-")}
+          <br>
+
+          ${
+            warning
+              ? `<div class="student-attendance-warning-badge">
+                   🚨 إنذار: ${absentCount} غيابات
+                 </div>`
+              : `<div style="color:#86efac;font-size:12px;margin-top:7px">
+                   غيابات: ${absentCount}
+                 </div>`
+          }
 
           <div style="margin-top:15px;display:flex;gap:8px;flex-wrap:wrap">
-            <button class="attendance-student-btn" onclick="viewStudentAttendance('${d.firestoreId}')">📊 الحضور والغياب</button>
-            <button onclick="editStudent('${d.firestoreId}')">✏️ تعديل</button>
-            <button onclick="resetStudentPassword('${d.firestoreId}')">🔐 Reset الباسورد</button>
-            <button class="danger" onclick="deleteStudent('${d.firestoreId}')">🗑 حذف</button>
+
+            <button
+              class="attendance-student-btn"
+              onclick="viewStudentAttendance('${d.firestoreId}')">
+              📊 الحضور والغياب
+            </button>
+
+            <button onclick="editStudent('${d.firestoreId}')">
+              ✏️ تعديل
+            </button>
+
+            <button onclick="resetStudentPassword('${d.firestoreId}')">
+              🔐 Reset الباسورد
+            </button>
+
+            <button
+              class="danger"
+              onclick="deleteStudent('${d.firestoreId}')">
+              🗑 حذف
+            </button>
+
           </div>
-        </div>`;
+        </div>
+      `;
     });
+
   } catch (err) {
+
     console.error("LOAD STUDENTS ERROR:", err);
-    div.innerHTML = `<div class="card">❌ ${escapeHtml(err.message || "حصل خطأ")}</div>`;
+
+    div.innerHTML = `
+      <div class="card">
+        ❌ ${escapeHtml(err.message || "حصل خطأ")}
+      </div>
+    `;
   }
 };
 

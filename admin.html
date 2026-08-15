@@ -508,23 +508,7 @@ input::placeholder,textarea::placeholder{
 .reset-info small{color:#64748b;}
 
 
-/* ===== ASSIGNMENTS / SETTINGS ===== */
-.assignment-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.assignment-card{background:linear-gradient(145deg,#07182a,#030914);border:1px solid #22d3ee33;padding:18px;border-radius:16px;margin:12px 0;box-shadow:0 12px 35px #0005}
-.assignment-card h3{margin:0 0 8px;color:#67e8f9}
-.assignment-card .deadline{color:#fbbf24;font-weight:800}
-.assignment-card .desc{color:#cbd5e1;line-height:1.8;white-space:pre-wrap}
-.filter-row{display:grid;grid-template-columns:1fr 220px;gap:10px}
-.assignment-submission{border:1px solid #22c55e33;background:#071a14;padding:14px;border-radius:13px;margin-top:10px}
-.settings-box{max-width:900px;margin:auto}
-.settings-item{background:#071426;border:1px solid #22d3ee22;border-radius:15px;padding:16px;margin:12px 0}
-.settings-item h3{margin:0 0 8px;color:#67e8f9}
-.color-picks{display:flex;gap:10px;flex-wrap:wrap}
-.color-pick{width:42px;height:42px;border-radius:50%;border:3px solid #ffffff22;cursor:pointer}
-.color-pick.active{border-color:#fff;box-shadow:0 0 18px currentColor}
-@media(max-width:700px){
-  .assignment-layout,.filter-row{grid-template-columns:1fr}
-}
+
 
 
 /* ===== مستقبل وطن / PREMIUM TEACHER UI ===== */
@@ -799,21 +783,14 @@ body::after{
   box-shadow:none!important;
 }
 .sidebar button::first-letter{font-size:1rem;}
-.sidebar button[onclick*="data"],
-.sidebar button[onclick*="exams"],
-.sidebar button[onclick*="assignments"],
 .sidebar button[onclick*="students"],
 .sidebar button[onclick*="settings"]{overflow:hidden;}
-.sidebar button[onclick*="data"]::before{content:"📚";}
-.sidebar button[onclick*="exams"]::before{content:"📝";}
-.sidebar button[onclick*="assignments"]::before{content:"📋";}
 .sidebar button[onclick*="students"]::before{content:"👥";}
 .sidebar button[onclick*="settings"]::before{content:"⚙️";}
-.sidebar button[onclick*="data"],.sidebar button[onclick*="exams"],.sidebar button[onclick*="assignments"],.sidebar button[onclick*="students"],.sidebar button[onclick*="settings"]{font-size:0;}
-.sidebar button[onclick*="data"]::before,.sidebar button[onclick*="exams"]::before,.sidebar button[onclick*="assignments"]::before,.sidebar button[onclick*="students"]::before,.sidebar button[onclick*="settings"]::before{font-size:1rem;width:2rem;height:2rem;display:grid;place-items:center;border-radius:.65rem;background:rgba(34,211,238,.08);}
-.sidebar button[onclick*="data"]::after{content:"الداتا";}
-.sidebar button[onclick*="exams"]::after{content:"الامتحانات";}
-.sidebar button[onclick*="assignments"]::after{content:"التاسكات";}
+.sidebar button[onclick*="students"],
+.sidebar button[onclick*="settings"]{font-size:0;}
+.sidebar button[onclick*="students"]::before,
+.sidebar button[onclick*="settings"]::before{font-size:1rem;width:2rem;height:2rem;display:grid;place-items:center;border-radius:.65rem;background:rgba(34,211,238,.08);}
 .sidebar button[onclick*="students"]::after{content:"الطلاب";}
 .sidebar button[onclick*="settings"]::after{content:"الإعدادات";}
 .sidebar .logout{margin-top:.4rem!important;background:linear-gradient(135deg,#7f1d1d,#dc2626)!important;color:#fff!important;border:1px solid rgba(248,113,113,.35)!important;font-size:.82rem!important;}
@@ -1814,11 +1791,6 @@ opacity:0;transform:translateY(20px);transition:all .4s ease;pointer-events:none
 
 <button class="attendance-menu-btn" onclick="show('attendance')">📋 الغياب والحضور</button><button class="students-menu-btn" onclick="show('students')">👥 الطلاب</button><button class="settings-menu-btn" onclick="show('settings')">⚙️ الإعدادات</button><button class="logout" onclick="logout()"> تسجيل الخروج</button></aside>
 <main class="main-content"><div class="admin-header"><div class="admin-page-badge">🛡️ لوحة الإداري</div><h1>لوحة الإداري</h1><p>إدارة الطلاب والحضور والغياب وإعدادات الحساب من مكان واحد.</p></div>
-<!-- 📚 DATA -->
-
-<!-- 📝 EXAMS -->
-
-<!-- 📋 ASSIGNMENTS / TASKS -->
 
 <!-- ⚙️ SETTINGS -->
 <!-- 📋 ATTENDANCE -->
@@ -2042,6 +2014,11 @@ opacity:0;transform:translateY(20px);transition:all .4s ease;pointer-events:none
 </div>
 <div class="section-card">
 <div class="title">👥 الطلاب</div>
+<select id="studentGroupFilter" onchange="loadStudents()">
+<option value="ALL">👥 كل الطلاب</option>
+<option value="مجموعة الأحد والأربعاء | 7:00 - 8:30">مجموعة الأحد والأربعاء | 7:00 - 8:30</option>
+<option value="مجموعة الأحد والأربعاء | 9:00 - 10:30">مجموعة الأحد والأربعاء | 9:00 - 10:30</option>
+</select>
 <input id="searchStudent" onkeyup="searchStudent()" placeholder="🔍 ابحث بالاسم أو رقم الطالب..."/>
 <div id="studentList"></div>
 </div>
@@ -2150,9 +2127,6 @@ window.show=(id)=>{
   section.style.display="block";
 
   if(id==="students") loadStudents();
-  if(id==="data") loadVideos();
-  if(id==="exams") loadExams();
-  if(id==="assignments") loadAssignments();
   if(id==="attendance") loadAttendanceData();
   if(id==="settings") loadTeacherSettings();
 };
@@ -3121,13 +3095,30 @@ window.loadStudents = async () => {
     const students = [];
     snapshot.forEach(s => students.push({ firestoreId: s.id, ...s.data() }));
 
-    students.sort((a, b) => {
+    // 👥 فلترة الطلاب حسب المجموعة
+    const selectedGroup =
+      document.getElementById("studentGroupFilter")?.value || "ALL";
+
+    const filteredStudents =
+      selectedGroup === "ALL"
+        ? students
+        : students.filter(student =>
+            String(student.group || "").trim() === selectedGroup
+          );
+
+    filteredStudents.sort((a, b) => {
       const ga = GROUPS.indexOf(a.group);
       const gb = GROUPS.indexOf(b.group);
-      return ga - gb || String(a.name || "").localeCompare(String(b.name || ""), "ar");
+      return ga - gb ||
+        String(a.name || "").localeCompare(String(b.name || ""), "ar");
     });
 
-    students.forEach(d => {
+    if (!filteredStudents.length) {
+      div.innerHTML = `<div class="card">❌ لا يوجد طلاب في المجموعة المختارة</div>`;
+      return;
+    }
+
+    filteredStudents.forEach(d => {
       const absentCount = attendanceStudentAbsentCount(d);
       const warning = absentCount > 1;
       div.innerHTML += `
@@ -3794,9 +3785,6 @@ function applyTeacherLanguageUI(lang){
     if(el) el.textContent=en?enText:ar;
   };
 
-  set('.sidebar button[onclick*="data"]',"الداتا","Data");
-  set('.sidebar button[onclick*="exams"]',"الامتحانات","Exams");
-  set('.sidebar button[onclick*="assignments"]',"التاسكات","Tasks");
   set('.sidebar button[onclick*="students"]',"الطلاب","Students");
   set('.sidebar button[onclick*="attendance"]',"الغياب","Attendance");
   set('.sidebar button[onclick*="settings"]',"الإعدادات","Settings");
@@ -4388,9 +4376,7 @@ window.closeModal=()=>{
 };
 
 window.onload=()=>{
-  loadVideos();
-  loadExams();
-  show("data");
+  show("attendance");
 };
 
 // تشغيل إعدادات المدرس أول مرة.
