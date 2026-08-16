@@ -1645,6 +1645,25 @@ select option{background:#06111f!important;color:#e9faff!important;}
   }
 }
 
+.brand-logo{
+    width:58px;
+    height:58px;
+    border-radius:50%;
+    overflow:hidden;
+    border:1px solid var(--gold);
+    background:#07170d;
+    display:grid;
+    place-items:center;
+    box-shadow:0 0 25px rgba(216,173,85,.18);
+}
+
+.brand-logo img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+}
+
 @media(min-width:851px){
   .mobile-menu-toggle,.mobile-menu-overlay{
     display:none!important;
@@ -1683,7 +1702,9 @@ opacity:0;transform:translateY(20px);transition:all .4s ease;pointer-events:none
 
   <aside class="sidebar" id="teacherSidebar">
     <div class="party-brand">
-      <div class="party-mark">🏛️</div>
+      <div class="brand-logo">
+          <img src="logo.jpeg" alt="حزب مستقبل وطن">
+      </div>
       <div>
         <h2>مستقبل وطن</h2>
         <small>منصة التعليم الرقمية</small>
