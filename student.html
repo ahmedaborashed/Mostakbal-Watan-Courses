@@ -2435,43 +2435,41 @@ async function renderExams(){
 window.startExam = async(examId)=>{
   if(!currentStudent || !examId) return;
 
-  /*
-    منع الضغط المكرر:
-    لو الطالب ضغط على نفس الامتحان أكثر من مرة بسرعة،
-    الطلب الثاني يتجاهل بدل ما يعمل Race Condition أو يغيّر الشاشة.
-  */
+  // منع الضغط المتكرر
   if(examOpening.has(examId)) return;
-
   examOpening.add(examId);
 
   try{
+    const student = studentKey();
 
     const resultRef = doc(
       db,
       "results",
-      studentKey()+"_"+examId
+      student+"_"+examId
     );
 
     const attemptRef = doc(
       db,
       "exam_attempts",
-      studentKey()+"_"+examId
+      student+"_"+examId
     );
 
     /*
-      النتيجة هي الحكم النهائي:
-      لو موجودة، الطالب سلّم الامتحان بالفعل وممنوع يعيده.
+      نقرأ النتيجة والمحاولة معًا
+      بدل طلبين منفصلين.
     */
-    const resultSnap = await getDoc(resultRef);
+    const [resultSnap,attemptSnap] = await Promise.all([
+      getDoc(resultRef),
+      getDoc(attemptRef)
+    ]);
 
+    // الامتحان تم تسليمه بالفعل
     if(resultSnap.exists()){
       showToast(t("examSubmitted"));
       return;
     }
 
-    /*
-      نجيب بيانات الامتحان أولًا.
-    */
+    // تحميل بيانات الامتحان
     const examSnap = await getDoc(
       doc(db,"exams",examId)
     );
@@ -2483,6 +2481,7 @@ window.startExam = async(examId)=>{
 
     const exam = examSnap.data();
 
+    // الامتحان مقفول
     if(exam.active === false){
       showToast(t("locked"));
       return;
@@ -2490,6 +2489,7 @@ window.startExam = async(examId)=>{
 
     const now = new Date();
 
+    // التحقق من وقت البداية
     if(exam.startAt){
       const start = exam.startAt.toDate
         ? exam.startAt.toDate()
@@ -2501,6 +2501,7 @@ window.startExam = async(examId)=>{
       }
     }
 
+    // التحقق من وقت النهاية
     if(exam.endAt){
       const end = exam.endAt.toDate
         ? exam.endAt.toDate()
@@ -2513,45 +2514,45 @@ window.startExam = async(examId)=>{
     }
 
     /*
-      لو عنده attempt بالفعل ولم يسلّم:
-      لا ننشئ محاولة جديدة.
-      نفتح نفس الامتحان ونخليه يكمل.
+      لو الطالب بدأ الامتحان بالفعل
+      نفتح نفس المحاولة بدون إنشاء محاولة جديدة.
     */
-    const attemptSnap = await getDoc(attemptRef);
-
     if(attemptSnap.exists()){
+
       currentExamId = examId;
       currentExamData = exam;
+
       saveExamSession(examId);
 
-      // مهم: لا نستدعي show("exams") هنا لأنه سيعيد renderExams
-      // ويقدر يعمل Race Condition مع شاشة الامتحان.
-      await renderExamScreen(exam,examId);
+      // نمرر بيانات المحاولة بدل getDoc جديد
+      await renderExamScreen(
+        exam,
+        examId,
+        attemptSnap.data()
+      );
 
       return;
     }
 
     /*
-      أول دخول فقط:
-      نستخدم Transaction لضمان إنشاء محاولة واحدة فقط.
+      أول دخول للامتحان.
+      Transaction تمنع إنشاء محاولتين.
     */
+
+    const clientStartTime = new Date();
+
     await runTransaction(db,async(transaction)=>{
 
       const existingAttempt =
         await transaction.get(attemptRef);
 
       if(existingAttempt.exists()){
-        /*
-          لو ضغطين حصلوا في نفس اللحظة،
-          الضغط الثاني لا ينشئ محاولة ثانية.
-          وسيتم التعامل معه بعد الـTransaction كـ Resume.
-        */
         return;
       }
 
       transaction.set(attemptRef,{
-        studentId:studentKey(),
-        examId,
+        studentId:student,
+        examId:examId,
         startTime:serverTimestamp(),
         started:true,
         locked:true
@@ -2559,21 +2560,26 @@ window.startExam = async(examId)=>{
     });
 
     /*
-      بعد الـTransaction نقرأ المحاولة مرة ثانية.
-      لو موجودة، ندخل على نفس الامتحان.
+      ندخل مباشرة.
+      لا نعمل getDoc إضافي لـ attempt.
     */
-    const finalAttemptSnap = await getDoc(attemptRef);
-
-    if(!finalAttemptSnap.exists()){
-      showToast(t("examUnavailable"));
-      return;
-    }
 
     currentExamId = examId;
     currentExamData = exam;
+
     saveExamSession(examId);
 
-    await renderExamScreen(exam,examId);
+    await renderExamScreen(
+      exam,
+      examId,
+      {
+        studentId:student,
+        examId:examId,
+        startTime:clientStartTime,
+        started:true,
+        locked:true
+      }
+    );
 
   }catch(error){
 
@@ -2586,15 +2592,17 @@ window.startExam = async(examId)=>{
     );
 
   }finally{
-    /*
-      نفتح الـlock مرة أخرى بعد انتهاء عملية الفتح.
-      وجود attempt هو الذي يحافظ على المحاولة، وليس هذا الـlock.
-    */
+
     examOpening.delete(examId);
   }
 };
 
-async function renderExamScreen(exam,examId){
+
+async function renderExamScreen(
+  exam,
+  examId,
+  attemptData=null
+){
 
   currentExamId = examId;
   currentExamData = exam;
@@ -2602,16 +2610,20 @@ async function renderExamScreen(exam,examId){
   const div = document.getElementById("examList");
 
   /*
-    نفعّل قسم الامتحانات مباشرة بدون استدعاء show().
-    show("exams") كان يعيد تشغيل renderExams أثناء فتح الامتحان
-    وده كان ممكن يعمل Race Condition ويخرج الطالب من شاشة الامتحان.
+    نفعّل شاشة الامتحان مباشرة
+    بدون استدعاء show("exams")
+    حتى لا يتم تشغيل renderExams مرة ثانية.
   */
+
   document.querySelectorAll(".section").forEach(section=>{
     section.classList.remove("active");
   });
 
   const examSection = document.getElementById("exams");
-  if(examSection) examSection.classList.add("active");
+
+  if(examSection){
+    examSection.classList.add("active");
+  }
 
   document.querySelectorAll(".side-btn[data-section]").forEach(btn=>{
     btn.classList.toggle(
@@ -2620,17 +2632,34 @@ async function renderExamScreen(exam,examId){
     );
   });
 
+  /*
+    عنوان الامتحان + التايمر
+  */
+
   div.innerHTML = `
     <div class="card">
-      <span class="badge">📝 ${escapeHtml(exam.name || "")}</span>
-      <h2>${escapeHtml(exam.name || "")}</h2>
-      <div id="examTimer" class="timer">⏳ ...</div>
+      <span class="badge">
+        📝 ${escapeHtml(exam.name || "")}
+      </span>
+
+      <h2>
+        ${escapeHtml(exam.name || "")}
+      </h2>
+
+      <div id="examTimer" class="timer">
+        ⏳ ...
+      </div>
     </div>
   `;
 
   if(currentExamTimer){
     clearInterval(currentExamTimer);
+    currentExamTimer = null;
   }
+
+  /*
+    إنشاء الأسئلة
+  */
 
   const questions = Array.isArray(exam.questions)
     ? exam.questions
@@ -2639,39 +2668,60 @@ async function renderExamScreen(exam,examId){
   questions.forEach((q,index)=>{
 
     const question = document.createElement("div");
+
     question.className = "card question";
 
     const title = document.createElement("p");
-    title.textContent = `${index+1}) ${q.text || ""}`;
+
+    title.textContent =
+      `${index+1}) ${q.text || ""}`;
+
     question.appendChild(title);
 
     if(q.type === "mcq"){
 
-      (q.choices || []).forEach((choice,choiceIndex)=>{
+      (q.choices || []).forEach(
+        (choice,choiceIndex)=>{
 
-        const label = document.createElement("label");
-        label.className = "choice";
+          const label =
+            document.createElement("label");
 
-        const input = document.createElement("input");
-        input.type = "radio";
-        input.name = "q"+index;
-        input.value = choiceIndex;
+          label.className = "choice";
 
-        label.appendChild(input);
-        label.appendChild(
-          document.createTextNode(" " + choice)
-        );
+          const input =
+            document.createElement("input");
 
-        question.appendChild(label);
-      });
+          input.type = "radio";
+
+          input.name = "q"+index;
+
+          input.value = choiceIndex;
+
+          label.appendChild(input);
+
+          label.appendChild(
+            document.createTextNode(
+              " " + choice
+            )
+          );
+
+          question.appendChild(label);
+        }
+      );
 
     }else{
 
-      const textarea = document.createElement("textarea");
+      const textarea =
+        document.createElement("textarea");
+
       textarea.id = "essay"+index;
+
       textarea.rows = 8;
+
       textarea.spellcheck = true;
+
       textarea.autocomplete = "off";
+
       textarea.placeholder =
         settings().language === "ar"
           ? "اكتب إجابتك... يمكنك كتابة أكثر من سطر"
@@ -2683,34 +2733,104 @@ async function renderExamScreen(exam,examId){
     div.appendChild(question);
   });
 
-  // استرجاع الإجابات بعد Reload/Restart وحفظها أثناء الكتابة.
+  /*
+    استرجاع الإجابات المحفوظة
+  */
+
   restoreExamDraft(examId,exam);
+
   bindExamDraftSaving(examId,exam);
 
-  const submit = document.createElement("button");
+  /*
+    زر التسليم
+  */
+
+  const submit =
+    document.createElement("button");
+
   submit.className = "primary";
+
   submit.textContent = t("submit");
-  submit.onclick = ()=>submitExam(examId);
+
+  submit.onclick = ()=>{
+    submitExam(examId);
+  };
 
   div.appendChild(submit);
 
-  // استرجاع وقت البداية من attempt.
-  const attemptSnap = await getDoc(
-    doc(db,"exam_attempts",studentKey()+"_"+examId)
-  );
+  /*
+    مهم:
+    لو بيانات attempt موجودة بالفعل
+    نستخدمها بدل getDoc جديد.
+    
+    فقط لو renderExamScreen تم استدعاؤه
+    بدون attemptData، نقرأها.
+  */
+
+  if(!attemptData){
+
+    try{
+
+      const attemptSnap = await getDoc(
+        doc(
+          db,
+          "exam_attempts",
+          studentKey()+"_"+examId
+        )
+      );
+
+      if(attemptSnap.exists()){
+        attemptData = attemptSnap.data();
+      }
+
+    }catch(error){
+
+      console.warn(
+        "EXAM ATTEMPT READ ERROR:",
+        error
+      );
+    }
+  }
+
+  /*
+    تحديد وقت بداية الامتحان
+  */
 
   let startTime = new Date();
 
-  if(attemptSnap.exists() && attemptSnap.data().startTime){
-    const value = attemptSnap.data().startTime;
+  if(
+    attemptData &&
+    attemptData.startTime
+  ){
 
-    startTime = value.toDate
-      ? value.toDate()
-      : new Date(value);
+    const value =
+      attemptData.startTime;
+
+    try{
+
+      startTime = value.toDate
+        ? value.toDate()
+        : new Date(value);
+
+    }catch(error){
+
+      console.warn(
+        "START TIME ERROR:",
+        error
+      );
+    }
   }
+
+  /*
+    مدة الامتحان بالدقائق
+  */
 
   const durationSeconds =
     Number(exam.duration || 0) * 60;
+
+  /*
+    تشغيل التايمر
+  */
 
   currentExamTimer = setInterval(()=>{
 
@@ -2718,38 +2838,68 @@ async function renderExamScreen(exam,examId){
 
     let remaining =
       durationSeconds -
-      Math.floor((now-startTime)/1000);
+      Math.floor(
+        (now-startTime)/1000
+      );
+
+    /*
+      لو فيه وقت نهاية عام للامتحان
+      ناخد الأقل.
+    */
 
     if(exam.endAt){
 
-      const end = exam.endAt.toDate
-        ? exam.endAt.toDate()
-        : new Date(exam.endAt);
+      const end =
+        exam.endAt.toDate
+          ? exam.endAt.toDate()
+          : new Date(exam.endAt);
 
       const globalRemaining =
-        Math.floor((end-now)/1000);
+        Math.floor(
+          (end-now)/1000
+        );
 
-      remaining = Math.min(
-        remaining,
-        globalRemaining
-      );
+      remaining =
+        Math.min(
+          remaining,
+          globalRemaining
+        );
     }
 
-    const timer = document.getElementById("examTimer");
+    const timer =
+      document.getElementById(
+        "examTimer"
+      );
+
     if(!timer) return;
+
+    /*
+      انتهى الوقت
+    */
 
     if(remaining <= 0){
 
-      clearInterval(currentExamTimer);
+      clearInterval(
+        currentExamTimer
+      );
 
-      timer.textContent = t("timeEnded");
+      currentExamTimer = null;
 
-      submitExam(examId,true);
+      timer.textContent =
+        t("timeEnded");
+
+      submitExam(
+        examId,
+        true
+      );
+
       return;
     }
 
     const minutes =
-      Math.floor(remaining/60);
+      Math.floor(
+        remaining/60
+      );
 
     const seconds =
       remaining%60;
@@ -2760,149 +2910,275 @@ async function renderExamScreen(exam,examId){
   },1000);
 }
 
-async function submitExam(examId,autoSubmit=false){
+
+async function submitExam(
+  examId,
+  autoSubmit=false
+){
+
   if(!currentStudent) return;
 
   try{
+
     /*
-      Reload / Restart لا يقوم بتسليم الامتحان.
-      التسليم التلقائي مسموح فقط عند انتهاء الوقت فعلًا.
+      التسليم اليدوي
     */
+
     if(autoSubmit !== true){
-      if(!confirm(t("confirmSubmit"))) return;
-    }else{
-      const attemptSnap=await getDoc(
-        doc(db,"exam_attempts",studentKey()+"_"+examId)
-      );
-      if(!attemptSnap.exists()){
-        console.warn("AUTO SUBMIT BLOCKED: no exam attempt.");
+
+      if(
+        !confirm(
+          t("confirmSubmit")
+        )
+      ){
         return;
       }
 
-      const attemptData=attemptSnap.data();
-      const examSnapForTime=await getDoc(doc(db,"exams",examId));
-      if(!examSnapForTime.exists()) return;
+    }else{
 
-      const examForTime=examSnapForTime.data();
-      const now=new Date();
-      let expired=false;
-      let startTime=null;
+      /*
+        التسليم التلقائي مسموح فقط
+        بعد انتهاء الوقت.
+      */
 
-      if(attemptData.startTime){
-        startTime=attemptData.startTime.toDate
-          ? attemptData.startTime.toDate()
-          : new Date(attemptData.startTime);
+      const attemptSnap =
+        await getDoc(
+          doc(
+            db,
+            "exam_attempts",
+            studentKey()+"_"+examId
+          )
+        );
+
+      if(!attemptSnap.exists()){
+
+        console.warn(
+          "AUTO SUBMIT BLOCKED: no exam attempt."
+        );
+
+        return;
       }
 
-      const durationSeconds=Number(examForTime.duration||0)*60;
+      const attemptData =
+        attemptSnap.data();
 
-      if(startTime && Number.isFinite(startTime.getTime()) && durationSeconds>0){
-        expired=Math.floor((now-startTime)/1000)>=durationSeconds;
+      const examSnapForTime =
+        await getDoc(
+          doc(
+            db,
+            "exams",
+            examId
+          )
+        );
+
+      if(!examSnapForTime.exists()){
+        return;
+      }
+
+      const examForTime =
+        examSnapForTime.data();
+
+      const now =
+        new Date();
+
+      let expired = false;
+
+      let startTime = null;
+
+      if(attemptData.startTime){
+
+        startTime =
+          attemptData.startTime.toDate
+            ? attemptData.startTime.toDate()
+            : new Date(
+                attemptData.startTime
+              );
+      }
+
+      const durationSeconds =
+        Number(
+          examForTime.duration || 0
+        ) * 60;
+
+      if(
+        startTime &&
+        Number.isFinite(
+          startTime.getTime()
+        ) &&
+        durationSeconds > 0
+      ){
+
+        expired =
+          Math.floor(
+            (now-startTime)/1000
+          ) >= durationSeconds;
       }
 
       if(examForTime.endAt){
-        const end=examForTime.endAt.toDate
-          ? examForTime.endAt.toDate()
-          : new Date(examForTime.endAt);
-        if(Number.isFinite(end.getTime()) && now>=end) expired=true;
+
+        const end =
+          examForTime.endAt.toDate
+            ? examForTime.endAt.toDate()
+            : new Date(
+                examForTime.endAt
+              );
+
+        if(
+          Number.isFinite(
+            end.getTime()
+          ) &&
+          now >= end
+        ){
+          expired = true;
+        }
       }
 
       if(!expired){
-        console.warn("AUTO SUBMIT BLOCKED: exam time has not ended.");
+
+        console.warn(
+          "AUTO SUBMIT BLOCKED: exam time has not ended."
+        );
+
         return;
       }
     }
 
-    const resultRef = doc(
-      db,
-      "results",
-      studentKey()+"_"+examId
-    );
+    /*
+      التأكد أن الامتحان لم يتم تسليمه
+    */
 
-    const existing = await getDoc(resultRef);
+    const resultRef =
+      doc(
+        db,
+        "results",
+        studentKey()+"_"+examId
+      );
+
+    const existing =
+      await getDoc(resultRef);
 
     if(existing.exists()){
-      showToast(t("examSubmitted"));
+
+      showToast(
+        t("examSubmitted")
+      );
+
       return;
     }
 
-    const examSnap = await getDoc(
-      doc(db,"exams",examId)
-    );
-
-    if(!examSnap.exists()) return;
-
-    const exam = examSnap.data();
-
-    const answers = [];
-    let score = 0;
-
-    (exam.questions || []).forEach((q,index)=>{
-
-      if(q.type === "mcq"){
-
-        const selected =
-          document.querySelector(
-            `input[name="q${index}"]:checked`
-          );
-
-        const answer =
-          selected ? Number(selected.value) : -1;
-
-        answers.push(answer);
-
-        if(answer === Number(q.correct)){
-          score += Number(q.degree || 0);
-        }
-
-      }else{
-
-        const text =
-          document.getElementById("essay"+index)?.value || "";
-
-        answers.push(text);
-      }
-    });
-
-    await setDoc(resultRef,{
-      examId,
-      studentId:studentKey(),
-      answers,
-      score,
-      total:score,
-      essayScores:[],
-      submittedAt:serverTimestamp()
-    });
-
-    // التسليم تم فعليًا: امسح المسودة وحالة الامتحان المحلية.
-    clearExamSession(examId);
-
     /*
-      لا نحذف exam_attempts بعد التسليم.
-
-      السبب:
-      حتى لو النتيجة موجودة، الاحتفاظ بالمحاولة كـ سجل دائم
-      يمنع إعادة فتح الامتحان بعد أي Refresh أو Logout/Login.
+      تحميل الامتحان
     */
 
+    const examSnap =
+      await getDoc(
+        doc(
+          db,
+          "exams",
+          examId
+        )
+      );
+
+    if(!examSnap.exists()){
+      return;
+    }
+
+    const exam =
+      examSnap.data();
+
+    /*
+      حساب الإجابات والدرجة
+    */
+
+    const answers = [];
+
+    let score = 0;
+
+    (exam.questions || [])
+      .forEach((q,index)=>{
+
+        if(q.type === "mcq"){
+
+          const selected =
+            document.querySelector(
+              `input[name="q${index}"]:checked`
+            );
+
+          const answer =
+            selected
+              ? Number(selected.value)
+              : -1;
+
+          answers.push(answer);
+
+          if(
+            answer ===
+            Number(q.correct)
+          ){
+
+            score +=
+              Number(q.degree || 0);
+          }
+
+        }else{
+
+          const text =
+            document.getElementById(
+              "essay"+index
+            )?.value || "";
+
+          answers.push(text);
+        }
+      });
+
+    /*
+      حفظ النتيجة
+    */
+
+    await setDoc(
+      resultRef,
+      {
+        examId,
+        studentId:studentKey(),
+        answers,
+        score,
+        total:score,
+        essayScores:[],
+        submittedAt:serverTimestamp()
+      }
+    );
+
+    /*
+      تم التسليم
+    */
+
+    clearExamSession(examId);
+
     if(currentExamTimer){
-      clearInterval(currentExamTimer);
+
+      clearInterval(
+        currentExamTimer
+      );
+
       currentExamTimer = null;
     }
 
-    /*
-      الامتحان انتهى.
-      نصفر حالة الامتحان الحالي حتى تقدر أزرار المنيو تشتغل طبيعي.
-    */
     currentExamId = null;
+
     currentExamData = null;
 
-    /* عرض النتيجة فقط، بدون إعادة رسم قائمة الامتحانات حتى يظل زر العودة ظاهرًا. */
+    /*
+      عرض النتيجة
+    */
+
     divSafeExamResult(score);
 
   }catch(error){
 
-    console.error("SUBMIT EXAM ERROR:",error);
+    console.error(
+      "SUBMIT EXAM ERROR:",
+      error
+    );
 
     showToast(
       settings().language === "ar"
@@ -2912,23 +3188,48 @@ async function submitExam(examId,autoSubmit=false){
   }
 }
 
+
 function divSafeExamResult(score){
-  const div = document.getElementById("examList");
+
+  const div =
+    document.getElementById(
+      "examList"
+    );
 
   div.innerHTML = `
-    <div class="card" style="text-align:center">
-      <div style="font-size:3rem">✅</div>
-      <h2>${t("solved")}</h2>
-      <p style="color:var(--accent);font-size:1.2rem;font-weight:900">
+    <div
+      class="card"
+      style="text-align:center"
+    >
+
+      <div
+        style="font-size:3rem"
+      >
+        ✅
+      </div>
+
+      <h2>
+        ${t("solved")}
+      </h2>
+
+      <p
+        style="
+          color:var(--accent);
+          font-size:1.2rem;
+          font-weight:900
+        "
+      >
         ${t("score")}: ${score}
       </p>
 
       <button
         class="primary"
         style="margin-top:1rem"
-        onclick="returnToHome()">
+        onclick="returnToHome()"
+      >
         ${t("backHome")}
       </button>
+
     </div>
   `;
 }
