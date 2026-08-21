@@ -1809,7 +1809,22 @@ select option{background:#06111f!important;color:#e9faff!important;}
   padding:12px;border:1px solid rgba(34,211,238,.16);border-radius:12px;background:#06111f;
 }
 .reopen-date-box small{display:block;color:#7893a3;line-height:1.7;margin-top:5px}
-.answer-preserve{white-space:pre-wrap;word-break:break-word;text-align:right;line-height:2;background:#06111f;border:1px solid rgba(34,211,238,.12);padding:14px;border-radius:12px;min-height:100px}
+.answer-preserve{
+  white-space:pre-wrap !important;
+  word-break:break-word !important;
+  overflow-wrap:anywhere !important;
+  text-align:right;
+  direction:rtl;
+  line-height:2;
+  background:#06111f;
+  border:1px solid rgba(34,211,238,.12);
+  padding:14px;
+  border-radius:12px;
+  min-height:100px;
+  width:100%;
+  display:block;
+  box-sizing:border-box;
+}
 
 /* print table requested layout */
 .print-student-matrix{
