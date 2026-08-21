@@ -1209,7 +1209,7 @@ select option{background:#06111f!important;color:#e9faff!important;}
 }
 .details-modal-backdrop.show{display:flex;animation:viewerBg .2s ease;}
 .details-modal-box{
-  width:min(1000px,100%);max-height:min(88vh,900px);
+  width:min(1100px,100%);max-height:min(92vh,920px);
   display:flex;flex-direction:column;overflow:hidden;
   background:linear-gradient(145deg,#081a2c,#030b16);
   border:1px solid rgba(34,211,238,.32);border-radius:22px;
@@ -1705,6 +1705,187 @@ select option{background:#06111f!important;color:#e9faff!important;}
   cursor:wait!important;
   transform:none!important;
 }
+
+
+/* =========================================================
+   🎯 TARGET STUDENTS / GROUPS
+========================================================= */
+.target-mode-box{
+  margin:10px 0 14px;
+  padding:14px;
+  border:1px solid rgba(34,211,238,.18);
+  border-radius:14px;
+  background:linear-gradient(145deg,#071426,#040b15);
+}
+.target-students-box{
+  margin-top:10px;
+  padding:12px;
+  border:1px solid rgba(34,211,238,.14);
+  border-radius:12px;
+  background:#020b16;
+}
+.target-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.target-students-box input[type="search"]{margin:8px 0!important}
+.target-toolbar button{width:auto!important;margin:0!important}
+.target-student-list{
+  max-height:280px;overflow:auto;
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;
+}
+.target-student-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;border:1px solid rgba(34,211,238,.12);
+  border-radius:10px;background:#06111f;
+}
+.target-student-item input{width:18px!important;height:18px!important;min-height:18px!important;margin:0!important}
+.target-count{color:#67e8f9;font-weight:900;font-size:12px;margin-top:7px}
+.final-grade-editor{
+  display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-top:10px;
+}
+.final-grade-editor input{max-width:180px}
+.reopen-date-box{
+  padding:12px;border:1px solid rgba(34,211,238,.16);border-radius:12px;background:#06111f;
+}
+.reopen-date-box small{display:block;color:#7893a3;line-height:1.7;margin-top:5px}
+.answer-preserve{white-space:pre-wrap;word-break:break-word;text-align:right;line-height:2;background:#06111f;border:1px solid rgba(34,211,238,.12);padding:14px;border-radius:12px;min-height:100px}
+
+/* print table requested layout */
+.print-student-matrix{
+  direction:rtl!important;
+  min-width:900px!important;
+}
+.print-student-matrix th,
+.print-student-matrix td{
+  text-align:center!important;
+}
+.print-student-matrix .student-name-col{
+  min-width:170px;
+  text-align:right!important;
+  font-weight:900;
+}
+.print-student-matrix .group-col{
+  min-width:180px;
+  text-align:left!important;
+}
+.print-student-matrix .exam-col{
+  min-width:110px;
+}
+.print-exam-head{font-weight:900;line-height:1.45}
+.print-exam-head small{display:block;font-weight:700;color:#64748b}
+.print-meta-line{
+  display:flex;justify-content:space-between;gap:20px;
+  margin-bottom:10px;font-weight:900;
+}
+.print-meta-line .left{text-align:left}
+.print-meta-line .right{text-align:right}
+
+@media(max-width:700px){
+  .target-student-list{grid-template-columns:1fr}
+}
+
+
+/* =========================================================
+   📊 GRADES / PRINT CENTER
+========================================================= */
+.grades-center{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.grades-center .settings-item{margin:0}
+.grades-table-wrap{
+  overflow:auto;
+  border:1px solid rgba(34,211,238,.18);
+  border-radius:14px;
+  background:#020617;
+}
+.grades-table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:720px;
+  direction:ltr;
+}
+.grades-table th,.grades-table td{
+  border:1px solid rgba(34,211,238,.16);
+  padding:10px 9px;
+  text-align:center;
+  white-space:nowrap;
+}
+.grades-table th{
+  background:#071a2b;
+  color:#67e8f9;
+  font-weight:900;
+}
+.grades-table .exam-name{
+  text-align:left;
+  background:#06111f;
+  color:#e9faff;
+  font-weight:900;
+}
+.grades-table .student-head{
+  min-width:125px;
+  color:#e9faff;
+}
+.grade-good{color:#86efac;font-weight:900}
+.grade-empty{color:#64748b}
+.print-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.print-actions button{flex:1;min-width:180px}
+#singleExamPrintStatusFilter{min-width:190px}
+.student-grades-summary{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+.student-grade-card{
+  border:1px solid rgba(34,211,238,.16);
+  border-radius:12px;
+  padding:12px;
+  background:linear-gradient(145deg,#071426,#040b15);
+}
+.student-grade-card h4{margin:0 0 7px;color:#67e8f9}
+.student-grade-card p{margin:5px 0;color:#cbd5e1}
+.print-only{display:none}
+
+@media(max-width:700px){
+  .grades-center,.student-grades-summary{grid-template-columns:1fr}
+}
+
+@media print{
+  body{background:#fff!important;color:#111!important}
+  body::before,body::after,.sidebar,.mobile-menu-toggle,.mobile-menu-overlay,#toast,
+  .no-print{display:none!important}
+  .main-content{margin:0!important;width:100%!important;padding:0!important}
+  .section{display:none!important}
+  #exams.printing-section{display:block!important}
+  #exams.printing-section > *:not(#printArea){display:none!important}
+  #printArea{display:block!important}
+  #printArea .print-actions,#printArea .print-controls{display:none!important}
+  .print-only{display:block!important}
+  .grades-table{min-width:0!important;width:100%!important;font-size:10px}
+  .grades-table th,.grades-table td{padding:6px;border:1px solid #555;color:#111!important;background:#fff!important}
+  .grades-table .exam-name{color:#111!important;background:#f4f4f4!important}
+  .print-title{text-align:center;color:#111!important;margin:0 0 14px}
+  .print-student-matrix{min-width:0!important;width:100%!important;direction:rtl!important}
+  .print-student-matrix th,.print-student-matrix td{color:#111!important;background:#fff!important}
+  .print-meta-line{color:#111!important}
+  .print-meta-line .left,.print-meta-line .right{text-align:initial}
+  .print-exam-head small{color:#333!important}
+}
+
+
+.single-exam-print-title{display:none}
+@media print{
+  .single-exam-print-title{
+    display:block!important;
+    direction:rtl;
+    text-align:center;
+    color:#111!important;
+    font-weight:900;
+    margin:0 0 10px;
+    font-size:18px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1796,6 +1977,7 @@ opacity:0;transform:translateY(20px);transition:all .4s ease;pointer-events:none
 
         <input id="examName" placeholder="اسم الامتحان">
 
+        <label>👥 المجموعة المستهدفة</label>
         <select id="examGroup">
           <option value="">اختر المجموعة</option>
           <option value="ALL">🌐 كل المجموعات</option>
@@ -1803,16 +1985,43 @@ opacity:0;transform:translateY(20px);transition:all .4s ease;pointer-events:none
           <option value="مجموعة الأحد والأربعاء | 9:00 - 10:30">مجموعة الأحد والأربعاء | 9:00 - 10:30</option>
         </select>
 
-        <div id="questions"></div>
+        <div class="target-mode-box">
+          <label>🎯 إرسال الامتحان إلى</label>
+          <select id="examAudienceMode" onchange="toggleTargetStudentsUI('exam')">
+            <option value="group">👥 المجموعة المحددة</option>
+            <option value="students">👤 طلاب محددين فقط</option>
+          </select>
 
-        <button class="btn-main" onclick="addQuestion()">➕ إضافة سؤال</button>
+          <div id="examTargetStudentsBox" class="target-students-box" style="display:none">
+            <label>فلترة الطلاب حسب المجموعة</label>
+            <select id="examTargetGroupFilter" onchange="renderTargetStudents('exam')">
+              <option value="ALL">🌐 كل المجموعات</option>
+              <option value="مجموعة الأحد والأربعاء | 7:00 - 8:30">مجموعة الأحد والأربعاء | 7:00 - 8:30</option>
+              <option value="مجموعة الأحد والأربعاء | 9:00 - 10:30">مجموعة الأحد والأربعاء | 9:00 - 10:30</option>
+            </select>
+            <input id="examTargetStudentSearch" type="search" placeholder="🔍 بحث باسم الطالب..." oninput="renderTargetStudents('exam')">
+            <div class="target-toolbar">
+              <button type="button" onclick="selectAllTargetStudents('exam')">☑️ تحديد الكل</button>
+              <button type="button" class="btn-secondary" onclick="clearAllTargetStudents('exam')">⬜ إلغاء الكل</button>
+            </div>
+            <div id="examTargetStudentsList" class="target-student-list"></div>
+            <div id="examTargetStudentsCount" class="target-count">0 طالب محدد</div>
+          </div>
+        </div>
 
-        <div id="timeBox" style="display:none;">
+        <div id="timeBox" style="display:none;" class="reopen-date-box">
           <label>⏰ وقت بداية الامتحان</label>
           <input type="datetime-local" id="examStartTime">
           <label>⛔ وقت نهاية الامتحان</label>
           <input type="datetime-local" id="examEndTime">
+          <label>⏱ مدة الامتحان بالدقائق</label>
+          <input type="number" id="examDuration" min="1" step="1" placeholder="مثال: 30">
+          <small>المدة تُحسب وتُعرض أسفل تحديد وقت البداية والنهاية.</small>
         </div>
+
+        <div id="questions"></div>
+
+        <button class="btn-main" onclick="addQuestion()">➕ إضافة سؤال</button>
 
         <button class="btn-main" onclick="handleSaveExam()">💾 حفظ الامتحان</button>
       </div>
@@ -1835,6 +2044,62 @@ opacity:0;transform:translateY(20px);transition:all .4s ease;pointer-events:none
       </div>
 
       <div id="resultsBox" class="section-card"></div>
+
+      <div id="printArea" class="section-card">
+        <div class="title">🖨️ مركز طباعة الدرجات</div>
+        <h2 class="print-title print-only">تقرير درجات الطلاب</h2>
+
+        <div class="grades-center print-controls">
+          <div class="settings-item">
+            <h3>📊 تقرير كل الطلاب × كل الامتحانات</h3>
+            <p>اسم الامتحان يظهر في العمود الأيسر، وأسماء الطلاب في أعلى الجدول. تقدر تختار كل المجموعات أو مجموعة محددة.</p>
+
+            <label>👥 المجموعة</label>
+            <select id="gradesGroupFilter" onchange="loadGradesCenter()">
+              <option value="ALL">🌐 كل المجموعات</option>
+              <option value="مجموعة الأحد والأربعاء | 7:00 - 8:30">مجموعة الأحد والأربعاء | 7:00 - 8:30</option>
+              <option value="مجموعة الأحد والأربعاء | 9:00 - 10:30">مجموعة الأحد والأربعاء | 9:00 - 10:30</option>
+            </select>
+
+            <label>👤 الطلاب في الطباعة</label>
+            <select id="gradesPrintStatusFilter" onchange="loadGradesCenter()">
+              <option value="all">👥 كل الطلاب المستهدفين</option>
+              <option value="taken">✅ الطلاب الذين دخلوا فقط</option>
+              <option value="absent">❌ الطلاب الذين لم يدخلوا فقط</option>
+            </select>
+
+            <button class="btn-main" onclick="loadGradesCenter()">🔄 تحديث الجدول</button>
+            <button class="success" onclick="printAllGrades()">🖨️ طباعة درجات كل الامتحانات</button>
+          </div>
+
+          <div class="settings-item">
+            <h3>📝 تقرير امتحان واحد</h3>
+            <p>يطبع: اسم الطالب + الدرجة + المجموعة.</p>
+
+            <label>📝 الامتحان</label>
+            <select id="singleExamPrintFilter" onchange="loadGradesCenter()">
+              <option value="">اختر الامتحان</option>
+            </select>
+            <select id="singleExamPrintStatusFilter" onchange="loadGradesCenter()">
+              <option value="all">👥 كل الطلاب</option>
+              <option value="taken">✅ اللي دخلوا فقط</option>
+              <option value="absent">❌ اللي مدخلوش فقط</option>
+            </select>
+
+            <label>👥 المجموعة</label>
+            <select id="singleExamGroupPrintFilter" onchange="loadGradesCenter()">
+              <option value="ALL">🌐 كل المجموعات</option>
+              <option value="مجموعة الأحد والأربعاء | 7:00 - 8:30">مجموعة الأحد والأربعاء | 7:00 - 8:30</option>
+              <option value="مجموعة الأحد والأربعاء | 9:00 - 10:30">مجموعة الأحد والأربعاء | 9:00 - 10:30</option>
+            </select>
+
+            <button class="btn-main" onclick="printSingleExamGrades()">🖨️ طباعة الامتحان</button>
+          </div>
+        </div>
+
+        <div id="gradesCenterStatus" class="badge no-print">⏳ جاري تجهيز الدرجات...</div>
+        <div id="gradesMatrixBox" style="margin-top:12px"></div>
+      </div>
     </div>
 
 
@@ -1844,18 +2109,42 @@ opacity:0;transform:translateY(20px);transition:all .4s ease;pointer-events:none
         <div class="title">📋 إنشاء تاسك جديد</div>
 
         <input id="assignmentTitle" placeholder="عنوان الاسايمنت / التاسك">
-        <textarea id="assignmentDescription" placeholder="اكتب المطلوب من الطالب بالتفصيل..."></textarea>
+        <textarea id="assignmentDescription" rows="5" placeholder="اكتب المطلوب من الطالب بالتفصيل..."></textarea>
 
         <label>⏰ الديد لاين</label>
         <input id="assignmentDeadline" type="datetime-local">
 
-        <label>👥 رفع الاسايمنت إلى</label>
+        <label>👥 المجموعة المستهدفة</label>
         <select id="assignmentGroup">
           <option value="">اختر المجموعة</option>
           <option value="ALL">🌐 كل المجموعات</option>
           <option value="مجموعة الأحد والأربعاء | 7:00 - 8:30">مجموعة الأحد والأربعاء | 7:00 - 8:30</option>
           <option value="مجموعة الأحد والأربعاء | 9:00 - 10:30">مجموعة الأحد والأربعاء | 9:00 - 10:30</option>
         </select>
+
+        <div class="target-mode-box">
+          <label>🎯 إرسال التاسك إلى</label>
+          <select id="assignmentAudienceMode" onchange="toggleTargetStudentsUI('assignment')">
+            <option value="group">👥 المجموعة المحددة</option>
+            <option value="students">👤 طلاب محددين فقط</option>
+          </select>
+
+          <div id="assignmentTargetStudentsBox" class="target-students-box" style="display:none">
+            <label>فلترة الطلاب حسب المجموعة</label>
+            <select id="assignmentTargetGroupFilter" onchange="renderTargetStudents('assignment')">
+              <option value="ALL">🌐 كل المجموعات</option>
+              <option value="مجموعة الأحد والأربعاء | 7:00 - 8:30">مجموعة الأحد والأربعاء | 7:00 - 8:30</option>
+              <option value="مجموعة الأحد والأربعاء | 9:00 - 10:30">مجموعة الأحد والأربعاء | 9:00 - 10:30</option>
+            </select>
+            <input id="assignmentTargetStudentSearch" type="search" placeholder="🔍 بحث باسم الطالب..." oninput="renderTargetStudents('assignment')">
+            <div class="target-toolbar">
+              <button type="button" onclick="selectAllTargetStudents('assignment')">☑️ تحديد الكل</button>
+              <button type="button" class="btn-secondary" onclick="clearAllTargetStudents('assignment')">⬜ إلغاء الكل</button>
+            </div>
+            <div id="assignmentTargetStudentsList" class="target-student-list"></div>
+            <div id="assignmentTargetStudentsCount" class="target-count">0 طالب محدد</div>
+          </div>
+        </div>
 
         <button class="btn-main" onclick="createAssignment()">🚀 نشر التاسك</button>
       </div>
@@ -2213,7 +2502,10 @@ window.show=(id)=>{
 
   if(id==="students") loadStudents();
   if(id==="data") loadVideos();
-  if(id==="exams") loadExams();
+  if(id==="exams"){
+    loadExams();
+    setTimeout(()=>loadGradesCenter(),250);
+  }
   if(id==="assignments") loadAssignments();
   if(id==="attendance") loadAttendanceData();
   if(id==="settings") loadTeacherSettings();
@@ -2726,6 +3018,95 @@ window.toggleType=btn=>{
   }
 };
 
+
+/* =========================================================
+   🎯 TARGET STUDENTS HELPERS
+========================================================= */
+let targetStudentCache={exam:[],assignment:[]};
+let targetSelectedIds={exam:new Set(),assignment:new Set()};
+
+async function loadTargetStudents(type){
+  try{
+    const snap=await getDocs(collection(db,"students"));
+    targetStudentCache[type]=snap.docs.map(d=>({firestoreId:d.id,id:d.id,...d.data()}))
+      .sort((a,b)=>studentDisplayName(a).localeCompare(studentDisplayName(b),"ar"));
+    renderTargetStudents(type);
+  }catch(err){
+    console.error("TARGET STUDENTS:",err);
+    showToast("فشل تحميل أسماء الطلاب ❌");
+  }
+}
+
+window.toggleTargetStudentsUI=(type)=>{
+  const mode=document.getElementById(type==="exam"?"examAudienceMode":"assignmentAudienceMode")?.value||"group";
+  const box=document.getElementById(type==="exam"?"examTargetStudentsBox":"assignmentTargetStudentsBox");
+  if(!box)return;
+  box.style.display=mode==="students"?"block":"none";
+  if(mode==="students") loadTargetStudents(type);
+};
+
+window.renderTargetStudents=(type)=>{
+  const list=document.getElementById(type==="exam"?"examTargetStudentsList":"assignmentTargetStudentsList");
+  const filter=document.getElementById(type==="exam"?"examTargetGroupFilter":"assignmentTargetGroupFilter")?.value||"ALL";
+  const search=String(document.getElementById(type==="exam"?"examTargetStudentSearch":"assignmentTargetStudentSearch")?.value||"").trim().toLowerCase();
+  if(!list)return;
+  const students=(targetStudentCache[type]||[]).filter(s=>{
+    const groupOk=filter==="ALL"||String(s.group||"").trim()===filter;
+    const name=studentDisplayName(s).toLowerCase();
+    return groupOk && (!search || name.includes(search));
+  });
+  const selected=targetSelectedIds[type]||new Set();
+  list.innerHTML=students.map(s=>{
+    const id=String(s.firestoreId||s.id);
+    return `<label class="target-student-item">
+      <input type="checkbox" value="${escapeAttr(id)}" ${selected.has(id)?"checked":""} onchange="toggleTargetStudent('${type}',this)">
+      <span>👤 ${escapeHtml(studentDisplayName(s))} <small style="color:#7893a3">— ${escapeHtml(s.group||"-")}</small></span>
+    </label>`;
+  }).join("") || `<div class="details-modal-empty">لا يوجد طلاب في المجموعة المختارة.</div>`;
+  updateTargetStudentCount(type);
+};
+
+window.toggleTargetStudent=(type,input)=>{
+  if(!targetSelectedIds[type]) targetSelectedIds[type]=new Set();
+  if(input.checked) targetSelectedIds[type].add(String(input.value));
+  else targetSelectedIds[type].delete(String(input.value));
+  updateTargetStudentCount(type);
+};
+
+window.updateTargetStudentCount=(type)=>{
+  const list=document.getElementById(type==="exam"?"examTargetStudentsList":"assignmentTargetStudentsList");
+  const count=document.getElementById(type==="exam"?"examTargetStudentsCount":"assignmentTargetStudentsCount");
+  if(!list||!count)return;
+  count.textContent=`${list.querySelectorAll('input[type="checkbox"]:checked').length} طالب محدد`;
+};
+
+window.selectAllTargetStudents=(type)=>{
+  const list=document.getElementById(type==="exam"?"examTargetStudentsList":"assignmentTargetStudentsList");
+  if(!list)return;
+  if(!targetSelectedIds[type]) targetSelectedIds[type]=new Set();
+  list.querySelectorAll('input[type="checkbox"]').forEach(i=>{
+    i.checked=true;
+    targetSelectedIds[type].add(String(i.value));
+  });
+  updateTargetStudentCount(type);
+};
+
+window.clearAllTargetStudents=(type)=>{
+  const list=document.getElementById(type==="exam"?"examTargetStudentsList":"assignmentTargetStudentsList");
+  if(!list)return;
+  if(!targetSelectedIds[type]) targetSelectedIds[type]=new Set();
+  list.querySelectorAll('input[type="checkbox"]').forEach(i=>{
+    i.checked=false;
+    targetSelectedIds[type].delete(String(i.value));
+  });
+  updateTargetStudentCount(type);
+};
+
+function getSelectedTargetStudentIds(type){
+  return [...(targetSelectedIds[type]||new Set())].map(String);
+}
+
+
 /* =========================
    EXAMS
 ========================= */
@@ -2740,7 +3121,7 @@ window.handleSaveExam=()=>{
 };
 
 window.saveExam=async()=>{
-  const duration=Number(prompt("مدة الامتحان بالدقايق")) || 10;
+  const duration=Number(document.getElementById("examDuration")?.value) || 10;
   const startInput=document.getElementById("examStartTime").value;
   const endInput=document.getElementById("examEndTime").value;
   const startAt=startInput?new Date(startInput):null;
@@ -2748,8 +3129,11 @@ window.saveExam=async()=>{
   const name=document.getElementById("examName").value.trim();
   const group=document.getElementById("examGroup").value;
 
-  if(!name || !group || !startInput || !endInput){
-    showToast("اكمل اسم الامتحان والمجموعة والأوقات ❗");
+  const audienceMode=document.getElementById("examAudienceMode")?.value||"group";
+  if(!name || (audienceMode==="group" && !group) || !startInput || !endInput){
+    showToast(audienceMode==="students"
+      ?"اكمل اسم الامتحان والأوقات واختار الطلاب ❗"
+      :"اكمل اسم الامتحان والمجموعة والأوقات ❗");
     return;
   }
   if(isNaN(startAt) || isNaN(endAt) || endAt<=startAt){
@@ -2778,10 +3162,18 @@ window.saveExam=async()=>{
   }
 
   try{
+    const targetStudentIds=audienceMode==="students" ? getSelectedTargetStudentIds("exam") : [];
+    if(audienceMode==="students" && !targetStudentIds.length){
+      showToast("اختار طالب واحد على الأقل للامتحان ❗");
+      return;
+    }
+
     await addDoc(collection(db,"exams"),{
       name,
-      group: group === "ALL" ? "ALL" : group,
-      groups: group === "ALL" ? ["ALL"] : [group],
+      group: audienceMode==="students" ? "ALL" : (group === "ALL" ? "ALL" : group),
+      groups: audienceMode==="students" ? ["ALL"] : (group === "ALL" ? ["ALL"] : [group]),
+      audienceMode,
+      targetStudentIds,
       questions,
       active:true,
       duration,
@@ -2795,8 +3187,12 @@ window.saveExam=async()=>{
     document.getElementById("examGroup").value="";
     document.getElementById("examStartTime").value="";
     document.getElementById("examEndTime").value="";
+    document.getElementById("examDuration").value="";
     document.getElementById("questions").innerHTML="";
     document.getElementById("timeBox").style.display="none";
+    targetSelectedIds.exam.clear();
+    document.getElementById("examAudienceMode").value="group";
+    document.getElementById("examTargetStudentsBox").style.display="none";
   }catch(err){
     console.error(err);
     showToast("في مشكلة ❌");
@@ -2809,38 +3205,132 @@ window.loadExams=()=>{
     if(!div) return;
     div.innerHTML="";
 
-    snapshot.forEach(e=>{
-      const d=e.data();
+    const exams=[];
+    snapshot.forEach(e=>exams.push({id:e.id,...e.data()}));
+
+    exams.sort((a,b)=>{
+      const da=a.startAt?.toDate?a.startAt.toDate():new Date(a.startAt||0);
+      const db=b.startAt?.toDate?b.startAt.toDate():new Date(b.startAt||0);
+      return db-da;
+    });
+
+    exams.forEach(d=>{
       let status=d.active===false?"🔒 مقفول":"🟢 مفتوح";
       const now=new Date();
+      const start=d.startAt?.toDate?d.startAt.toDate():new Date(d.startAt||0);
+      const end=d.endAt?.toDate?d.endAt.toDate():new Date(d.endAt||0);
+      const validDates=!isNaN(start) && !isNaN(end);
 
-      if(d.startAt && d.endAt){
-        const start=d.startAt.toDate();
-        const end=d.endAt.toDate();
+      if(validDates){
         if(now<start) status="⏰ لم يبدأ";
-        else if(now<=end) status="🟢 مفتوح";
-        else status="⛔ انتهى";
+        else if(now<=end && d.active!==false) status="🟢 مفتوح";
+        else if(now>end) status="⛔ انتهى";
+        else if(d.active===false) status="🔒 مقفول";
       }
+
+      const ended=validDates && now>end;
+      const closed=d.active===false;
 
       div.innerHTML+=`
         <div class="card">
-          <h3>📝 ${d.name}</h3>
+          <h3>📝 ${escapeHtml(d.name||"بدون اسم")}</h3>
           <p>${status}</p>
-          <p>⏱ ${d.duration} دقيقة</p>
-          <span class="badge">👥 ${d.group || "-"}</span>
-          <div style="margin-top:10px">
-            <button onclick="toggleExam('${e.id}',${d.active})">${d.active?"🔴 قفل":"🟢 فتح"}</button>
-            <button onclick="openExam('${e.id}')">📊 النتائج</button>
-            <button class="danger" onclick="deleteExam('${e.id}')">🗑 حذف</button>
+          <p>⏱ ${escapeHtml(String(d.duration||"-"))} دقيقة</p>
+          <p style="color:#94a3b8;font-size:12px">
+            🕐 ${validDates?escapeHtml(start.toLocaleString("ar-EG")):"-"} → ${validDates?escapeHtml(end.toLocaleString("ar-EG")):"-"}
+          </p>
+          <span class="badge">👥 ${escapeHtml(d.group==="ALL"?"كل المجموعات":(d.group||"-"))}</span>
+
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="toggleExam('${escapeAttr(d.id)}',${d.active!==false})">
+              ${d.active!==false?"🔴 قفل":"🟢 فتح"}
+            </button>
+
+            ${ended
+              ? `<button class="success" onclick="reopenExam('${escapeAttr(d.id)}')">♻️ إعادة فتح بوقت جديد</button>`
+              : `<button onclick="reopenExam('${escapeAttr(d.id)}')">♻️ إعادة ضبط الوقت</button>`
+            }
+
+            <button onclick="openExam('${escapeAttr(d.id)}')">📊 النتائج</button>
+            <button class="danger" onclick="deleteExam('${escapeAttr(d.id)}')">🗑 حذف</button>
           </div>
         </div>`;
     });
+
+    if(!exams.length){
+      div.innerHTML=`<div class="card">❌ لا توجد امتحانات حتى الآن</div>`;
+    }
+
+    refreshGradesExamOptions(exams);
   });
 };
 
 window.toggleExam=async(id,currentState)=>{
   await updateDoc(doc(db,"exams",id),{active:!currentState});
   showToast(currentState?"تم قفل الامتحان 🔒":"تم فتح الامتحان 🟢");
+};
+
+function dateTimeLocalValue(d){
+  const x=d instanceof Date ? d : new Date(d||Date.now());
+  if(Number.isNaN(x.getTime())) return "";
+  const pad=n=>String(n).padStart(2,"0");
+  return `${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}T${pad(x.getHours())}:${pad(x.getMinutes())}`;
+}
+
+window.reopenExam=async(id)=>{
+  const snap=await getDoc(doc(db,"exams",id));
+  if(!snap.exists()) return;
+
+  const exam=snap.data()||{};
+  const oldDuration=Number(exam.duration)||30;
+  const oldStart=exam.startAt?.toDate?exam.startAt.toDate():new Date(exam.startAt||Date.now());
+  const oldEnd=exam.endAt?.toDate?exam.endAt.toDate():new Date(exam.endAt||Date.now()+oldDuration*60000);
+
+  openDetailsModal("♻️ إعادة ضبط وقت الامتحان",`
+    <div class="reopen-date-box">
+      <div class="badge">📝 ${escapeHtml(exam.name||"الامتحان")}</div>
+      <label>⏰ وقت البداية</label>
+      <input type="datetime-local" id="reopenExamStart" value="${escapeAttr(dateTimeLocalValue(oldStart))}">
+      <label>⛔ وقت النهاية</label>
+      <input type="datetime-local" id="reopenExamEnd" value="${escapeAttr(dateTimeLocalValue(oldEnd))}">
+      <label>⏱ مدة الامتحان بالدقائق</label>
+      <input type="number" id="reopenExamDuration" min="1" value="${oldDuration}">
+      <small>الوقت القديم متحمل تلقائيًا. لو عدلت البداية والنهاية، مدة الامتحان تفضل قابلة للتعديل من هنا.</small>
+      <div class="modal-actions">
+        <button class="success" onclick="saveReopenedExam('${escapeAttr(id)}')">💾 حفظ وفتح الامتحان</button>
+        <button class="btn-secondary" onclick="closeDetailsModal()">إلغاء</button>
+      </div>
+    </div>
+  `);
+};
+
+window.saveReopenedExam=async(id)=>{
+  const startInput=document.getElementById("reopenExamStart")?.value||"";
+  const endInput=document.getElementById("reopenExamEnd")?.value||"";
+  const minutes=Number(document.getElementById("reopenExamDuration")?.value||0);
+  const startAt=new Date(startInput);
+  const endAt=new Date(endInput);
+
+  if(!startInput||!endInput||Number.isNaN(startAt.getTime())||Number.isNaN(endAt.getTime())||endAt<=startAt){
+    showToast("اختار بداية ونهاية صحيحتين ❌");
+    return;
+  }
+  if(!Number.isFinite(minutes)||minutes<=0){
+    showToast("مدة الامتحان لازم تكون أكبر من صفر ❗");
+    return;
+  }
+
+  try{
+    await updateDoc(doc(db,"exams",id),{
+      active:true,startAt,endAt,duration:minutes,
+      reopenedAt:serverTimestamp(),allowRetake:true
+    });
+    closeDetailsModal();
+    showToast("تم فتح الامتحان بالوقت الجديد ♻️✅");
+  }catch(err){
+    console.error("REOPEN EXAM:",err);
+    showToast("فشل إعادة فتح الامتحان ❌");
+  }
 };
 
 window.deleteExam=async(id)=>{
@@ -2853,10 +3343,18 @@ let currentExamStudents=[];
 let allStudentsExam=[];
 let currentExamGroup="ALL";
 let currentExamGroups=[];
+let currentExamTargetIds=[];
 let currentExamName="";
 let currentExamView="taken";
 let currentExamTakenStudentKeys=new Set();
 let currentExamCurrentId="";
+
+
+function examAllowsStudent(student){
+  if(!student)return false;
+  if(currentExamTargetIds.length) return currentExamTargetIds.includes(String(student.firestoreId||student.id));
+  return groupAllowsStudent(student,null,currentExamGroups);
+}
 
 function renderExamList(name){
   const search=(document.getElementById("searchExam")?.value||"").trim().toLowerCase();
@@ -2919,13 +3417,17 @@ function renderExamList(name){
         📱 ${escapeHtml(student.studentPhone || student.phone || student.mobile || record.studentPhone || record.phone || "-")}<br>
         👥 ${escapeHtml(group)}<br>
         ${submitted
-          ? `🎯 الدرجة: ${escapeHtml(String(record.total ?? record.score ?? 0))}`
+          ? `🎯 الدرجة النهائية: <strong id="resultListGrade_${escapeAttr(record.id)}">${escapeHtml(String(record.total ?? record.score ?? 0))}</strong>`
           : `🟡 دخل الامتحان ولم يسلّمه بعد`}
         ${submitted ? `
-        <div style="margin-top:10px">
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn-main"
             onclick="openResultDetails('${escapeAttr(record.id)}','${escapeAttr(record.examId||currentExamCurrentId||"")}')">
             📄 تفاصيل الإجابات
+          </button>
+          <button class="success"
+            onclick="editFinalStudentGrade('${escapeAttr(record.id)}','${escapeAttr(record.examId||currentExamCurrentId||"")}')">
+            ✏️ تعديل الدرجة النهائية
           </button>
         </div>` : ""}
       </div>`;
@@ -2955,7 +3457,7 @@ function renderExamAbsent(name){
   const search=(document.getElementById("searchExam")?.value||"").trim().toLowerCase();
   const absent=allStudentsExam.filter(student=>{
     const taken=currentExamTakenStudentKeys.has(normalizeMatchValue(student.firestoreId));
-    const groupOk=groupAllowsStudent(student,null,currentExamGroups);
+    const groupOk=examAllowsStudent(student);
     return !taken && groupOk &&
       studentDisplayName(student).toLowerCase().includes(search);
   });
@@ -2981,6 +3483,56 @@ function renderExamAbsent(name){
   });
 }
 
+
+window.editFinalStudentGrade=async(resultId,examId)=>{
+  try{
+    const snap=await getDoc(doc(db,"results",resultId));
+    if(!snap.exists()){showToast("النتيجة غير موجودة ❌");return;}
+    const result=snap.data()||{};
+    const examSnap=await getDoc(doc(db,"exams",examId));
+    const exam=examSnap.exists()?examSnap.data()||{}:{};
+    const max=(Array.isArray(exam.questions)?exam.questions:[]).reduce((s,q)=>s+Math.max(0,Number(q.degree||0)),0);
+    const current=Number(result.total??result.score??0);
+
+    openDetailsModal("✏️ تعديل الدرجة النهائية",`
+      <div class="reopen-date-box">
+        <div class="badge">🎯 الدرجة الحالية: ${current}${max?` / ${max}`:""}</div>
+        <label>الدرجة النهائية الجديدة</label>
+        <input id="finalStudentGradeInput" type="number" min="0" max="${max||999999}" step="0.5" value="${current}">
+        <small>التعديل هنا يغير الدرجة النهائية مباشرة، بدون تعديل درجات الأسئلة واحدًا واحدًا.</small>
+        <div class="modal-actions">
+          <button class="success" onclick="saveFinalStudentGrade('${escapeAttr(resultId)}','${escapeAttr(examId)}')">💾 حفظ الدرجة النهائية</button>
+          <button class="btn-secondary" onclick="closeDetailsModal()">إلغاء</button>
+        </div>
+      </div>
+    `);
+  }catch(err){
+    console.error("OPEN FINAL GRADE EDIT:",err);
+    showToast("تعذر فتح تعديل الدرجة ❌");
+  }
+};
+
+window.saveFinalStudentGrade=async(resultId,examId)=>{
+  const value=Number(document.getElementById("finalStudentGradeInput")?.value);
+  if(!Number.isFinite(value)||value<0){showToast("اكتب درجة صحيحة ❗");return;}
+  try{
+    const examSnap=await getDoc(doc(db,"exams",examId));
+    if(examSnap.exists()){
+      const max=(Array.isArray(examSnap.data()?.questions)?examSnap.data().questions:[]).reduce((s,q)=>s+Math.max(0,Number(q.degree||0)),0);
+      if(max>0 && value>max){showToast(`الدرجة لا يمكن أن تتجاوز ${max} ❗`);return;}
+    }
+    await updateDoc(doc(db,"results",resultId),{
+      total:value,score:value,manualFinalGrade:value,teacherGradedAt:serverTimestamp()
+    });
+    closeDetailsModal();
+    showToast("تم تعديل الدرجة النهائية للطالب ✅");
+    if(currentExamName) renderExamList(`📊 نتائج: ${currentExamName}`);
+  }catch(err){
+    console.error("SAVE FINAL GRADE:",err);
+    showToast("فشل حفظ الدرجة النهائية ❌");
+  }
+};
+
 window.closeExamDetails=()=>closeDetailsModal();
 
 window.openExam=async(examId)=>{
@@ -3002,6 +3554,7 @@ window.openExam=async(examId)=>{
 
   if(!currentExamGroups.length) currentExamGroups=["ALL"];
   currentExamGroup=currentExamGroups.includes("ALL")?"ALL":currentExamGroups[0];
+  currentExamTargetIds=Array.isArray(examData.targetStudentIds)?examData.targetStudentIds.map(String):[];
 
   const wantedExamId=normalizeMatchValue(examId);
 
@@ -3023,7 +3576,7 @@ window.openExam=async(examId)=>{
       const record={...d,id:r.id,__submitted:true};
       const student=findStudentMatch(allStudentsExam,record);
 
-      if(student && groupAllowsStudent(student,record,currentExamGroups)){
+      if(student && examAllowsStudent(student)){
         const key=normalizeMatchValue(student.firestoreId);
         if(key){
           currentExamTakenStudentKeys.add(key);
@@ -3053,7 +3606,7 @@ window.openExam=async(examId)=>{
       const record={...d,id:r.id,__submitted:false};
       const student=findStudentMatch(allStudentsExam,record);
 
-      if(student && groupAllowsStudent(student,record,currentExamGroups)){
+      if(student && examAllowsStudent(student)){
         const key=normalizeMatchValue(student.firestoreId);
         if(key){
           currentExamTakenStudentKeys.add(key);
@@ -3071,7 +3624,7 @@ window.openExam=async(examId)=>{
   currentExamView="taken";
 
   const examTakenCount=currentExamTakenStudentKeys.size;
-  const examTargetCount=allStudentsExam.filter(student=>groupAllowsStudent(student,null,currentExamGroups)).length;
+  const examTargetCount=allStudentsExam.filter(student=>examAllowsStudent(student)).length;
   const examCount=document.getElementById("examCountBadge");
   const examAbsentCount=document.getElementById("examAbsentCountBadge");
   if(examCount) examCount.textContent=`📝 امتحنوا: ${examTakenCount}`;
@@ -3264,10 +3817,8 @@ window.loadStudents = async () => {
 
           <div style="margin-top:15px;display:flex;gap:8px;flex-wrap:wrap">
 
-            <button
-              class="attendance-student-btn"
-              onclick="viewStudentAttendance('${d.firestoreId}')">
-              📊 الحضور والغياب
+            <button class="btn-main" onclick="openStudentDataMenu('${d.firestoreId}')">
+              📊 بيانات الطالب
             </button>
 
             <button onclick="editStudent('${d.firestoreId}')">
@@ -3300,6 +3851,185 @@ window.loadStudents = async () => {
     `;
   }
 };
+
+
+window.openStudentDataMenu=(studentId)=>{
+  const student=allStudentsAssignments.find(s=>String(s.firestoreId||s.id)===String(studentId))
+    || attendanceStudentsCache.find(s=>String(s.firestoreId||s.id)===String(studentId));
+  if(!student){showToast("بيانات الطالب غير موجودة ❌");return;}
+  const name=studentDisplayName(student);
+
+  openDetailsModal(`📊 بيانات الطالب — ${name}`,`
+    <div class="target-mode-box">
+      <div class="details-result-card" style="margin-bottom:12px">
+        <strong>👤 ${escapeHtml(name)}</strong>
+        ${student?.group?`<br>👥 ${escapeHtml(student.group)}`:""}
+      </div>
+
+      <div class="student-data-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <button class="btn-main" onclick="showStudentDataPanel('${escapeAttr(studentId)}','attendance')">📋 الحضور والغياب</button>
+        <button class="btn-main" onclick="showStudentDataPanel('${escapeAttr(studentId)}','exams')">📝 درجات الطالب في الامتحانات</button>
+        <button class="btn-main" onclick="showStudentDataPanel('${escapeAttr(studentId)}','tasks')">📋 درجات الطالب في التاسكات</button>
+      </div>
+
+      <div id="studentDataPanel">
+        <div class="details-modal-empty">اختار نوع البيانات من الأزرار فوق 👆</div>
+      </div>
+    </div>
+  `);
+};
+
+window.showStudentDataPanel=async(studentId,type)=>{
+  const panel=document.getElementById("studentDataPanel");
+  if(!panel)return;
+  panel.innerHTML=`<div class="details-modal-empty">⏳ جاري تحميل البيانات...</div>`;
+
+  if(type==="attendance"){
+    // Render attendance inside the SAME popup instead of replacing it.
+    const student=attendanceStudentsCache.find(s=>String(s.firestoreId||s.id)===String(studentId))
+      || allStudentsAssignments.find(s=>String(s.firestoreId||s.id)===String(studentId));
+    if(!student){panel.innerHTML=`<div class="details-modal-empty">الطالب غير موجود.</div>`;return;}
+
+    const records=attendanceSessionsCache.map(session=>{
+      const r=attendanceSessionMatches(session,student);
+      if(!r)return null;
+      return {
+        date:attendanceDateValue(session.date),
+        name:session.name||"بدون اسم",
+        group:session.group==="ALL"?"كل المجموعات":attendanceNormalizeGroup(session.group),
+        present:r.present!==false
+      };
+    }).filter(Boolean).sort((a,b)=>b.date.localeCompare(a.date));
+
+    const absentCount=records.filter(r=>!r.present).length;
+    const presentCount=records.filter(r=>r.present).length;
+
+    panel.innerHTML=`
+      <div class="student-grade-card">
+        <h3 style="margin-top:0">📋 الحضور والغياب</h3>
+        <div class="popup-summary">
+          <span class="present-pill">✅ حاضر: ${presentCount}</span>
+          <span class="absent-pill">❌ غائب: ${absentCount}</span>
+        </div>
+      </div>
+      ${records.length?`<div class="grades-table-wrap"><table class="grades-table">
+        <thead><tr><th>التاريخ</th><th>السيشن</th><th>المجموعة</th><th>الحالة</th></tr></thead>
+        <tbody>${records.map(r=>`<tr>
+          <td>${escapeHtml(r.date)}</td>
+          <td>${escapeHtml(r.name)}</td>
+          <td>${escapeHtml(r.group)}</td>
+          <td>${r.present?`<span class="present-pill">حاضر</span>`:`<span class="absent-pill">غائب</span>`}</td>
+        </tr>`).join("")}</tbody>
+      </table></div>`:`<div class="details-modal-empty">لا يوجد حضور أو غياب مسجل لهذا الطالب.</div>`}
+    `;
+    return;
+  }
+
+  if(type==="exams"){
+    await renderStudentExamGradesPanel(studentId,panel);
+    return;
+  }
+
+  if(type==="tasks"){
+    await renderStudentTaskGradesPanel(studentId,panel);
+  }
+};
+
+window.renderStudentExamGradesPanel=async(studentId,panel)=>{
+  try{
+    const studentSnap=await getDoc(doc(db,"students",studentId));
+    if(!studentSnap.exists()){panel.innerHTML=`<div class="details-modal-empty">الطالب غير موجود.</div>`;return;}
+    const student={firestoreId:studentSnap.id,...studentSnap.data()};
+    const [examsSnap,resultsSnap]=await Promise.all([getDocs(collection(db,"exams")),getDocs(collection(db,"results"))]);
+    const exams=examsSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const examMap=new Map(exams.map(e=>[e.id,e]));
+    const results=[];
+    resultsSnap.forEach(r=>{
+      const d=r.data()||{};
+      if(!studentRecordMatchesAnyKey(student,{...d,id:r.id}))return;
+      const examId=getResultExamId(d,r.id,examMap);
+      if(examId)results.push({id:r.id,...d,examId});
+    });
+    const latest=new Map();
+    results.forEach(r=>{
+      const old=latest.get(r.examId);
+      if(!old||recordTimestampValue(r)>=recordTimestampValue(old))latest.set(r.examId,r);
+    });
+
+    const relevant=exams.filter(e=>{
+      const ids=Array.isArray(e.targetStudentIds)?e.targetStudentIds.map(String):[];
+      if(ids.length)return ids.includes(String(studentId));
+      const groups=Array.isArray(e.groups)?e.groups.map(String):[String(e.group||"")];
+      return groups.includes("ALL")||groups.includes(String(student.group||""));
+    });
+
+    panel.innerHTML=`
+      <div class="student-grade-card"><h3 style="margin-top:0">📝 درجات الطالب في الامتحانات</h3></div>
+      <div class="student-grades-summary">
+        ${relevant.map(e=>{
+          const r=latest.get(e.id);
+          const max=(Array.isArray(e.questions)?e.questions:[]).reduce((s,q)=>s+Number(q.degree||0),0);
+          const score=r?(r.total??r.score??0):"لم يدخل";
+          return `<div class="student-grade-card">
+            <h4>📝 ${escapeHtml(e.name||"امتحان")}</h4>
+            <p>🎯 الدرجة: <strong class="${r?'grade-good':'grade-empty'}">${escapeHtml(String(score))}${max?` / ${max}`:""}</strong></p>
+            ${r?`<button class="btn-main" onclick="openResultDetails('${escapeAttr(r.id)}','${escapeAttr(e.id)}')">📄 تفاصيل الإجابات</button>`:""}
+          </div>`;
+        }).join("")||`<div class="details-modal-empty">لا توجد امتحانات لهذا الطالب.</div>`}
+      </div>
+    `;
+  }catch(err){
+    console.error(err);
+    panel.innerHTML=`<div class="details-modal-empty">فشل تحميل درجات الامتحانات ❌</div>`;
+  }
+};
+
+
+window.openStudentTaskGrades=async(studentId)=>{
+  const panel=document.getElementById("studentDataPanel");
+  if(panel) await renderStudentTaskGradesPanel(studentId,panel);
+};
+
+window.renderStudentTaskGradesPanel=async(studentId,panel)=>{
+  try{
+    const studentSnap=await getDoc(doc(db,"students",studentId));
+    if(!studentSnap.exists()){panel.innerHTML=`<div class="details-modal-empty">الطالب غير موجود.</div>`;return;}
+    const student={firestoreId:studentSnap.id,...studentSnap.data()};
+    const [assignmentsSnap,submissionsSnap]=await Promise.all([
+      getDocs(collection(db,"assignments")),getDocs(collection(db,"submissions"))
+    ]);
+    const assignments=assignmentsSnap.docs.map(d=>({id:d.id,...d.data()})).filter(a=>{
+      const ids=Array.isArray(a.targetStudentIds)?a.targetStudentIds.map(String):[];
+      const groups=Array.isArray(a.groups)?a.groups.map(String):[String(a.group||"")];
+      return ids.length ? ids.includes(String(studentId)) : (groups.includes("ALL")||groups.includes(String(student.group||"")));
+    });
+    const subs=submissionsSnap.docs.map(d=>({id:d.id,...d.data()})).filter(s=>studentRecordMatchesAnyKey(student,s));
+    const latest=new Map();
+    subs.forEach(s=>{
+      const old=latest.get(s.assignmentId);
+      if(!old||recordTimestampValue(s)>=recordTimestampValue(old))latest.set(s.assignmentId,s);
+    });
+
+    panel.innerHTML=`
+      <div class="student-grade-card"><h3 style="margin-top:0">📋 درجات الطالب في التاسكات</h3></div>
+      <div class="student-grades-summary">
+        ${assignments.map(a=>{
+          const s=latest.get(a.id);
+          const grade=s&&s.grade!==undefined&&s.grade!==null?s.grade:"لم يسلّم/لم يتم التقييم";
+          return `<div class="student-grade-card">
+            <h4>📋 ${escapeHtml(a.title||"تاسك")}</h4>
+            <p>🎯 الدرجة: <strong class="${s&&s.grade!==undefined?'grade-good':'grade-empty'}">${escapeHtml(String(grade))}</strong></p>
+            ${s?`<button class="view-file-btn" onclick="openSubmissionViewer('${escapeAttr(s.id)}')">📄 عرض التسليم</button>`:""}
+          </div>`;
+        }).join("")||`<div class="details-modal-empty">لا توجد تاسكات لهذا الطالب.</div>`}
+      </div>
+    `;
+  }catch(err){
+    console.error(err);
+    panel.innerHTML=`<div class="details-modal-empty">فشل تحميل درجات التاسكات ❌</div>`;
+  }
+};
+
 
 window.searchStudent=()=>{
   const val=document.getElementById("searchStudent").value.toLowerCase();
@@ -3584,21 +4314,30 @@ window.createAssignment = async function(){
   const deadline = document.getElementById("assignmentDeadline").value;
   const group = document.getElementById("assignmentGroup").value;
 
-  if(!title || !description || !deadline || !group){
-    showToast("اكمل عنوان الاسايمنت والمطلوب والديد لاين والمجموعة ❗");
+  const audienceMode=document.getElementById("assignmentAudienceMode")?.value||"group";
+  if(!title || !description || !deadline || (audienceMode==="group" && !group)){
+    showToast(audienceMode==="students"
+      ?"اكمل عنوان التاسك والمطلوب والديد لاين واختار الطلاب ❗"
+      :"اكمل عنوان الاسايمنت والمطلوب والديد لاين والمجموعة ❗");
     return;
   }
 
   try{
 
+    const targetStudentIds=audienceMode==="students" ? getSelectedTargetStudentIds("assignment") : [];
+    if(audienceMode==="students" && !targetStudentIds.length){
+      showToast("اختار طالب واحد على الأقل للتاسك ❗");
+      return;
+    }
+
     await addDoc(collection(db, "assignments"), {
       title,
       description,
       deadline: new Date(deadline),
-
-      group: group === "ALL" ? "ALL" : group,
-      groups: group === "ALL" ? ["ALL"] : [group],
-
+      group: audienceMode==="students" ? "ALL" : (group === "ALL" ? "ALL" : group),
+      groups: audienceMode==="students" ? ["ALL"] : (group === "ALL" ? ["ALL"] : [group]),
+      audienceMode,
+      targetStudentIds,
       active: true,
       createdAt: new Date()
     });
@@ -3608,6 +4347,9 @@ window.createAssignment = async function(){
     document.getElementById("assignmentDescription").value = "";
     document.getElementById("assignmentDeadline").value = "";
     document.getElementById("assignmentGroup").value = "";
+    document.getElementById("assignmentAudienceMode").value = "group";
+    document.getElementById("assignmentTargetStudentsBox").style.display = "none";
+    targetSelectedIds.assignment.clear();
 
     showToast("تم نشر التاسك بنجاح 🚀");
 
@@ -3659,6 +4401,7 @@ window.loadAssignments=async()=>{
           ${a.fileUrl?`<p><a href="${escapeAttr(a.fileUrl)}" target="_blank" style="color:#67e8f9">📎 ${escapeHtml(a.fileName||"فتح ملف الاسايمنت")}</a></p>`:""}
           <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
             <button onclick="viewAssignmentSubmissions('${a.id}')">📥 التسليمات</button>
+            <button onclick="reopenAssignment('${a.id}')">♻️ فتح مدة التسليم تاني</button>
             <button onclick="deleteAssignment('${a.id}')" class="danger">🗑 حذف</button>
           </div>
         </div>`;
@@ -3680,6 +4423,7 @@ window.viewAssignmentSubmissions=async(assignmentId)=>{
       .filter(s=>s.assignmentId===assignmentId);
 
     const group=assignment.group||"ALL";
+    window.currentAssignmentTargetIds=Array.isArray(assignment.targetStudentIds)?assignment.targetStudentIds.map(String):[];
     currentAssignmentView="submitted";
 
     openDetailsModal("📋 تسليمات التاسك",`
@@ -3716,10 +4460,13 @@ function renderAssignmentSubmissions(){
     return;
   }
 
+  const targetIds=Array.isArray(window.currentAssignmentTargetIds)?window.currentAssignmentTargetIds:[];
   const rows=submissionCache.filter(s=>{
     const student=findStudentMatch(allStudentsAssignments,s);
+    const studentId=String(student?.firestoreId||student?.id||s.studentId||s.uid||"");
+    const targetOk=!targetIds.length || targetIds.includes(studentId);
     const name=String(student?.name||s.studentName||"طالب").toLowerCase();
-    return name.includes(search) && isRecordInGroup(student,s,targetGroup);
+    return targetOk && name.includes(search) && isRecordInGroup(student,s,targetGroup);
   });
 
   if(!rows.length){
@@ -3763,9 +4510,13 @@ window.renderAssignmentAbsent=(assignmentId)=>{
 
   const search=(document.getElementById("assignmentSearchModal")?.value||"").trim().toLowerCase();
   const group=assignment.group||"ALL";
-  const targetStudents=group==="ALL"
+  const targetIds=Array.isArray(window.currentAssignmentTargetIds)?window.currentAssignmentTargetIds:[];
+  const baseTargetStudents=group==="ALL"
     ? allStudentsAssignments
     : allStudentsAssignments.filter(s=>String(s.group||"").trim()===group);
+  const targetStudents=targetIds.length
+    ? baseTargetStudents.filter(s=>targetIds.includes(String(s.firestoreId||s.id)))
+    : baseTargetStudents;
 
   const absent=targetStudents.filter(student=>{
     const submitted=isStudentAnswered(student,submissionCache);
@@ -3827,7 +4578,7 @@ window.openSubmissionViewer=async(submissionId)=>{
 
   if(!s.fileUrl){
     body.innerHTML=s.answerText
-      ? `<div class="viewer-note"><h2>✍️ الإجابة النصية</h2><p>${escapeHtml(s.answerText)}</p></div>`
+      ? `<div class="viewer-note"><h2>✍️ الإجابة النصية</h2><div class="answer-preserve">${escapeHtml(s.answerText)}</div></div>`
       : `<div class="viewer-note">❌ الطالب لم يرفع ملفًا ولم يكتب إجابة.</div>`;
     modal.classList.add("show");
     return;
@@ -3865,6 +4616,45 @@ window.closeAssignmentViewer=()=>{
 };
 window.closeAssignmentViewerOutside=(e)=>{
   if(e.target.id==="assignmentViewerModal") closeAssignmentViewer();
+};
+
+
+window.reopenAssignment=async(id)=>{
+  const assignment=assignmentCache.find(a=>a.id===id);
+  if(!assignment)return;
+  const oldDeadline=assignment.deadline?.toDate?assignment.deadline.toDate():new Date(assignment.deadline||Date.now());
+  openDetailsModal("♻️ فتح مدة تسليم التاسك من جديد",`
+    <div class="reopen-date-box">
+      <div class="badge">📋 ${escapeHtml(assignment.title||"التاسك")}</div>
+      <label>⏰ موعد التسليم الجديد</label>
+      <input type="datetime-local" id="reopenAssignmentDeadline" value="${escapeAttr(dateTimeLocalValue(oldDeadline))}">
+      <small>الميعاد القديم ظاهر تلقائيًا. غيره للموعد الجديد ثم احفظ.</small>
+      <div class="modal-actions">
+        <button class="success" onclick="saveReopenedAssignment('${escapeAttr(id)}')">💾 فتح التسليم</button>
+        <button class="btn-secondary" onclick="closeDetailsModal()">إلغاء</button>
+      </div>
+    </div>
+  `);
+};
+
+window.saveReopenedAssignment=async(id)=>{
+  const value=document.getElementById("reopenAssignmentDeadline")?.value||"";
+  const deadline=new Date(value);
+  if(!value||Number.isNaN(deadline.getTime())){
+    showToast("اختار موعد تسليم صحيح ❌");
+    return;
+  }
+  try{
+    await updateDoc(doc(db,"assignments",id),{
+      deadline,active:true,reopenedAt:serverTimestamp()
+    });
+    closeDetailsModal();
+    showToast("تم فتح مدة تسليم التاسك من جديد ♻️✅");
+    loadAssignments();
+  }catch(err){
+    console.error("REOPEN ASSIGNMENT:",err);
+    showToast("فشل فتح مدة التسليم ❌");
+  }
 };
 
 window.deleteAssignment=async(id)=>{
@@ -4704,6 +5494,315 @@ window.history.replaceState(
 window.closeResultModalOutside=(e)=>{
   if(e.target?.id==="resultModal") closeModal();
 };
+
+/* =========================================================
+   🎓 STUDENT ACADEMIC REPORT
+   عرض كل درجات الطالب في الامتحانات + التاسكات.
+========================================================= */
+function recordTimestampValue(record){
+  const candidates=[record?.submittedAt,record?.gradedAt,record?.createdAt,record?.timestamp];
+  for(const v of candidates){
+    if(v?.toDate) return v.toDate().getTime();
+    if(v?.seconds) return Number(v.seconds)*1000;
+    if(v){
+      const t=new Date(v).getTime();
+      if(Number.isFinite(t)) return t;
+    }
+  }
+  return 0;
+}
+
+function getResultExamId(record,docId,examMap){
+  const explicit=record?.examId||record?.examID||record?.exam_id;
+  if(explicit && examMap.has(String(explicit))) return String(explicit);
+
+  const normalizedDoc=normalizeMatchValue(docId);
+  for(const id of examMap.keys()){
+    const n=normalizeMatchValue(id);
+    if(normalizedDoc===n || normalizedDoc.endsWith("_"+n)) return id;
+  }
+  return explicit ? String(explicit) : "";
+}
+
+window.openStudentAcademicReport=async(studentId)=>{
+  try{
+    const studentSnap=await getDoc(doc(db,"students",studentId));
+    if(!studentSnap.exists()){
+      showToast("الطالب غير موجود ❌");
+      return;
+    }
+
+    const student={firestoreId:studentSnap.id,...studentSnap.data()};
+    openDetailsModal("🎓 السجل الدراسي للطالب",`
+      <div class="details-modal-tools">
+        <div class="badge">👤 ${escapeHtml(studentDisplayName(student))}</div>
+        <div class="badge">👥 ${escapeHtml(student.group||"-")}</div>
+      </div>
+      <div id="studentAcademicReportBox" style="margin-top:12px">
+        ⏳ جاري تحميل درجات الامتحانات والتاسكات...
+      </div>
+    `);
+
+    const [examsSnap,resultsSnap,assignmentsSnap,submissionsSnap]=await Promise.all([
+      getDocs(collection(db,"exams")),
+      getDocs(collection(db,"results")),
+      getDocs(collection(db,"assignments")),
+      getDocs(collection(db,"submissions"))
+    ]);
+
+    const exams=examsSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const examMap=new Map(exams.map(e=>[e.id,e]));
+    const results=[];
+
+    resultsSnap.forEach(r=>{
+      const d=r.data()||{};
+      if(!studentRecordMatchesAnyKey(student,{...d,id:r.id})) return;
+      const examId=getResultExamId(d,r.id,examMap);
+      if(!examId) return;
+      results.push({id:r.id,...d,examId});
+    });
+
+    // آخر نتيجة لكل امتحان
+    const latestResults=new Map();
+    results.forEach(r=>{
+      const old=latestResults.get(r.examId);
+      if(!old || recordTimestampValue(r)>=recordTimestampValue(old)){
+        latestResults.set(r.examId,r);
+      }
+    });
+
+    const submissions=[];
+    submissionsSnap.forEach(s=>{
+      const d=s.data()||{};
+      if(studentRecordMatchesAnyKey(student,{...d,id:s.id})){
+        submissions.push({id:s.id,...d});
+      }
+    });
+
+    const assignmentMap=new Map(assignmentsSnap.docs.map(d=>[d.id,{id:d.id,...d.data()}]));
+    const assignmentRows=submissions
+      .map(s=>({...s,assignment:assignmentMap.get(s.assignmentId)}))
+      .filter(s=>s.assignment);
+
+    const box=document.getElementById("studentAcademicReportBox");
+    if(!box)return;
+
+    const relevantExams=exams
+      .filter(e=>{
+        const groups=Array.isArray(e.groups)
+          ? e.groups.map(x=>String(x).trim())
+          : [String(e.group||"").trim()];
+        const targetIds=Array.isArray(e.targetStudentIds)?e.targetStudentIds.map(String):[];
+        return targetIds.length ? targetIds.includes(String(student.firestoreId)) : (groups.includes("ALL") || groups.includes(String(student.group||"").trim()));
+      })
+      .sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"ar"));
+
+    const examHtml=relevantExams
+      .map(e=>{
+        const r=latestResults.get(e.id);
+        const max=(Array.isArray(e.questions)?e.questions:[]).reduce((sum,q)=>sum+Number(q.degree||0),0);
+        const score=r ? (r.total ?? r.score ?? 0) : "لم يدخل";
+        return `
+          <div class="student-grade-card">
+            <h4>📝 ${escapeHtml(e.name||"امتحان")}</h4>
+            <p>🎯 الدرجة: <strong class="${r?'grade-good':'grade-empty'}">${escapeHtml(String(score))}${r&&max?` / ${escapeHtml(String(max))}`:""}</strong></p>
+            <p>👥 المجموعة: ${escapeHtml(student.group||e.group||"-")}</p>
+            ${r?`<button class="btn-main" onclick="openResultDetails('${escapeAttr(r.id)}','${escapeAttr(e.id)}')">📄 تفاصيل الإجابات</button>`:""}
+          </div>`;
+      }).join("");
+
+    const submissionByAssignment=new Map();
+    assignmentRows.forEach(s=>{
+      const old=submissionByAssignment.get(s.assignmentId);
+      if(!old || recordTimestampValue(s)>=recordTimestampValue(old)) submissionByAssignment.set(s.assignmentId,s);
+    });
+
+    const relevantAssignments=Array.from(assignmentMap.values())
+      .filter(a=>{
+        const groups=Array.isArray(a.groups)
+          ? a.groups.map(x=>String(x).trim())
+          : [String(a.group||"").trim()];
+        const targetIds=Array.isArray(a.targetStudentIds)?a.targetStudentIds.map(String):[];
+        return targetIds.length ? targetIds.includes(String(student.firestoreId)) : (groups.includes("ALL") || groups.includes(String(student.group||"").trim()));
+      })
+      .sort((a,b)=>String(a.title||"").localeCompare(String(b.title||""),"ar"));
+
+    const taskHtml=relevantAssignments
+      .map(a=>{
+        const s=submissionByAssignment.get(a.id);
+        const graded=s && s.grade!==null && s.grade!==undefined;
+        return `
+          <div class="student-grade-card">
+            <h4>📋 ${escapeHtml(a.title||"تاسك")}</h4>
+            <p>🎯 الدرجة: <strong class="${graded?'grade-good':'grade-empty'}">${
+              s ? escapeHtml(String(s.grade??"لم يتم التقييم")) : "لم يسلّم"
+            }</strong></p>
+            <p>👥 المجموعة: ${escapeHtml(student.group||a.group||"-")}</p>
+          </div>`;
+      }).join("");
+
+    box.innerHTML=`
+      <div class="student-grades-summary">
+        <div>
+          <h3 style="color:#67e8f9">📝 درجات الامتحانات (${relevantExams.length})</h3>
+          ${examHtml||`<div class="details-modal-empty">لا توجد نتائج امتحانات مسجلة لهذا الطالب.</div>`}
+        </div>
+        <div>
+          <h3 style="color:#67e8f9">📋 درجات التاسكات (${relevantAssignments.length})</h3>
+          ${taskHtml||`<div class="details-modal-empty">لا توجد تسليمات تاسكات لهذا الطالب.</div>`}
+        </div>
+      </div>
+    `;
+  }catch(err){
+    console.error("STUDENT ACADEMIC REPORT:",err);
+    showToast("فشل تحميل سجل الطالب ❌");
+  }
+};
+
+/* =========================================================
+   🖨️ GRADES CENTER / PRINT
+========================================================= */
+let gradesCenterCache={exams:[],students:[],results:[],assignments:[],submissions:[]};
+
+function refreshGradesExamOptions(exams){
+  const select=document.getElementById("singleExamPrintFilter");
+  if(!select)return;
+  const current=select.value;
+  select.innerHTML=`<option value="">اختر الامتحان</option>`+
+    exams
+      .slice()
+      .sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"ar"))
+      .map(e=>`<option value="${escapeAttr(e.id)}">${escapeHtml(e.name||"بدون اسم")}</option>`)
+      .join("");
+  if(exams.some(e=>e.id===current)) select.value=current;
+}
+
+window.loadGradesCenter=async()=>{
+  const box=document.getElementById("gradesMatrixBox");
+  const status=document.getElementById("gradesCenterStatus");
+  if(!box)return;
+
+  try{
+    status.textContent="⏳ جاري تحميل الدرجات...";
+    const [studentsSnap,examsSnap,resultsSnap]=await Promise.all([
+      getDocs(collection(db,"students")),
+      getDocs(collection(db,"exams")),
+      getDocs(collection(db,"results"))
+    ]);
+
+    gradesCenterCache.students=studentsSnap.docs.map(d=>({firestoreId:d.id,...d.data()}));
+    gradesCenterCache.exams=examsSnap.docs.map(d=>({id:d.id,...d.data()}));
+    gradesCenterCache.results=resultsSnap.docs.map(d=>({id:d.id,...d.data()}));
+    refreshGradesExamOptions(gradesCenterCache.exams);
+
+    const group=document.getElementById("gradesGroupFilter")?.value||"ALL";
+    const statusFilter=selectedExam
+      ? (document.getElementById("singleExamPrintStatusFilter")?.value||"all")
+      : (document.getElementById("gradesPrintStatusFilter")?.value||"all");
+
+    const examMap=new Map(gradesCenterCache.exams.map(e=>[e.id,e]));
+    const resultByKey=new Map();
+
+    gradesCenterCache.results.forEach(r=>{
+      const examId=getResultExamId(r,r.id,examMap);
+      const student=findStudentMatch(gradesCenterCache.students,r);
+      if(!examId||!student)return;
+      const key=normalizeMatchValue(student.firestoreId)+"__"+examId;
+      const old=resultByKey.get(key);
+      if(!old||recordTimestampValue(r)>=recordTimestampValue(old))resultByKey.set(key,r);
+    });
+
+    let exams=gradesCenterCache.exams
+      .filter(e=>{
+        if(group==="ALL")return true;
+        const groups=Array.isArray(e.groups)?e.groups.map(x=>String(x).trim()):[String(e.group||"").trim()];
+        return groups.includes("ALL")||groups.includes(group);
+      })
+      .sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"ar"));
+
+    const selectedExam=document.getElementById("singleExamPrintFilter")?.value||"";
+    const selectedExamObj=selectedExam?examMap.get(selectedExam):null;
+    if(selectedExamObj) exams=[selectedExamObj];
+
+    let students=gradesCenterCache.students
+      .filter(s=>group==="ALL"||String(s.group||"").trim()===group)
+      .filter(s=>{
+        if(statusFilter==="all")return true;
+        const relevant=selectedExamObj?[selectedExamObj]:exams;
+        const entered=relevant.some(e=>resultByKey.has(normalizeMatchValue(s.firestoreId)+"__"+e.id));
+        return statusFilter==="taken"?entered:!entered;
+      })
+      .sort((a,b)=>String(studentDisplayName(a)).localeCompare(String(studentDisplayName(b)),"ar"));
+
+    if(!students.length||!exams.length){
+      box.innerHTML=`<div class="details-modal-empty">❌ لا توجد بيانات مطابقة للفلاتر الحالية.</div>`;
+      status.textContent="0 طالب";
+      return;
+    }
+
+    let html=selectedExamObj
+      ? `<div class="single-exam-print-title">📝 ${escapeHtml(selectedExamObj.name||"الامتحان")} — الدرجة النهائية: ${escapeHtml(String((selectedExamObj.questions||[]).reduce((s,q)=>s+Number(q.degree||0),0)))}</div>`
+      : "";
+    html+=`<div class="grades-table-wrap"><table class="grades-table print-student-matrix">
+      <thead><tr>`;
+
+    html+=`<th class="student-name-col">اسم الطالب</th>`;
+    exams.forEach(e=>{
+      const max=(Array.isArray(e.questions)?e.questions:[]).reduce((s,q)=>s+Number(q.degree||0),0);
+      html+=`<th class="exam-col"><div class="print-exam-head">${escapeHtml(e.name||"امتحان")}<small>النهائي: ${max}</small></div></th>`;
+    });
+    html+=`<th class="group-col">المجموعة</th></tr></thead><tbody>`;
+
+    students.forEach(s=>{
+      html+=`<tr><td class="student-name-col">${escapeHtml(studentDisplayName(s))}</td>`;
+      exams.forEach(e=>{
+        const r=resultByKey.get(normalizeMatchValue(s.firestoreId)+"__"+e.id);
+        const score=r?(r.total??r.score??0):"—";
+        html+=`<td class="${r?'grade-good':'grade-empty'}">${escapeHtml(String(score))}</td>`;
+      });
+      html+=`<td class="group-col">${escapeHtml(s.group||"-")}</td></tr>`;
+    });
+
+    html+=`</tbody></table></div>`;
+
+    box.innerHTML=html;
+    status.textContent=`✅ ${students.length} طالب × ${exams.length} امتحان — ${statusFilter==="taken"?"الداخلين فقط":statusFilter==="absent"?"اللي مدخلوش فقط":"الكل"}`;
+  }catch(err){
+    console.error("GRADES CENTER:",err);
+    status.textContent="❌ فشل تحميل الدرجات";
+    box.innerHTML=`<div class="card">❌ ${escapeHtml(err.message||"حصل خطأ أثناء تحميل الدرجات")}</div>`;
+  }
+};
+
+
+window.printAllGrades=async()=>{
+  await loadGradesCenter();
+  const section=document.getElementById("exams");
+  if(!section)return;
+  section.classList.add("printing-section");
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>section.classList.remove("printing-section"),300);
+  },150);
+};
+
+window.printSingleExamGrades=async()=>{
+  const examId=document.getElementById("singleExamPrintFilter")?.value||"";
+  if(!examId){
+    showToast("اختار الامتحان الأول ❗");
+    return;
+  }
+  await loadGradesCenter();
+  const section=document.getElementById("exams");
+  if(!section)return;
+  section.classList.add("printing-section");
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>section.classList.remove("printing-section"),300);
+  },150);
+};
+
+
 window.closeModal=()=>{
   const modal=document.getElementById("resultModal");
   if(modal)modal.style.display="none";
@@ -4715,6 +5814,7 @@ window.closeModal=()=>{
 window.onload=()=>{
   loadVideos();
   loadExams();
+  setTimeout(()=>{ loadGradesCenter(); loadTargetStudents('exam'); loadTargetStudents('assignment'); },500);
   show("data");
 };
 
