@@ -604,8 +604,9 @@ select option{background:#06111f;color:#e9faff}
 }
 .task-file-link{display:inline-block;margin:.35rem 0 .7rem;color:var(--accent);font-weight:800;text-decoration:none}
 .task-file-link:hover{text-decoration:underline}
-.task-card textarea{min-height:7rem;resize:vertical}
+.task-card textarea{min-height:12rem;resize:vertical;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.9}
 .task-status-note{color:var(--muted);font-size:.72rem;line-height:1.7}
+.task-answer-display{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.9}
 
 
 /* =========================================================
@@ -1369,6 +1370,7 @@ onAuthStateChanged(auth, async (user) => {
     // تحميل الداتا والامتحانات
     await renderVideos();
     await renderExams();
+    await resumeExamAfterReload();
 
   } catch (error) {
 
@@ -1403,6 +1405,104 @@ function studentKey(){
          currentStudent?.studentPhone ||
          "";
 }
+
+function examDraftKey(examId){
+  return `future_watan_exam_draft_${studentKey()}_${examId}`;
+}
+
+function examSessionKey(){
+  return "future_watan_current_exam";
+}
+
+function saveExamSession(examId){
+  try{ localStorage.setItem(examSessionKey(),String(examId)); }catch{}
+}
+
+function clearExamSession(examId){
+  try{
+    if(!examId || localStorage.getItem(examSessionKey())===String(examId)){
+      localStorage.removeItem(examSessionKey());
+    }
+    if(examId) localStorage.removeItem(examDraftKey(examId));
+  }catch{}
+}
+
+function saveExamDraft(examId,exam){
+  if(!currentStudent || !examId) return;
+  try{
+    const answers={};
+    (exam.questions||[]).forEach((q,index)=>{
+      if(q.type==="mcq"){
+        const selected=document.querySelector(`input[name="q${index}"]:checked`);
+        if(selected) answers[index]={type:"mcq",value:Number(selected.value)};
+      }else{
+        const field=document.getElementById("essay"+index);
+        if(field) answers[index]={type:"essay",value:field.value};
+      }
+    });
+    localStorage.setItem(examDraftKey(examId),JSON.stringify({
+      examId,savedAt:Date.now(),answers
+    }));
+  }catch(error){ console.warn("EXAM DRAFT SAVE ERROR:",error); }
+}
+
+function restoreExamDraft(examId,exam){
+  try{
+    const raw=localStorage.getItem(examDraftKey(examId));
+    if(!raw) return;
+    const draft=JSON.parse(raw);
+    if(!draft?.answers) return;
+    (exam.questions||[]).forEach((q,index)=>{
+      const saved=draft.answers[index];
+      if(!saved) return;
+      if(q.type==="mcq"){
+        const input=document.querySelector(
+          `input[name="q${index}"][value="${Number(saved.value)}"]`
+        );
+        if(input) input.checked=true;
+      }else{
+        const field=document.getElementById("essay"+index);
+        if(field) field.value=String(saved.value??"");
+      }
+    });
+  }catch(error){ console.warn("EXAM DRAFT RESTORE ERROR:",error); }
+}
+
+function bindExamDraftSaving(examId,exam){
+  const container=document.getElementById("examList");
+  if(!container) return;
+  const save=()=>{
+    if(currentExamId===examId) saveExamDraft(examId,exam);
+  };
+  container.querySelectorAll('input[type="radio"], textarea').forEach(el=>{
+    el.addEventListener("change",save);
+    el.addEventListener("input",save);
+  });
+}
+
+async function resumeExamAfterReload(){
+  if(!currentStudent) return;
+  let examId=null;
+  try{ examId=localStorage.getItem(examSessionKey()); }catch{}
+  if(!examId) return;
+
+  try{
+    const resultSnap=await getDoc(doc(db,"results",studentKey()+"_"+examId));
+    if(resultSnap.exists()){ clearExamSession(examId); return; }
+
+    const attemptSnap=await getDoc(doc(db,"exam_attempts",studentKey()+"_"+examId));
+    if(!attemptSnap.exists()){ clearExamSession(examId); return; }
+
+    const examSnap=await getDoc(doc(db,"exams",examId));
+    if(!examSnap.exists()){ clearExamSession(examId); return; }
+
+    const exam=examSnap.data();
+    currentExamId=examId;
+    currentExamData=exam;
+    await renderExamScreen(exam,examId);
+  }catch(error){ console.warn("RESUME EXAM ERROR:",error); }
+}
+
 
 /* =========================================================
    UI SETTINGS
@@ -1975,13 +2075,13 @@ async function renderTasks(){
             ? `<div class="task-grade">${t("grade")}: ${escapeHtml(String(sub.grade))}</div>`
             : `<div class="task-under-review">${t("underReview")}</div>`}
           ${sub.answerText
-            ? `<div class="task-status-note">✍️ ${escapeHtml(sub.answerText)}</div>`
+            ? `<div class="task-status-note task-answer-display">✍️ ${escapeHtml(sub.answerText)}</div>`
             : ""}`;
       }else if(passed){
         action=`<div style="color:#f87171;font-weight:900">⛔ ${t("deadlinePassed")}</div>`;
       }else{
         action=`
-          <textarea id="taskText_${task.id}" placeholder="${t("answerText")}"></textarea>
+          <textarea id="taskText_${task.id}" rows="10" spellcheck="true" autocomplete="off" placeholder="${t("answerText")}"></textarea>
 
           <button class="primary task-submit-btn" data-task-id="${escapeHtml(task.id)}">
             📤 تسليم التاسك
@@ -2422,6 +2522,7 @@ window.startExam = async(examId)=>{
     if(attemptSnap.exists()){
       currentExamId = examId;
       currentExamData = exam;
+      saveExamSession(examId);
 
       // مهم: لا نستدعي show("exams") هنا لأنه سيعيد renderExams
       // ويقدر يعمل Race Condition مع شاشة الامتحان.
@@ -2470,6 +2571,7 @@ window.startExam = async(examId)=>{
 
     currentExamId = examId;
     currentExamData = exam;
+    saveExamSession(examId);
 
     await renderExamScreen(exam,examId);
 
@@ -2567,16 +2669,23 @@ async function renderExamScreen(exam,examId){
 
       const textarea = document.createElement("textarea");
       textarea.id = "essay"+index;
+      textarea.rows = 8;
+      textarea.spellcheck = true;
+      textarea.autocomplete = "off";
       textarea.placeholder =
         settings().language === "ar"
-          ? "اكتب إجابتك..."
-          : "Write your answer...";
+          ? "اكتب إجابتك... يمكنك كتابة أكثر من سطر"
+          : "Write your answer... You can use multiple lines.";
 
       question.appendChild(textarea);
     }
 
     div.appendChild(question);
   });
+
+  // استرجاع الإجابات بعد Reload/Restart وحفظها أثناء الكتابة.
+  restoreExamDraft(examId,exam);
+  bindExamDraftSaving(examId,exam);
 
   const submit = document.createElement("button");
   submit.className = "primary";
@@ -2652,13 +2761,56 @@ async function renderExamScreen(exam,examId){
 }
 
 async function submitExam(examId,autoSubmit=false){
-
   if(!currentStudent) return;
 
   try{
-
-    if(!autoSubmit){
+    /*
+      Reload / Restart لا يقوم بتسليم الامتحان.
+      التسليم التلقائي مسموح فقط عند انتهاء الوقت فعلًا.
+    */
+    if(autoSubmit !== true){
       if(!confirm(t("confirmSubmit"))) return;
+    }else{
+      const attemptSnap=await getDoc(
+        doc(db,"exam_attempts",studentKey()+"_"+examId)
+      );
+      if(!attemptSnap.exists()){
+        console.warn("AUTO SUBMIT BLOCKED: no exam attempt.");
+        return;
+      }
+
+      const attemptData=attemptSnap.data();
+      const examSnapForTime=await getDoc(doc(db,"exams",examId));
+      if(!examSnapForTime.exists()) return;
+
+      const examForTime=examSnapForTime.data();
+      const now=new Date();
+      let expired=false;
+      let startTime=null;
+
+      if(attemptData.startTime){
+        startTime=attemptData.startTime.toDate
+          ? attemptData.startTime.toDate()
+          : new Date(attemptData.startTime);
+      }
+
+      const durationSeconds=Number(examForTime.duration||0)*60;
+
+      if(startTime && Number.isFinite(startTime.getTime()) && durationSeconds>0){
+        expired=Math.floor((now-startTime)/1000)>=durationSeconds;
+      }
+
+      if(examForTime.endAt){
+        const end=examForTime.endAt.toDate
+          ? examForTime.endAt.toDate()
+          : new Date(examForTime.endAt);
+        if(Number.isFinite(end.getTime()) && now>=end) expired=true;
+      }
+
+      if(!expired){
+        console.warn("AUTO SUBMIT BLOCKED: exam time has not ended.");
+        return;
+      }
     }
 
     const resultRef = doc(
@@ -2722,6 +2874,9 @@ async function submitExam(examId,autoSubmit=false){
       submittedAt:serverTimestamp()
     });
 
+    // التسليم تم فعليًا: امسح المسودة وحالة الامتحان المحلية.
+    clearExamSession(examId);
+
     /*
       لا نحذف exam_attempts بعد التسليم.
 
@@ -2783,6 +2938,8 @@ window.returnToHome = ()=>{
     clearInterval(currentExamTimer);
     currentExamTimer = null;
   }
+
+  if(currentExamId) clearExamSession(currentExamId);
 
   currentExamId = null;
   currentExamData = null;
