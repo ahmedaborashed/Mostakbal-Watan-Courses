@@ -1283,6 +1283,8 @@ import {
   doc,
   getDoc,
   getDocs,
+  query,
+  where,
   onSnapshot,
   setDoc,
   runTransaction,
@@ -1397,6 +1399,14 @@ let currentExamData = null;
 const examOpening = new Set();
 
 /*
+  Cache للامتحانات + نتائج ومحاولات الطالب.
+  الهدف: منع إعادة طلب نفس البيانات من Firestore عند الضغط على "ابدأ".
+*/
+const examCache = new Map();
+const examResultCache = new Map();
+const examAttemptCache = new Map();
+
+/*
   الـID ده هو Firestore Document ID للطالب.
   ثابت حتى لو المدرس غيّر رقم الهاتف.
 */
@@ -1482,25 +1492,65 @@ function bindExamDraftSaving(examId,exam){
 
 async function resumeExamAfterReload(){
   if(!currentStudent) return;
-  let examId=null;
-  try{ examId=localStorage.getItem(examSessionKey()); }catch{}
+
+  let examId = null;
+  try{
+    examId = localStorage.getItem(examSessionKey());
+  }catch{}
+
   if(!examId) return;
 
   try{
-    const resultSnap=await getDoc(doc(db,"results",studentKey()+"_"+examId));
-    if(resultSnap.exists()){ clearExamSession(examId); return; }
+    /*
+      استخدم الكاش أولًا.
+      لو الصفحة اتعمل لها Reload، renderExams يكون قد حمّل
+      الامتحانات والـ attempts والنتائج قبل استدعاء هذه الدالة.
+    */
+    let exam = examCache.get(String(examId));
 
-    const attemptSnap=await getDoc(doc(db,"exam_attempts",studentKey()+"_"+examId));
-    if(!attemptSnap.exists()){ clearExamSession(examId); return; }
+    if(!exam){
+      const examSnap = await getDoc(doc(db,"exams",examId));
+      if(!examSnap.exists()){
+        clearExamSession(examId);
+        return;
+      }
 
-    const examSnap=await getDoc(doc(db,"exams",examId));
-    if(!examSnap.exists()){ clearExamSession(examId); return; }
+      exam = examSnap.data();
+      examCache.set(String(examId),exam);
+    }
 
-    const exam=examSnap.data();
-    currentExamId=examId;
-    currentExamData=exam;
-    await renderExamScreen(exam,examId);
-  }catch(error){ console.warn("RESUME EXAM ERROR:",error); }
+    const resultExists =
+      examResultCache.has(String(examId))
+        ? examResultCache.get(String(examId))
+        : null;
+
+    const attempt =
+      examAttemptCache.get(String(examId)) || null;
+
+    /*
+      لو النتيجة موجودة بالفعل، لا نفتح الامتحان.
+    */
+    if(resultExists){
+      clearExamSession(examId);
+      return;
+    }
+
+    /*
+      لو لا توجد attempt، لا نستكمل جلسة غير موجودة.
+    */
+    if(!attempt){
+      clearExamSession(examId);
+      return;
+    }
+
+    currentExamId = examId;
+    currentExamData = exam;
+
+    await renderExamScreen(exam,examId,attempt);
+
+  }catch(error){
+    console.warn("RESUME EXAM ERROR:",error);
+  }
 }
 
 
@@ -2175,17 +2225,90 @@ async function renderExams(){
   div.innerHTML = `<div class="card empty">${t("loading")}</div>`;
 
   try{
-    const snapshot = await getDocs(collection(db,"exams"));
+    /*
+      1) نقرأ Collection الامتحانات مرة واحدة.
+      2) نقرأ نتائج الطالب مرة واحدة.
+      3) نقرأ محاولات الطالب مرة واحدة.
+
+      الكود القديم كان يعمل getDoc مرتين لكل امتحان،
+      وده كان سبب رئيسي في كثرة طلبات Firestore.
+    */
+    const [examSnapshot,resultSnapshot,attemptSnapshot] =
+      await Promise.all([
+        getDocs(collection(db,"exams")),
+        getDocs(
+          query(
+            collection(db,"results"),
+            where("studentId","==",studentKey())
+          )
+        ),
+        getDocs(
+          query(
+            collection(db,"exam_attempts"),
+            where("studentId","==",studentKey())
+          )
+        )
+      ]);
+
+    /*
+      تحديث الـ caches.
+    */
+    examCache.clear();
+    examResultCache.clear();
+    examAttemptCache.clear();
+
+    examSnapshot.forEach(examDoc=>{
+      examCache.set(
+        String(examDoc.id),
+        examDoc.data()
+      );
+    });
+
+    resultSnapshot.forEach(resultDoc=>{
+      const result = resultDoc.data() || {};
+
+      /*
+        examId هو المفتاح الأساسي.
+        fallback من اسم الـ document لو احتجناه.
+      */
+      const examId =
+        result.examId ||
+        String(resultDoc.id).replace(
+          String(studentKey()) + "_",
+          ""
+        );
+
+      if(examId){
+        examResultCache.set(
+          String(examId),
+          result
+        );
+      }
+    });
+
+    attemptSnapshot.forEach(attemptDoc=>{
+      const attempt = attemptDoc.data() || {};
+
+      const examId =
+        attempt.examId ||
+        String(attemptDoc.id).replace(
+          String(studentKey()) + "_",
+          ""
+        );
+
+      if(examId){
+        examAttemptCache.set(
+          String(examId),
+          attempt
+        );
+      }
+    });
 
     /*
       ترتيب الامتحانات:
-      - الجديد فوق والقديم تحت.
-      - الأولوية لـ createdAt لأنه تاريخ إنشاء الامتحان.
-      - لو createdAt غير موجود نستخدم startAt / date / timestamp كبدائل.
-      - لو مفيش تاريخ، نحافظ على ترتيب Firestore الحالي.
-      - الترتيب لا يعتمد على اسم الامتحان.
+      الجديد فوق والقديم تحت.
     */
-    const exams = snapshot.docs.map((examDoc,index)=>({
+    const exams = examSnapshot.docs.map((examDoc,index)=>({
       examDoc,
       data:examDoc.data(),
       originalIndex:index
@@ -2237,6 +2360,14 @@ async function renderExams(){
       const examDoc = item.examDoc;
       const data = item.data;
 
+      /*
+        حفظ الامتحان في الكاش لاستخدامه عند الضغط على "ابدأ".
+      */
+      examCache.set(
+        String(examDoc.id),
+        data
+      );
+
       const groups = Array.isArray(data.groups)
         ? data.groups
         : (data.group ? [data.group] : []);
@@ -2250,29 +2381,17 @@ async function renderExams(){
 
       found = true;
 
-      const resultRef = doc(
-        db,
-        "results",
-        studentKey()+"_"+examDoc.id
-      );
-
-      const attemptRef = doc(
-        db,
-        "exam_attempts",
-        studentKey()+"_"+examDoc.id
-      );
-
       /*
-        نقرأ النتيجة والمحاولة معًا بدل تنفيذ طلبين متتاليين.
-        ده يقلل التقطيع أثناء تحميل قائمة الامتحانات.
+        لا يوجد getDoc هنا.
+        نستخدم البيانات التي تم تحميلها فوق.
       */
-      const [resultSnap,attemptSnap] = await Promise.all([
-        getDoc(resultRef),
-        getDoc(attemptRef)
-      ]);
+      const alreadySubmitted =
+        examResultCache.has(String(examDoc.id));
 
-      const alreadySubmitted = resultSnap.exists();
-      const alreadyStarted = attemptSnap.exists();
+      const attemptData =
+        examAttemptCache.get(String(examDoc.id)) || null;
+
+      const alreadyStarted = !!attemptData;
 
       let status = t("available");
       let canStart = true;
@@ -2309,19 +2428,10 @@ async function renderExams(){
         canStart = false;
       }
 
-      /*
-        لو الطالب سلّم الامتحان بالفعل:
-        ممنوع الدخول نهائيًا.
-      */
       if(alreadySubmitted){
         canStart = false;
       }
 
-      /*
-        لو بدأ الامتحان ولم يسلّمه:
-        مسموح له يدخل ويكمل من نفس المحاولة.
-        لا نمنعه ولا نعتبرها محاولة جديدة.
-      */
       if(alreadyStarted && !alreadySubmitted){
         status = t("continueExam");
         canStart = true;
@@ -2330,17 +2440,21 @@ async function renderExams(){
       let resultHtml = "";
 
       if(alreadySubmitted){
-        const result = resultSnap.data();
+        const result =
+          examResultCache.get(String(examDoc.id)) || {};
 
-        const hasEssay = Array.isArray(data.questions) &&
+        const hasEssay =
+          Array.isArray(data.questions) &&
           data.questions.some(q=>q.type === "essay");
 
-        const essayScores = Array.isArray(result.essayScores)
-          ? result.essayScores
-          : [];
+        const essayScores =
+          Array.isArray(result.essayScores)
+            ? result.essayScores
+            : [];
 
         if(hasEssay && essayScores.length === 0){
-          resultHtml = `<p class="status-wait">${t("essayPending")}</p>`;
+          resultHtml =
+            `<p class="status-wait">${t("essayPending")}</p>`;
         }else{
           resultHtml = `
             <p class="status-done">
@@ -2353,30 +2467,33 @@ async function renderExams(){
       let buttonHtml = "";
 
       if(alreadySubmitted){
+
         buttonHtml = `
           <button class="primary" disabled>
             ${t("solved")}
           </button>
         `;
+
       }else if(alreadyStarted && canStart){
-        /*
-          زر استكمال نفس المحاولة.
-          الضغط عليه لا ينشئ attempt جديد.
-        */
+
         buttonHtml = `
           <button class="primary js-start-exam"
             data-exam-id="${escapeHtml(examDoc.id)}">
             ${t("continueExam")}
           </button>
         `;
+
       }else if(canStart){
+
         buttonHtml = `
           <button class="primary js-start-exam"
             data-exam-id="${escapeHtml(examDoc.id)}">
             ${t("start")}
           </button>
         `;
+
       }else{
+
         buttonHtml = `
           <button class="primary" disabled>
             ${status}
@@ -2412,6 +2529,7 @@ async function renderExams(){
       : `<div class="card empty">${t("emptyExams")}</div>`;
 
   }catch(error){
+
     console.error("EXAMS ERROR:",error);
 
     div.innerHTML = `
@@ -2424,64 +2542,50 @@ async function renderExams(){
   }
 }
 
+
 /*
-  بمجرد الضغط على "ابدأ":
-  1) نتحقق من عدم وجود result.
-  2) نتحقق من عدم وجود attempt.
-  3) ننشئ attempt دائم.
-  4) لا نحذفه عند إغلاق الصفحة.
-  وبالتالي لا يمكن للطالب دخول الامتحان مرة ثانية.
+  بدء / استكمال الامتحان.
+
+  مهم:
+  - لا نعيد تحميل بيانات الامتحان إذا كانت موجودة في cache.
+  - لا نعمل getDoc إضافي للـ attempt إذا كانت موجودة في cache.
+  - أول دخول ينشئ attempt مرة واحدة فقط.
 */
 window.startExam = async(examId)=>{
   if(!currentStudent || !examId) return;
 
-  // منع الضغط المتكرر
-  if(examOpening.has(examId)) return;
-  examOpening.add(examId);
+  const id = String(examId);
+
+  if(examOpening.has(id)) return;
+
+  examOpening.add(id);
 
   try{
-    const student = studentKey();
-
-    const resultRef = doc(
-      db,
-      "results",
-      student+"_"+examId
-    );
-
-    const attemptRef = doc(
-      db,
-      "exam_attempts",
-      student+"_"+examId
-    );
 
     /*
-      نقرأ النتيجة والمحاولة معًا
-      بدل طلبين منفصلين.
+      الامتحان من الكاش أولًا.
     */
-    const [resultSnap,attemptSnap] = await Promise.all([
-      getDoc(resultRef),
-      getDoc(attemptRef)
-    ]);
+    let exam = examCache.get(id);
 
-    // الامتحان تم تسليمه بالفعل
-    if(resultSnap.exists()){
-      showToast(t("examSubmitted"));
-      return;
+    if(!exam){
+
+      const examSnap =
+        await getDoc(
+          doc(db,"exams",id)
+        );
+
+      if(!examSnap.exists()){
+        showToast(t("examUnavailable"));
+        return;
+      }
+
+      exam = examSnap.data();
+      examCache.set(id,exam);
     }
 
-    // تحميل بيانات الامتحان
-    const examSnap = await getDoc(
-      doc(db,"exams",examId)
-    );
-
-    if(!examSnap.exists()){
-      showToast(t("examUnavailable"));
-      return;
-    }
-
-    const exam = examSnap.data();
-
-    // الامتحان مقفول
+    /*
+      التحقق من حالة الامتحان.
+    */
     if(exam.active === false){
       showToast(t("locked"));
       return;
@@ -2489,8 +2593,8 @@ window.startExam = async(examId)=>{
 
     const now = new Date();
 
-    // التحقق من وقت البداية
     if(exam.startAt){
+
       const start = exam.startAt.toDate
         ? exam.startAt.toDate()
         : new Date(exam.startAt);
@@ -2501,8 +2605,8 @@ window.startExam = async(examId)=>{
       }
     }
 
-    // التحقق من وقت النهاية
     if(exam.endAt){
+
       const end = exam.endAt.toDate
         ? exam.endAt.toDate()
         : new Date(exam.endAt);
@@ -2514,76 +2618,130 @@ window.startExam = async(examId)=>{
     }
 
     /*
-      لو الطالب بدأ الامتحان بالفعل
-      نفتح نفس المحاولة بدون إنشاء محاولة جديدة.
+      النتيجة من الكاش.
+      لو موجودة، ممنوع الدخول.
     */
-    if(attemptSnap.exists()){
+    if(examResultCache.has(id)){
 
-      currentExamId = examId;
+      showToast(t("examSubmitted"));
+
+      return;
+    }
+
+    /*
+      الـattempt من الكاش.
+    */
+    let attemptData =
+      examAttemptCache.get(id) || null;
+
+    /*
+      fallback واحد فقط لو الكاش مش موجود.
+    */
+    if(!attemptData){
+
+      const attemptRef =
+        doc(
+          db,
+          "exam_attempts",
+          studentKey()+"_"+id
+        );
+
+      const attemptSnap =
+        await getDoc(attemptRef);
+
+      if(attemptSnap.exists()){
+
+        attemptData =
+          attemptSnap.data();
+
+        examAttemptCache.set(
+          id,
+          attemptData
+        );
+      }
+    }
+
+    /*
+      لو المحاولة موجودة:
+      استكمال نفس الامتحان.
+    */
+    if(attemptData){
+
+      currentExamId = id;
       currentExamData = exam;
 
-      saveExamSession(examId);
+      saveExamSession(id);
 
-      // نمرر بيانات المحاولة بدل getDoc جديد
       await renderExamScreen(
         exam,
-        examId,
-        attemptSnap.data()
+        id,
+        attemptData
       );
 
       return;
     }
 
     /*
-      أول دخول للامتحان.
-      Transaction تمنع إنشاء محاولتين.
+      أول دخول:
+      إنشاء attempt.
+
+      نستخدم setDoc بدل Transaction هنا
+      لأن الضغط المتكرر ممنوع بالـexamOpening
+      والـattempt يتم تثبيته كحالة دائمة.
     */
+    const attemptRef =
+      doc(
+        db,
+        "exam_attempts",
+        studentKey()+"_"+id
+      );
 
     const clientStartTime = new Date();
 
-    await runTransaction(db,async(transaction)=>{
+    const newAttempt = {
+      studentId:studentKey(),
+      examId:id,
+      startTime:serverTimestamp(),
+      started:true,
+      locked:true
+    };
 
-      const existingAttempt =
-        await transaction.get(attemptRef);
-
-      if(existingAttempt.exists()){
-        return;
-      }
-
-      transaction.set(attemptRef,{
-        studentId:student,
-        examId:examId,
-        startTime:serverTimestamp(),
-        started:true,
-        locked:true
-      });
-    });
+    await setDoc(
+      attemptRef,
+      newAttempt
+    );
 
     /*
-      ندخل مباشرة.
-      لا نعمل getDoc إضافي لـ attempt.
+      نخزن نسخة محلية بالوقت المحلي حتى يبدأ
+      الـtimer فورًا بدون قراءة Firestore ثانية.
     */
+    const localAttempt = {
+      ...newAttempt,
+      startTime:clientStartTime
+    };
 
-    currentExamId = examId;
+    examAttemptCache.set(
+      id,
+      localAttempt
+    );
+
+    currentExamId = id;
     currentExamData = exam;
 
-    saveExamSession(examId);
+    saveExamSession(id);
 
     await renderExamScreen(
       exam,
-      examId,
-      {
-        studentId:student,
-        examId:examId,
-        startTime:clientStartTime,
-        started:true,
-        locked:true
-      }
+      id,
+      localAttempt
     );
 
   }catch(error){
 
-    console.error("START EXAM ERROR:",error);
+    console.error(
+      "START EXAM ERROR:",
+      error
+    );
 
     showToast(
       settings().language === "ar"
@@ -2593,7 +2751,7 @@ window.startExam = async(examId)=>{
 
   }finally{
 
-    examOpening.delete(examId);
+    examOpening.delete(id);
   }
 };
 
@@ -2607,34 +2765,33 @@ async function renderExamScreen(
   currentExamId = examId;
   currentExamData = exam;
 
-  const div = document.getElementById("examList");
+  const div =
+    document.getElementById("examList");
 
   /*
-    نفعّل شاشة الامتحان مباشرة
-    بدون استدعاء show("exams")
-    حتى لا يتم تشغيل renderExams مرة ثانية.
+    نفعّل قسم الامتحانات مباشرة.
+    لا نستدعي show("exams") حتى لا نعيد renderExams.
   */
+  document.querySelectorAll(".section")
+    .forEach(section=>{
+      section.classList.remove("active");
+    });
 
-  document.querySelectorAll(".section").forEach(section=>{
-    section.classList.remove("active");
-  });
-
-  const examSection = document.getElementById("exams");
+  const examSection =
+    document.getElementById("exams");
 
   if(examSection){
     examSection.classList.add("active");
   }
 
-  document.querySelectorAll(".side-btn[data-section]").forEach(btn=>{
+  document.querySelectorAll(
+    ".side-btn[data-section]"
+  ).forEach(btn=>{
     btn.classList.toggle(
       "active",
       btn.dataset.section === "exams"
     );
   });
-
-  /*
-    عنوان الامتحان + التايمر
-  */
 
   div.innerHTML = `
     <div class="card">
@@ -2657,21 +2814,21 @@ async function renderExamScreen(
     currentExamTimer = null;
   }
 
-  /*
-    إنشاء الأسئلة
-  */
-
-  const questions = Array.isArray(exam.questions)
-    ? exam.questions
-    : [];
+  const questions =
+    Array.isArray(exam.questions)
+      ? exam.questions
+      : [];
 
   questions.forEach((q,index)=>{
 
-    const question = document.createElement("div");
+    const question =
+      document.createElement("div");
 
-    question.className = "card question";
+    question.className =
+      "card question";
 
-    const title = document.createElement("p");
+    const title =
+      document.createElement("p");
 
     title.textContent =
       `${index+1}) ${q.text || ""}`;
@@ -2692,9 +2849,7 @@ async function renderExamScreen(
             document.createElement("input");
 
           input.type = "radio";
-
           input.name = "q"+index;
-
           input.value = choiceIndex;
 
           label.appendChild(input);
@@ -2714,12 +2869,11 @@ async function renderExamScreen(
       const textarea =
         document.createElement("textarea");
 
-      textarea.id = "essay"+index;
+      textarea.id =
+        "essay"+index;
 
       textarea.rows = 8;
-
       textarea.spellcheck = true;
-
       textarea.autocomplete = "off";
 
       textarea.placeholder =
@@ -2733,23 +2887,13 @@ async function renderExamScreen(
     div.appendChild(question);
   });
 
-  /*
-    استرجاع الإجابات المحفوظة
-  */
-
   restoreExamDraft(examId,exam);
-
   bindExamDraftSaving(examId,exam);
-
-  /*
-    زر التسليم
-  */
 
   const submit =
     document.createElement("button");
 
   submit.className = "primary";
-
   submit.textContent = t("submit");
 
   submit.onclick = ()=>{
@@ -2759,28 +2903,36 @@ async function renderExamScreen(
   div.appendChild(submit);
 
   /*
-    مهم:
-    لو بيانات attempt موجودة بالفعل
-    نستخدمها بدل getDoc جديد.
-    
-    فقط لو renderExamScreen تم استدعاؤه
-    بدون attemptData، نقرأها.
+    لو attemptData مش متوفر، نستخدم الكاش.
+    ولا نعمل Firestore read إلا كـfallback أخير.
   */
+  if(!attemptData){
+    attemptData =
+      examAttemptCache.get(String(examId)) || null;
+  }
 
   if(!attemptData){
 
     try{
 
-      const attemptSnap = await getDoc(
-        doc(
-          db,
-          "exam_attempts",
-          studentKey()+"_"+examId
-        )
-      );
+      const attemptSnap =
+        await getDoc(
+          doc(
+            db,
+            "exam_attempts",
+            studentKey()+"_"+examId
+          )
+        );
 
       if(attemptSnap.exists()){
-        attemptData = attemptSnap.data();
+
+        attemptData =
+          attemptSnap.data();
+
+        examAttemptCache.set(
+          String(examId),
+          attemptData
+        );
       }
 
     }catch(error){
@@ -2793,9 +2945,8 @@ async function renderExamScreen(
   }
 
   /*
-    تحديد وقت بداية الامتحان
+    تحديد وقت البداية.
   */
-
   let startTime = new Date();
 
   if(
@@ -2803,14 +2954,15 @@ async function renderExamScreen(
     attemptData.startTime
   ){
 
-    const value =
-      attemptData.startTime;
-
     try{
 
-      startTime = value.toDate
-        ? value.toDate()
-        : new Date(value);
+      const value =
+        attemptData.startTime;
+
+      startTime =
+        value?.toDate
+          ? value.toDate()
+          : new Date(value);
 
     }catch(error){
 
@@ -2821,364 +2973,227 @@ async function renderExamScreen(
     }
   }
 
-  /*
-    مدة الامتحان بالدقائق
-  */
-
   const durationSeconds =
     Number(exam.duration || 0) * 60;
 
-  /*
-    تشغيل التايمر
-  */
+  currentExamTimer =
+    setInterval(()=>{
 
-  currentExamTimer = setInterval(()=>{
+      const now = new Date();
 
-    const now = new Date();
-
-    let remaining =
-      durationSeconds -
-      Math.floor(
-        (now-startTime)/1000
-      );
-
-    /*
-      لو فيه وقت نهاية عام للامتحان
-      ناخد الأقل.
-    */
-
-    if(exam.endAt){
-
-      const end =
-        exam.endAt.toDate
-          ? exam.endAt.toDate()
-          : new Date(exam.endAt);
-
-      const globalRemaining =
+      let remaining =
+        durationSeconds -
         Math.floor(
-          (end-now)/1000
+          (now-startTime)/1000
         );
 
-      remaining =
-        Math.min(
-          remaining,
-          globalRemaining
+      if(exam.endAt){
+
+        const end =
+          exam.endAt.toDate
+            ? exam.endAt.toDate()
+            : new Date(exam.endAt);
+
+        const globalRemaining =
+          Math.floor(
+            (end-now)/1000
+          );
+
+        remaining =
+          Math.min(
+            remaining,
+            globalRemaining
+          );
+      }
+
+      const timer =
+        document.getElementById(
+          "examTimer"
         );
-    }
 
-    const timer =
-      document.getElementById(
-        "examTimer"
-      );
+      if(!timer) return;
 
-    if(!timer) return;
+      if(remaining <= 0){
 
-    /*
-      انتهى الوقت
-    */
+        clearInterval(
+          currentExamTimer
+        );
 
-    if(remaining <= 0){
+        currentExamTimer = null;
 
-      clearInterval(
-        currentExamTimer
-      );
+        timer.textContent =
+          t("timeEnded");
 
-      currentExamTimer = null;
+        submitExam(
+          examId,
+          true
+        );
+
+        return;
+      }
+
+      const minutes =
+        Math.floor(
+          remaining/60
+        );
+
+      const seconds =
+        remaining%60;
 
       timer.textContent =
-        t("timeEnded");
+        `⏳ ${minutes}:${String(seconds).padStart(2,"0")}`;
 
-      submitExam(
-        examId,
-        true
-      );
-
-      return;
-    }
-
-    const minutes =
-      Math.floor(
-        remaining/60
-      );
-
-    const seconds =
-      remaining%60;
-
-    timer.textContent =
-      `⏳ ${minutes}:${String(seconds).padStart(2,"0")}`;
-
-  },1000);
+    },1000);
 }
 
-
-async function submitExam(
-  examId,
-  autoSubmit=false
-){
-
+async function submitExam(examId,autoSubmit=false){
   if(!currentStudent) return;
 
   try{
-
     /*
-      التسليم اليدوي
+      Reload / Restart لا يقوم بتسليم الامتحان.
+      التسليم التلقائي مسموح فقط عند انتهاء الوقت فعلًا.
     */
-
     if(autoSubmit !== true){
-
-      if(
-        !confirm(
-          t("confirmSubmit")
-        )
-      ){
-        return;
-      }
-
+      if(!confirm(t("confirmSubmit"))) return;
     }else{
-
-      /*
-        التسليم التلقائي مسموح فقط
-        بعد انتهاء الوقت.
-      */
-
-      const attemptSnap =
-        await getDoc(
-          doc(
-            db,
-            "exam_attempts",
-            studentKey()+"_"+examId
-          )
-        );
-
+      const attemptSnap=await getDoc(
+        doc(db,"exam_attempts",studentKey()+"_"+examId)
+      );
       if(!attemptSnap.exists()){
-
-        console.warn(
-          "AUTO SUBMIT BLOCKED: no exam attempt."
-        );
-
+        console.warn("AUTO SUBMIT BLOCKED: no exam attempt.");
         return;
       }
 
-      const attemptData =
-        attemptSnap.data();
+      const attemptData=attemptSnap.data();
+      const examSnapForTime=await getDoc(doc(db,"exams",examId));
+      if(!examSnapForTime.exists()) return;
 
-      const examSnapForTime =
-        await getDoc(
-          doc(
-            db,
-            "exams",
-            examId
-          )
-        );
-
-      if(!examSnapForTime.exists()){
-        return;
-      }
-
-      const examForTime =
-        examSnapForTime.data();
-
-      const now =
-        new Date();
-
-      let expired = false;
-
-      let startTime = null;
+      const examForTime=examSnapForTime.data();
+      const now=new Date();
+      let expired=false;
+      let startTime=null;
 
       if(attemptData.startTime){
-
-        startTime =
-          attemptData.startTime.toDate
-            ? attemptData.startTime.toDate()
-            : new Date(
-                attemptData.startTime
-              );
+        startTime=attemptData.startTime.toDate
+          ? attemptData.startTime.toDate()
+          : new Date(attemptData.startTime);
       }
 
-      const durationSeconds =
-        Number(
-          examForTime.duration || 0
-        ) * 60;
+      const durationSeconds=Number(examForTime.duration||0)*60;
 
-      if(
-        startTime &&
-        Number.isFinite(
-          startTime.getTime()
-        ) &&
-        durationSeconds > 0
-      ){
-
-        expired =
-          Math.floor(
-            (now-startTime)/1000
-          ) >= durationSeconds;
+      if(startTime && Number.isFinite(startTime.getTime()) && durationSeconds>0){
+        expired=Math.floor((now-startTime)/1000)>=durationSeconds;
       }
 
       if(examForTime.endAt){
-
-        const end =
-          examForTime.endAt.toDate
-            ? examForTime.endAt.toDate()
-            : new Date(
-                examForTime.endAt
-              );
-
-        if(
-          Number.isFinite(
-            end.getTime()
-          ) &&
-          now >= end
-        ){
-          expired = true;
-        }
+        const end=examForTime.endAt.toDate
+          ? examForTime.endAt.toDate()
+          : new Date(examForTime.endAt);
+        if(Number.isFinite(end.getTime()) && now>=end) expired=true;
       }
 
       if(!expired){
-
-        console.warn(
-          "AUTO SUBMIT BLOCKED: exam time has not ended."
-        );
-
+        console.warn("AUTO SUBMIT BLOCKED: exam time has not ended.");
         return;
       }
     }
 
-    /*
-      التأكد أن الامتحان لم يتم تسليمه
-    */
-
-    const resultRef =
-      doc(
-        db,
-        "results",
-        studentKey()+"_"+examId
-      );
-
-    const existing =
-      await getDoc(resultRef);
-
-    if(existing.exists()){
-
-      showToast(
-        t("examSubmitted")
-      );
-
-      return;
-    }
-
-    /*
-      تحميل الامتحان
-    */
-
-    const examSnap =
-      await getDoc(
-        doc(
-          db,
-          "exams",
-          examId
-        )
-      );
-
-    if(!examSnap.exists()){
-      return;
-    }
-
-    const exam =
-      examSnap.data();
-
-    /*
-      حساب الإجابات والدرجة
-    */
-
-    const answers = [];
-
-    let score = 0;
-
-    (exam.questions || [])
-      .forEach((q,index)=>{
-
-        if(q.type === "mcq"){
-
-          const selected =
-            document.querySelector(
-              `input[name="q${index}"]:checked`
-            );
-
-          const answer =
-            selected
-              ? Number(selected.value)
-              : -1;
-
-          answers.push(answer);
-
-          if(
-            answer ===
-            Number(q.correct)
-          ){
-
-            score +=
-              Number(q.degree || 0);
-          }
-
-        }else{
-
-          const text =
-            document.getElementById(
-              "essay"+index
-            )?.value || "";
-
-          answers.push(text);
-        }
-      });
-
-    /*
-      حفظ النتيجة
-    */
-
-    await setDoc(
-      resultRef,
-      {
-        examId,
-        studentId:studentKey(),
-        answers,
-        score,
-        total:score,
-        essayScores:[],
-        submittedAt:serverTimestamp()
-      }
+    const resultRef = doc(
+      db,
+      "results",
+      studentKey()+"_"+examId
     );
 
-    /*
-      تم التسليم
-    */
+    const existing = await getDoc(resultRef);
 
-    clearExamSession(examId);
+    if(existing.exists()){
+      showToast(t("examSubmitted"));
+      return;
+    }
 
-    if(currentExamTimer){
+    let exam = examCache.get(String(examId)) || null;
 
-      clearInterval(
-        currentExamTimer
+    if(!exam){
+      const examSnap = await getDoc(
+        doc(db,"exams",examId)
       );
 
+      if(!examSnap.exists()) return;
+
+      exam = examSnap.data();
+      examCache.set(String(examId),exam);
+    }
+
+    const answers = [];
+    let score = 0;
+
+    (exam.questions || []).forEach((q,index)=>{
+
+      if(q.type === "mcq"){
+
+        const selected =
+          document.querySelector(
+            `input[name="q${index}"]:checked`
+          );
+
+        const answer =
+          selected ? Number(selected.value) : -1;
+
+        answers.push(answer);
+
+        if(answer === Number(q.correct)){
+          score += Number(q.degree || 0);
+        }
+
+      }else{
+
+        const text =
+          document.getElementById("essay"+index)?.value || "";
+
+        answers.push(text);
+      }
+    });
+
+    await setDoc(resultRef,{
+      examId,
+      studentId:studentKey(),
+      answers,
+      score,
+      total:score,
+      essayScores:[],
+      submittedAt:serverTimestamp()
+    });
+
+    // التسليم تم فعليًا: امسح المسودة وحالة الامتحان المحلية.
+    clearExamSession(examId);
+
+    /*
+      لا نحذف exam_attempts بعد التسليم.
+
+      السبب:
+      حتى لو النتيجة موجودة، الاحتفاظ بالمحاولة كـ سجل دائم
+      يمنع إعادة فتح الامتحان بعد أي Refresh أو Logout/Login.
+    */
+
+    if(currentExamTimer){
+      clearInterval(currentExamTimer);
       currentExamTimer = null;
     }
 
+    /*
+      الامتحان انتهى.
+      نصفر حالة الامتحان الحالي حتى تقدر أزرار المنيو تشتغل طبيعي.
+    */
     currentExamId = null;
-
     currentExamData = null;
 
-    /*
-      عرض النتيجة
-    */
-
+    /* عرض النتيجة فقط، بدون إعادة رسم قائمة الامتحانات حتى يظل زر العودة ظاهرًا. */
     divSafeExamResult(score);
 
   }catch(error){
 
-    console.error(
-      "SUBMIT EXAM ERROR:",
-      error
-    );
+    console.error("SUBMIT EXAM ERROR:",error);
 
     showToast(
       settings().language === "ar"
@@ -3188,48 +3203,23 @@ async function submitExam(
   }
 }
 
-
 function divSafeExamResult(score){
-
-  const div =
-    document.getElementById(
-      "examList"
-    );
+  const div = document.getElementById("examList");
 
   div.innerHTML = `
-    <div
-      class="card"
-      style="text-align:center"
-    >
-
-      <div
-        style="font-size:3rem"
-      >
-        ✅
-      </div>
-
-      <h2>
-        ${t("solved")}
-      </h2>
-
-      <p
-        style="
-          color:var(--accent);
-          font-size:1.2rem;
-          font-weight:900
-        "
-      >
+    <div class="card" style="text-align:center">
+      <div style="font-size:3rem">✅</div>
+      <h2>${t("solved")}</h2>
+      <p style="color:var(--accent);font-size:1.2rem;font-weight:900">
         ${t("score")}: ${score}
       </p>
 
       <button
         class="primary"
         style="margin-top:1rem"
-        onclick="returnToHome()"
-      >
+        onclick="returnToHome()">
         ${t("backHome")}
       </button>
-
     </div>
   `;
 }
