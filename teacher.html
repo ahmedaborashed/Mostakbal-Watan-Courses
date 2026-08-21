@@ -1246,6 +1246,36 @@ select option{background:#06111f!important;color:#e9faff!important;}
   padding:14px;border-radius:14px;margin:10px 0;
 }
 .details-result-card:hover{border-color:rgba(34,211,238,.4);}
+.student-data-tabs{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  margin-bottom:12px;
+}
+.student-data-tab{
+  min-height:46px!important;
+  margin:0!important;
+  padding:9px 10px!important;
+  border:1px solid rgba(34,211,238,.18)!important;
+  border-radius:12px!important;
+  background:#06111f!important;
+  color:#9db2bf!important;
+  box-shadow:none!important;
+  animation:none!important;
+}
+.student-data-tab:hover{
+  transform:translateY(-1px)!important;
+  border-color:rgba(34,211,238,.45)!important;
+  color:#fff!important;
+}
+.student-data-tab.active{
+  background:linear-gradient(135deg,#0e7490,#7c3aed)!important;
+  border-color:rgba(103,232,249,.55)!important;
+  color:#fff!important;
+  box-shadow:0 0 22px rgba(34,211,238,.14)!important;
+}
+.student-data-panel{min-height:120px;}
+@media(max-width:700px){.student-data-tabs{grid-template-columns:1fr;}}
 .password-change-box{
   margin-top:18px;padding:18px;border-radius:16px;
   background:linear-gradient(145deg,rgba(139,92,246,.10),rgba(34,211,238,.05));
@@ -1724,12 +1754,45 @@ select option{background:#06111f!important;color:#e9faff!important;}
   border-radius:12px;
   background:#020b16;
 }
-.target-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
-.target-students-box input[type="search"]{margin:8px 0!important}
-.target-toolbar button{width:auto!important;margin:0!important}
+.target-toolbar{
+  display:flex!important;
+  gap:8px!important;
+  flex-wrap:wrap!important;
+  margin:8px 0!important;
+}
+.target-toolbar button{
+  width:auto!important;
+  margin:0!important;
+  flex:0 0 auto!important;
+}
+.target-student-search{
+  display:block!important;
+  width:100%!important;
+  min-height:46px!important;
+  margin:8px 0!important;
+  box-sizing:border-box!important;
+}
 .target-student-list{
-  max-height:280px;overflow:auto;
-  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;
+  max-height:320px;
+  overflow:auto;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+}
+.target-student-item{
+  cursor:pointer;
+  transition:.18s ease;
+}
+.target-student-item:hover{
+  border-color:rgba(34,211,238,.4);
+  background:#071a2c;
+}
+.target-student-item span{min-width:0;line-height:1.6}
+.target-count{
+  display:flex;
+  justify-content:flex-start;
+  align-items:center;
+  padding-top:4px;
 }
 .target-student-item{
   display:flex;align-items:center;gap:8px;
@@ -1829,7 +1892,6 @@ select option{background:#06111f!important;color:#e9faff!important;}
 .grade-empty{color:#64748b}
 .print-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .print-actions button{flex:1;min-width:180px}
-#singleExamPrintStatusFilter{min-width:190px}
 .student-grades-summary{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -1873,19 +1935,55 @@ select option{background:#06111f!important;color:#e9faff!important;}
 }
 
 
-.single-exam-print-title{display:none}
+
+/* ===== FINAL REPORT / PRINT UX ===== */
 @media print{
-  .single-exam-print-title{
+  body.printing-single-exam #printArea .print-controls,
+  body.printing-single-exam #printArea #gradesCenterStatus,
+  body.printing-single-exam #exams > .section-card:first-child,
+  body.printing-single-exam #exams > .section-card:nth-child(2),
+  body.printing-single-exam #exams > #resultsBox{
+    display:none!important;
+  }
+  body.printing-single-exam #printArea{
     display:block!important;
-    direction:rtl;
-    text-align:center;
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    box-shadow:none!important;
+    background:#fff!important;
     color:#111!important;
-    font-weight:900;
-    margin:0 0 10px;
-    font-size:18px;
+  }
+  body.printing-single-exam #gradesMatrixBox,
+  body.printing-single-exam .grades-table-wrap{
+    display:block!important;
+    overflow:visible!important;
+    border:0!important;
+    background:#fff!important;
+  }
+  body.printing-single-exam .grades-table{
+    min-width:0!important;
+    width:100%!important;
+    color:#111!important;
+  }
+  body.printing-single-exam .grades-table th,
+  body.printing-single-exam .grades-table td{
+    color:#111!important;
+    background:#fff!important;
+    border:1px solid #777!important;
+  }
+  body.printing-single-exam .print-meta-line{
+    color:#111!important;
+    direction:rtl!important;
   }
 }
 
+
+/* إخفاء صندوق النتائج القديم داخل قسم الامتحانات؛ النتائج تظهر في Popup فقط */
+#examDetails{display:none!important;}
+#resultsBox{display:none!important;}
 </style>
 </head>
 <body>
@@ -1999,7 +2097,7 @@ opacity:0;transform:translateY(20px);transition:all .4s ease;pointer-events:none
               <option value="مجموعة الأحد والأربعاء | 7:00 - 8:30">مجموعة الأحد والأربعاء | 7:00 - 8:30</option>
               <option value="مجموعة الأحد والأربعاء | 9:00 - 10:30">مجموعة الأحد والأربعاء | 9:00 - 10:30</option>
             </select>
-            <input id="examTargetStudentSearch" type="search" placeholder="🔍 بحث باسم الطالب..." oninput="renderTargetStudents('exam')">
+            <input id="examTargetStudentSearch" class="target-student-search" placeholder="🔍 بحث باسم الطالب..." oninput="renderTargetStudents('exam')">
             <div class="target-toolbar">
               <button type="button" onclick="selectAllTargetStudents('exam')">☑️ تحديد الكل</button>
               <button type="button" class="btn-secondary" onclick="clearAllTargetStudents('exam')">⬜ إلغاء الكل</button>
@@ -2074,16 +2172,11 @@ opacity:0;transform:translateY(20px);transition:all .4s ease;pointer-events:none
 
           <div class="settings-item">
             <h3>📝 تقرير امتحان واحد</h3>
-            <p>يطبع: اسم الطالب + الدرجة + المجموعة.</p>
+            <p>اختار الامتحان والمجموعة وحالة الطلاب: الكل / دخلوا / مدخلوش، ثم اطبع التقرير.</p>
 
             <label>📝 الامتحان</label>
             <select id="singleExamPrintFilter" onchange="loadGradesCenter()">
               <option value="">اختر الامتحان</option>
-            </select>
-            <select id="singleExamPrintStatusFilter" onchange="loadGradesCenter()">
-              <option value="all">👥 كل الطلاب</option>
-              <option value="taken">✅ اللي دخلوا فقط</option>
-              <option value="absent">❌ اللي مدخلوش فقط</option>
             </select>
 
             <label>👥 المجموعة</label>
@@ -2136,7 +2229,7 @@ opacity:0;transform:translateY(20px);transition:all .4s ease;pointer-events:none
               <option value="مجموعة الأحد والأربعاء | 7:00 - 8:30">مجموعة الأحد والأربعاء | 7:00 - 8:30</option>
               <option value="مجموعة الأحد والأربعاء | 9:00 - 10:30">مجموعة الأحد والأربعاء | 9:00 - 10:30</option>
             </select>
-            <input id="assignmentTargetStudentSearch" type="search" placeholder="🔍 بحث باسم الطالب..." oninput="renderTargetStudents('assignment')">
+            <input id="assignmentTargetStudentSearch" class="target-student-search" placeholder="🔍 بحث باسم الطالب..." oninput="renderTargetStudents('assignment')">
             <div class="target-toolbar">
               <button type="button" onclick="selectAllTargetStudents('assignment')">☑️ تحديد الكل</button>
               <button type="button" class="btn-secondary" onclick="clearAllTargetStudents('assignment')">⬜ إلغاء الكل</button>
@@ -3025,6 +3118,13 @@ window.toggleType=btn=>{
 let targetStudentCache={exam:[],assignment:[]};
 let targetSelectedIds={exam:new Set(),assignment:new Set()};
 
+function getTargetStudentSearchId(type){
+  return type==="exam" ? "examTargetStudentSearch" : "assignmentTargetStudentSearch";
+}
+function getTargetStudentGroupId(type){
+  return type==="exam" ? "examTargetGroupFilter" : "assignmentTargetGroupFilter";
+}
+
 async function loadTargetStudents(type){
   try{
     const snap=await getDocs(collection(db,"students"));
@@ -3047,22 +3147,26 @@ window.toggleTargetStudentsUI=(type)=>{
 
 window.renderTargetStudents=(type)=>{
   const list=document.getElementById(type==="exam"?"examTargetStudentsList":"assignmentTargetStudentsList");
-  const filter=document.getElementById(type==="exam"?"examTargetGroupFilter":"assignmentTargetGroupFilter")?.value||"ALL";
-  const search=String(document.getElementById(type==="exam"?"examTargetStudentSearch":"assignmentTargetStudentSearch")?.value||"").trim().toLowerCase();
+  const filter=document.getElementById(getTargetStudentGroupId(type))?.value||"ALL";
+  const search=String(document.getElementById(getTargetStudentSearchId(type))?.value||"").trim().toLowerCase();
   if(!list)return;
+
   const students=(targetStudentCache[type]||[]).filter(s=>{
     const groupOk=filter==="ALL"||String(s.group||"").trim()===filter;
     const name=studentDisplayName(s).toLowerCase();
-    return groupOk && (!search || name.includes(search));
+    return groupOk && (!search||name.includes(search));
   });
+
   const selected=targetSelectedIds[type]||new Set();
+
   list.innerHTML=students.map(s=>{
     const id=String(s.firestoreId||s.id);
     return `<label class="target-student-item">
       <input type="checkbox" value="${escapeAttr(id)}" ${selected.has(id)?"checked":""} onchange="toggleTargetStudent('${type}',this)">
-      <span>👤 ${escapeHtml(studentDisplayName(s))} <small style="color:#7893a3">— ${escapeHtml(s.group||"-")}</small></span>
+      <span>👤 ${escapeHtml(studentDisplayName(s))}<small style="display:block;color:#7893a3">👥 ${escapeHtml(s.group||"-")}</small></span>
     </label>`;
-  }).join("") || `<div class="details-modal-empty">لا يوجد طلاب في المجموعة المختارة.</div>`;
+  }).join("") || `<div class="details-modal-empty">لا يوجد طلاب مطابقون للبحث/المجموعة المختارة.</div>`;
+
   updateTargetStudentCount(type);
 };
 
@@ -3074,10 +3178,9 @@ window.toggleTargetStudent=(type,input)=>{
 };
 
 window.updateTargetStudentCount=(type)=>{
-  const list=document.getElementById(type==="exam"?"examTargetStudentsList":"assignmentTargetStudentsList");
   const count=document.getElementById(type==="exam"?"examTargetStudentsCount":"assignmentTargetStudentsCount");
-  if(!list||!count)return;
-  count.textContent=`${list.querySelectorAll('input[type="checkbox"]:checked').length} طالب محدد`;
+  if(!count)return;
+  count.textContent=`${(targetSelectedIds[type]||new Set()).size} طالب محدد`;
 };
 
 window.selectAllTargetStudents=(type)=>{
@@ -3856,152 +3959,96 @@ window.loadStudents = async () => {
 window.openStudentDataMenu=(studentId)=>{
   const student=allStudentsAssignments.find(s=>String(s.firestoreId||s.id)===String(studentId))
     || attendanceStudentsCache.find(s=>String(s.firestoreId||s.id)===String(studentId));
-  if(!student){showToast("بيانات الطالب غير موجودة ❌");return;}
-  const name=studentDisplayName(student);
-
+  const name=studentDisplayName(student||{});
   openDetailsModal(`📊 بيانات الطالب — ${name}`,`
-    <div class="target-mode-box">
-      <div class="details-result-card" style="margin-bottom:12px">
-        <strong>👤 ${escapeHtml(name)}</strong>
-        ${student?.group?`<br>👥 ${escapeHtml(student.group)}`:""}
-      </div>
-
-      <div class="student-data-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-        <button class="btn-main" onclick="showStudentDataPanel('${escapeAttr(studentId)}','attendance')">📋 الحضور والغياب</button>
-        <button class="btn-main" onclick="showStudentDataPanel('${escapeAttr(studentId)}','exams')">📝 درجات الطالب في الامتحانات</button>
-        <button class="btn-main" onclick="showStudentDataPanel('${escapeAttr(studentId)}','tasks')">📋 درجات الطالب في التاسكات</button>
-      </div>
-
-      <div id="studentDataPanel">
-        <div class="details-modal-empty">اختار نوع البيانات من الأزرار فوق 👆</div>
-      </div>
+    <div class="student-data-header details-result-card" style="margin:0 0 12px">
+      <strong>👤 ${escapeHtml(name)}</strong>
+      ${student?.group?`<br>👥 ${escapeHtml(student.group)}`:""}
     </div>
+    <div class="student-data-tabs">
+      <button id="studentTabAttendance" class="student-data-tab active" onclick="showStudentDataTab('${escapeAttr(studentId)}','attendance')">📋 الحضور والغياب</button>
+      <button id="studentTabExams" class="student-data-tab" onclick="showStudentDataTab('${escapeAttr(studentId)}','exams')">📝 درجات الامتحانات</button>
+      <button id="studentTabTasks" class="student-data-tab" onclick="showStudentDataTab('${escapeAttr(studentId)}','tasks')">📋 درجات التاسكات</button>
+    </div>
+    <div id="studentDataPanel" class="student-data-panel">⏳ جاري تحميل الحضور والغياب...</div>
   `);
+  showStudentDataTab(studentId,"attendance");
 };
 
-window.showStudentDataPanel=async(studentId,type)=>{
+function setStudentDataTabActive(tab){
+  document.querySelectorAll(".student-data-tab").forEach(b=>b.classList.remove("active"));
+  const suffix=tab==="attendance"?"Attendance":tab==="exams"?"Exams":"Tasks";
+  document.getElementById(`studentTab${suffix}`)?.classList.add("active");
+}
+
+window.showStudentDataTab=async(studentId,tab)=>{
   const panel=document.getElementById("studentDataPanel");
   if(!panel)return;
-  panel.innerHTML=`<div class="details-modal-empty">⏳ جاري تحميل البيانات...</div>`;
-
-  if(type==="attendance"){
-    // Render attendance inside the SAME popup instead of replacing it.
-    const student=attendanceStudentsCache.find(s=>String(s.firestoreId||s.id)===String(studentId))
-      || allStudentsAssignments.find(s=>String(s.firestoreId||s.id)===String(studentId));
-    if(!student){panel.innerHTML=`<div class="details-modal-empty">الطالب غير موجود.</div>`;return;}
-
-    const records=attendanceSessionsCache.map(session=>{
-      const r=attendanceSessionMatches(session,student);
-      if(!r)return null;
-      return {
-        date:attendanceDateValue(session.date),
-        name:session.name||"بدون اسم",
-        group:session.group==="ALL"?"كل المجموعات":attendanceNormalizeGroup(session.group),
-        present:r.present!==false
-      };
-    }).filter(Boolean).sort((a,b)=>b.date.localeCompare(a.date));
-
-    const absentCount=records.filter(r=>!r.present).length;
-    const presentCount=records.filter(r=>r.present).length;
-
-    panel.innerHTML=`
-      <div class="student-grade-card">
-        <h3 style="margin-top:0">📋 الحضور والغياب</h3>
-        <div class="popup-summary">
-          <span class="present-pill">✅ حاضر: ${presentCount}</span>
-          <span class="absent-pill">❌ غائب: ${absentCount}</span>
-        </div>
-      </div>
-      ${records.length?`<div class="grades-table-wrap"><table class="grades-table">
-        <thead><tr><th>التاريخ</th><th>السيشن</th><th>المجموعة</th><th>الحالة</th></tr></thead>
-        <tbody>${records.map(r=>`<tr>
-          <td>${escapeHtml(r.date)}</td>
-          <td>${escapeHtml(r.name)}</td>
-          <td>${escapeHtml(r.group)}</td>
-          <td>${r.present?`<span class="present-pill">حاضر</span>`:`<span class="absent-pill">غائب</span>`}</td>
-        </tr>`).join("")}</tbody>
-      </table></div>`:`<div class="details-modal-empty">لا يوجد حضور أو غياب مسجل لهذا الطالب.</div>`}
-    `;
-    return;
-  }
-
-  if(type==="exams"){
-    await renderStudentExamGradesPanel(studentId,panel);
-    return;
-  }
-
-  if(type==="tasks"){
-    await renderStudentTaskGradesPanel(studentId,panel);
-  }
-};
-
-window.renderStudentExamGradesPanel=async(studentId,panel)=>{
+  setStudentDataTabActive(tab);
+  panel.innerHTML="⏳ جاري التحميل...";
   try{
-    const studentSnap=await getDoc(doc(db,"students",studentId));
-    if(!studentSnap.exists()){panel.innerHTML=`<div class="details-modal-empty">الطالب غير موجود.</div>`;return;}
-    const student={firestoreId:studentSnap.id,...studentSnap.data()};
-    const [examsSnap,resultsSnap]=await Promise.all([getDocs(collection(db,"exams")),getDocs(collection(db,"results"))]);
-    const exams=examsSnap.docs.map(d=>({id:d.id,...d.data()}));
-    const examMap=new Map(exams.map(e=>[e.id,e]));
-    const results=[];
-    resultsSnap.forEach(r=>{
-      const d=r.data()||{};
-      if(!studentRecordMatchesAnyKey(student,{...d,id:r.id}))return;
-      const examId=getResultExamId(d,r.id,examMap);
-      if(examId)results.push({id:r.id,...d,examId});
-    });
-    const latest=new Map();
-    results.forEach(r=>{
-      const old=latest.get(r.examId);
-      if(!old||recordTimestampValue(r)>=recordTimestampValue(old))latest.set(r.examId,r);
-    });
-
-    const relevant=exams.filter(e=>{
-      const ids=Array.isArray(e.targetStudentIds)?e.targetStudentIds.map(String):[];
-      if(ids.length)return ids.includes(String(studentId));
-      const groups=Array.isArray(e.groups)?e.groups.map(String):[String(e.group||"")];
-      return groups.includes("ALL")||groups.includes(String(student.group||""));
-    });
-
-    panel.innerHTML=`
-      <div class="student-grade-card"><h3 style="margin-top:0">📝 درجات الطالب في الامتحانات</h3></div>
-      <div class="student-grades-summary">
-        ${relevant.map(e=>{
-          const r=latest.get(e.id);
-          const max=(Array.isArray(e.questions)?e.questions:[]).reduce((s,q)=>s+Number(q.degree||0),0);
-          const score=r?(r.total??r.score??0):"لم يدخل";
-          return `<div class="student-grade-card">
-            <h4>📝 ${escapeHtml(e.name||"امتحان")}</h4>
-            <p>🎯 الدرجة: <strong class="${r?'grade-good':'grade-empty'}">${escapeHtml(String(score))}${max?` / ${max}`:""}</strong></p>
-            ${r?`<button class="btn-main" onclick="openResultDetails('${escapeAttr(r.id)}','${escapeAttr(e.id)}')">📄 تفاصيل الإجابات</button>`:""}
-          </div>`;
-        }).join("")||`<div class="details-modal-empty">لا توجد امتحانات لهذا الطالب.</div>`}
-      </div>
-    `;
+    if(tab==="attendance"){
+      const student=attendanceStudentsCache.find(s=>String(s.firestoreId||s.id)===String(studentId))
+        || allStudentsAssignments.find(s=>String(s.firestoreId||s.id)===String(studentId));
+      if(!student){panel.innerHTML=`<div class="details-modal-empty">بيانات الطالب غير موجودة.</div>`;return;}
+      const records=attendanceSessionsCache.map(session=>{
+        const r=attendanceSessionMatches(session,student);
+        if(!r)return null;
+        return {
+          date:attendanceDateValue(session.date),
+          name:session.name||"بدون اسم",
+          group:session.group==="ALL"?"كل المجموعات":attendanceNormalizeGroup(session.group),
+          present:r.present!==false
+        };
+      }).filter(Boolean).sort((a,b)=>b.date.localeCompare(a.date));
+      const absentCount=records.filter(r=>!r.present).length;
+      const presentCount=records.filter(r=>r.present).length;
+      panel.innerHTML=`
+        <div class="attendance-person-popup">
+          <div class="card ${absentCount>2?"attendance-danger":""}" style="margin:0;max-width:none">
+            <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
+              <div>
+                <h3 style="margin:0;color:${absentCount>2?"#fecaca":"#67e8f9"}">${escapeHtml(studentDisplayName(student))}</h3>
+                <p style="color:#7893a3;margin:.35rem 0">${escapeHtml(attendanceNormalizeGroup(student.group)||"—")}</p>
+              </div>
+              <div class="popup-summary">
+                <span class="present-pill">✅ حاضر: ${presentCount}</span>
+                <span class="absent-pill">❌ غائب: ${absentCount}</span>
+              </div>
+            </div>
+          </div>
+          ${records.length?`
+            <table>
+              <thead><tr><th>التاريخ</th><th>السيشن</th><th>المجموعة</th><th>الحالة</th></tr></thead>
+              <tbody>${records.map(r=>`<tr>
+                <td>${escapeHtml(r.date)}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.group)}</td>
+                <td>${r.present?`<span class="present-pill">حاضر</span>`:`<span class="absent-pill">غائب</span>`}</td>
+              </tr>`).join("")}</tbody>
+            </table>`:
+            `<div class="details-modal-empty">لا يوجد حضور أو غياب مسجل لهذا الطالب حتى الآن.</div>`}
+        </div>`;
+      return;
+    }
+    await renderStudentAcademicPanel(studentId,panel,tab);
   }catch(err){
-    console.error(err);
-    panel.innerHTML=`<div class="details-modal-empty">فشل تحميل درجات الامتحانات ❌</div>`;
+    console.error("STUDENT DATA TAB:",err);
+    panel.innerHTML=`<div class="details-modal-empty">❌ فشل تحميل البيانات.</div>`;
   }
 };
 
+window.renderStudentAcademicPanel=async(studentId,panel,mode)=>{
+  const studentSnap=await getDoc(doc(db,"students",studentId));
+  if(!studentSnap.exists()){panel.innerHTML=`<div class="details-modal-empty">الطالب غير موجود.</div>`;return;}
+  const student={firestoreId:studentSnap.id,...studentSnap.data()};
 
-window.openStudentTaskGrades=async(studentId)=>{
-  const panel=document.getElementById("studentDataPanel");
-  if(panel) await renderStudentTaskGradesPanel(studentId,panel);
-};
-
-window.renderStudentTaskGradesPanel=async(studentId,panel)=>{
-  try{
-    const studentSnap=await getDoc(doc(db,"students",studentId));
-    if(!studentSnap.exists()){panel.innerHTML=`<div class="details-modal-empty">الطالب غير موجود.</div>`;return;}
-    const student={firestoreId:studentSnap.id,...studentSnap.data()};
+  if(mode==="tasks"){
     const [assignmentsSnap,submissionsSnap]=await Promise.all([
       getDocs(collection(db,"assignments")),getDocs(collection(db,"submissions"))
     ]);
     const assignments=assignmentsSnap.docs.map(d=>({id:d.id,...d.data()})).filter(a=>{
       const ids=Array.isArray(a.targetStudentIds)?a.targetStudentIds.map(String):[];
       const groups=Array.isArray(a.groups)?a.groups.map(String):[String(a.group||"")];
-      return ids.length ? ids.includes(String(studentId)) : (groups.includes("ALL")||groups.includes(String(student.group||"")));
+      return ids.length?ids.includes(String(studentId)):(groups.includes("ALL")||groups.includes(String(student.group||"")));
     });
     const subs=submissionsSnap.docs.map(d=>({id:d.id,...d.data()})).filter(s=>studentRecordMatchesAnyKey(student,s));
     const latest=new Map();
@@ -4009,9 +4056,7 @@ window.renderStudentTaskGradesPanel=async(studentId,panel)=>{
       const old=latest.get(s.assignmentId);
       if(!old||recordTimestampValue(s)>=recordTimestampValue(old))latest.set(s.assignmentId,s);
     });
-
     panel.innerHTML=`
-      <div class="student-grade-card"><h3 style="margin-top:0">📋 درجات الطالب في التاسكات</h3></div>
       <div class="student-grades-summary">
         ${assignments.map(a=>{
           const s=latest.get(a.id);
@@ -4019,17 +4064,90 @@ window.renderStudentTaskGradesPanel=async(studentId,panel)=>{
           return `<div class="student-grade-card">
             <h4>📋 ${escapeHtml(a.title||"تاسك")}</h4>
             <p>🎯 الدرجة: <strong class="${s&&s.grade!==undefined?'grade-good':'grade-empty'}">${escapeHtml(String(grade))}</strong></p>
-            ${s?`<button class="view-file-btn" onclick="openSubmissionViewer('${escapeAttr(s.id)}')">📄 عرض التسليم</button>`:""}
+            <p>⏰ ${escapeHtml((a.deadline?.toDate?a.deadline.toDate():new Date(a.deadline||0)).toLocaleString("ar-EG"))}</p>
+          </div>`;
+        }).join("")||`<div class="details-modal-empty">لا توجد تاسكات لهذا الطالب.</div>`}
+      </div>`;
+    return;
+  }
+
+  const [examsSnap,resultsSnap]=await Promise.all([
+    getDocs(collection(db,"exams")),getDocs(collection(db,"results"))
+  ]);
+  const exams=examsSnap.docs.map(d=>({id:d.id,...d.data()}));
+  const examMap=new Map(exams.map(e=>[e.id,e]));
+  const latest=new Map();
+  resultsSnap.forEach(r=>{
+    const d=r.data()||{};
+    if(!studentRecordMatchesAnyKey(student,{...d,id:r.id}))return;
+    const examId=getResultExamId(d,r.id,examMap);
+    if(!examId)return;
+    const record={id:r.id,...d};
+    const old=latest.get(examId);
+    if(!old||recordTimestampValue(record)>=recordTimestampValue(old))latest.set(examId,record);
+  });
+  const relevant=exams.filter(e=>{
+    const groups=Array.isArray(e.groups)?e.groups.map(String):[String(e.group||"")];
+    const ids=Array.isArray(e.targetStudentIds)?e.targetStudentIds.map(String):[];
+    return ids.length?ids.includes(String(studentId)):(groups.includes("ALL")||groups.includes(String(student.group||"")));
+  }).sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"ar"));
+  panel.innerHTML=`
+    <div class="student-grades-summary">
+      ${relevant.map(e=>{
+        const r=latest.get(e.id);
+        const max=(Array.isArray(e.questions)?e.questions:[]).reduce((s,q)=>s+Number(q.degree||0),0);
+        const score=r?(r.total??r.score??0):"لم يدخل";
+        return `<div class="student-grade-card">
+          <h4>📝 ${escapeHtml(e.name||"امتحان")}</h4>
+          <p>🎯 الدرجة: <strong class="${r?'grade-good':'grade-empty'}">${escapeHtml(String(score))}${r&&max?` / ${max}`:""}</strong></p>
+          <p>👥 المجموعة: ${escapeHtml(student.group||e.group||"-")}</p>
+          ${r?`<button class="btn-main" onclick="openResultDetails('${escapeAttr(r.id)}','${escapeAttr(e.id)}')">📄 تفاصيل الإجابات</button>`:""}
+        </div>`;
+      }).join("")||`<div class="details-modal-empty">لا توجد امتحانات لهذا الطالب.</div>`}
+    </div>`;
+};
+
+window.openStudentTaskGrades=async(studentId)=>{
+  try{
+    const studentSnap=await getDoc(doc(db,"students",studentId));
+    if(!studentSnap.exists()){showToast("الطالب غير موجود ❌");return;}
+    const student={firestoreId:studentSnap.id,...studentSnap.data()};
+    const [assignmentsSnap,submissionsSnap]=await Promise.all([
+      getDocs(collection(db,"assignments")),getDocs(collection(db,"submissions"))
+    ]);
+    const assignments=assignmentsSnap.docs.map(d=>({id:d.id,...d.data()}))
+      .filter(a=>{
+        const ids=Array.isArray(a.targetStudentIds)?a.targetStudentIds.map(String):[];
+        const groups=Array.isArray(a.groups)?a.groups.map(String):[String(a.group||"")];
+        return ids.length ? ids.includes(String(studentId)) : (groups.includes("ALL")||groups.includes(String(student.group||"")));
+      });
+    const subs=submissionsSnap.docs.map(d=>({id:d.id,...d.data()}))
+      .filter(s=>studentRecordMatchesAnyKey(student,s));
+
+    const latest=new Map();
+    subs.forEach(s=>{
+      const old=latest.get(s.assignmentId);
+      if(!old||recordTimestampValue(s)>=recordTimestampValue(old))latest.set(s.assignmentId,s);
+    });
+
+    openDetailsModal(`📋 درجات التاسكات — ${studentDisplayName(student)}`,`
+      <div class="student-grades-summary">
+        ${assignments.map(a=>{
+          const s=latest.get(a.id);
+          const grade=s&&s.grade!==undefined&&s.grade!==null?s.grade:"لم يسلّم/لم يتم التقييم";
+          return `<div class="student-grade-card">
+            <h4>📋 ${escapeHtml(a.title||"تاسك")}</h4>
+            <p>🎯 الدرجة: <strong class="${s&&s.grade!==undefined?'grade-good':'grade-empty'}">${escapeHtml(String(grade))}</strong></p>
+            <p>⏰ ${escapeHtml((a.deadline?.toDate?a.deadline.toDate():new Date(a.deadline||0)).toLocaleString("ar-EG"))}</p>
           </div>`;
         }).join("")||`<div class="details-modal-empty">لا توجد تاسكات لهذا الطالب.</div>`}
       </div>
-    `;
+    `);
   }catch(err){
-    console.error(err);
-    panel.innerHTML=`<div class="details-modal-empty">فشل تحميل درجات التاسكات ❌</div>`;
+    console.error("STUDENT TASK GRADES:",err);
+    showToast("فشل تحميل درجات التاسكات ❌");
   }
 };
-
 
 window.searchStudent=()=>{
   const val=document.getElementById("searchStudent").value.toLowerCase();
@@ -5695,10 +5813,10 @@ window.loadGradesCenter=async()=>{
     gradesCenterCache.results=resultsSnap.docs.map(d=>({id:d.id,...d.data()}));
     refreshGradesExamOptions(gradesCenterCache.exams);
 
-    const group=document.getElementById("gradesGroupFilter")?.value||"ALL";
-    const statusFilter=selectedExam
-      ? (document.getElementById("singleExamPrintStatusFilter")?.value||"all")
-      : (document.getElementById("gradesPrintStatusFilter")?.value||"all");
+    const generalGroup=document.getElementById("gradesGroupFilter")?.value||"ALL";
+    const singleExamGroup=document.getElementById("singleExamGroupPrintFilter")?.value||"ALL";
+    const group=document.getElementById("singleExamPrintFilter")?.value ? singleExamGroup : generalGroup;
+    const statusFilter=document.getElementById("gradesPrintStatusFilter")?.value||"all";
 
     const examMap=new Map(gradesCenterCache.exams.map(e=>[e.id,e]));
     const resultByKey=new Map();
@@ -5740,10 +5858,14 @@ window.loadGradesCenter=async()=>{
       return;
     }
 
-    let html=selectedExamObj
-      ? `<div class="single-exam-print-title">📝 ${escapeHtml(selectedExamObj.name||"الامتحان")} — الدرجة النهائية: ${escapeHtml(String((selectedExamObj.questions||[]).reduce((s,q)=>s+Number(q.degree||0),0)))}</div>`
-      : "";
-    html+=`<div class="grades-table-wrap"><table class="grades-table print-student-matrix">
+    const printModeLabel=statusFilter==="taken"?"الطلاب الذين دخلوا فقط":statusFilter==="absent"?"الطلاب الذين لم يدخلوا فقط":"كل الطلاب المستهدفين";
+    let html=`<div class="print-meta-line">
+      <div class="right">👤 اسم الطالب</div>
+      <div class="left">${selectedExamObj
+        ? `📝 ${escapeHtml(selectedExamObj.name||"الامتحان")} — الدرجة النهائية: ${escapeHtml(String((selectedExamObj.questions||[]).reduce((s,q)=>s+Number(q.degree||0),0)))} — ${printModeLabel}`
+        : `📝 تقرير كل الامتحانات — ${printModeLabel}`}</div>
+    </div>
+    <div class="grades-table-wrap"><table class="grades-table print-student-matrix">
       <thead><tr>`;
 
     html+=`<th class="student-name-col">اسم الطالب</th>`;
@@ -5794,12 +5916,19 @@ window.printSingleExamGrades=async()=>{
   }
   await loadGradesCenter();
   const section=document.getElementById("exams");
-  if(!section)return;
+  const box=document.getElementById("gradesMatrixBox");
+  if(!section||!box)return;
+
   section.classList.add("printing-section");
+  document.body.classList.add("printing-single-exam");
+
   setTimeout(()=>{
     window.print();
-    setTimeout(()=>section.classList.remove("printing-section"),300);
-  },150);
+    setTimeout(()=>{
+      section.classList.remove("printing-section");
+      document.body.classList.remove("printing-single-exam");
+    },400);
+  },180);
 };
 
 
