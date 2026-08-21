@@ -1681,6 +1681,30 @@ select option{background:#06111f!important;color:#e9faff!important;}
     font-size: 13px !important;
   }
 }
+
+/* =========================================================
+   TEACHER RESULT GRADING UI
+========================================================= */
+#resultModal input[type="number"]{
+  width:100%!important;
+  box-sizing:border-box!important;
+  min-height:44px!important;
+  padding:10px 12px!important;
+  border:1px solid rgba(34,211,238,.28)!important;
+  border-radius:10px!important;
+  background:#06111f!important;
+  color:#fff!important;
+  outline:none!important;
+}
+#resultModal input[type="number"]:focus{
+  border-color:#22d3ee!important;
+  box-shadow:0 0 0 3px rgba(34,211,238,.10)!important;
+}
+#resultModal button.success:disabled{
+  opacity:.65!important;
+  cursor:wait!important;
+  transform:none!important;
+}
 </style>
 </head>
 <body>
@@ -4401,96 +4425,273 @@ window.changeTeacherPassword=async()=>{
 ========================= */
 
 window.openResultDetails=async(resultId,examId)=>{
-  const resultsSnap=await getDocs(collection(db,"results"));
-  let result=null;
-  resultsSnap.forEach(r=>{if(r.id===resultId) result=r.data();});
+  try{
+    const [resultSnap,examSnap]=await Promise.all([
+      getDoc(doc(db,"results",resultId)),
+      getDoc(doc(db,"exams",examId))
+    ]);
 
-  const examSnap=await getDocs(collection(db,"exams"));
-  let exam=null;
-  examSnap.forEach(e=>{if(e.id===examId) exam=e.data();});
-
-  if(!result || !exam) return;
-
-  const div=document.getElementById("modalContent");
-  div.innerHTML="<h3>📄 الإجابات</h3>";
-
-  exam.questions.forEach((q,i)=>{
-    const userAnswer=result.answers?result.answers[i]:null;
-
-    if(q.type==="mcq"){
-      const correct=Number(q.correct);
-      const isRight=Number(userAnswer)===correct;
-
-      div.innerHTML+=`
-        <div style="border:1px solid ${isRight?"#22c55e":"#ef4444"};padding:10px;margin:10px 0;border-radius:10px">
-          <b>❓ ${q.text}</b><br>
-          ${q.choices.map((c,idx)=>{
-            let color="";
-            if(idx===correct) color="color:#22c55e;font-weight:bold;";
-            if(idx===userAnswer && idx!==correct) color="color:#ef4444;font-weight:bold;";
-            return `<div style="${color}">${c}</div>`;
-          }).join("")}
-        </div>`;
-    }else{
-      div.innerHTML+=`
-        <div style="border:1px solid #22d3ee;padding:10px;margin:10px 0;border-radius:10px">
-          <b>❓ ${q.text}</b><br>
-          <div style="margin:5px 0">✍️ ${userAnswer||"لا يوجد"}</div>
-          <input type="number" id="essayScore_${i}" placeholder="ادخل الدرجة"
-            value="${result.essayScores?result.essayScores[i]||"":""}">
-          <button id="btn_${i}" onclick="saveEssayScore('${resultId}',${i})">
-            ${result.essayScores && result.essayScores[i]!=null?"تم الحفظ ✅":"💾 حفظ الدرجة"}
-          </button>
-        </div>`;
+    if(!resultSnap.exists() || !examSnap.exists()){
+      showToast("تعذر تحميل نتيجة الطالب ❌");
+      return;
     }
-  });
 
-  const resultModal=document.getElementById("resultModal");
-  if(resultModal){
-    resultModal.style.display="flex";
-    resultModal.style.zIndex="70000";
+    const result=resultSnap.data() || {};
+    const exam=examSnap.data() || {};
+    const questions=Array.isArray(exam.questions) ? exam.questions : [];
+    const answers=Array.isArray(result.answers) ? result.answers : [];
+    const essayScores=Array.isArray(result.essayScores) ? result.essayScores : [];
+    const manualScores=Array.isArray(result.manualQuestionScores) ? result.manualQuestionScores : [];
+
+    const div=document.getElementById("modalContent");
+    if(!div) return;
+
+    const currentTotal=Number(result.total ?? result.score ?? 0);
+    div.innerHTML=`
+      <div style="position:sticky;top:0;z-index:5;background:#020617;padding-bottom:10px;border-bottom:1px solid #22d3ee44;margin-bottom:12px">
+        <h3 style="margin:0 0 8px">📄 مراجعة وتعديل إجابات الطالب</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <span style="background:#0b2638;border:1px solid #22d3ee55;border-radius:999px;padding:6px 10px;color:#bdf6ff">🎯 الدرجة الحالية: <b id="teacherResultTotal">${currentTotal}</b></span>
+          <span style="color:#94a3b8;font-size:12px">يمكنك تعديل درجة أي سؤال، بما فيها الاختياري.</span>
+        </div>
+      </div>
+    `;
+
+    questions.forEach((q,i)=>{
+      const userAnswer=answers[i];
+      const degree=Math.max(0,Number(q.degree ?? 0));
+      const isMcq=q.type==="mcq";
+      const correct=isMcq ? Number(q.correct) : null;
+      const isRight=isMcq && Number(userAnswer)===correct;
+
+      // الدرجة التي ستظهر في خانة التعديل:
+      // 1) الدرجة المعدلة يدويًا إن وجدت.
+      // 2) للمقالي: essayScores.
+      // 3) للاختياري: الدرجة التلقائية حسب الإجابة الصحيحة.
+      let autoScore=0;
+      if(isMcq){
+        autoScore=isRight ? degree : 0;
+      }else if(essayScores[i]!==undefined && essayScores[i]!==null && essayScores[i]!==""){
+        autoScore=Number(essayScores[i]) || 0;
+      }
+
+      const savedManual=manualScores[i];
+      const displayedScore=(savedManual!==undefined && savedManual!==null && savedManual!=="")
+        ? Number(savedManual)
+        : autoScore;
+
+      const safeScore=Number.isFinite(displayedScore) ? displayedScore : 0;
+      const border=isMcq ? (isRight ? "#22c55e" : "#ef4444") : "#22d3ee";
+
+      let answerHtml="";
+      if(isMcq){
+        answerHtml=`
+          <div style="margin:8px 0">
+            <div style="color:#94a3b8;font-size:12px;margin-bottom:5px">إجابات الاختيارات:</div>
+            ${Array.isArray(q.choices) ? q.choices.map((c,idx)=>{
+              let color="#cbd5e1";
+              let extra="";
+              if(idx===correct){ color="#22c55e"; extra="font-weight:900"; }
+              if(idx===Number(userAnswer) && idx!==correct){ color="#ef4444"; extra="font-weight:900"; }
+              if(idx===Number(userAnswer) && idx===correct){ extra="font-weight:900"; }
+              return `<div style="padding:4px 8px;color:${color};${extra}">${idx+1}. ${escapeHtml(c)} ${idx===Number(userAnswer)?"← إجابة الطالب":""}${idx===correct?" ← الصحيحة":""}</div>`;
+            }).join("") : ""}
+          </div>
+        `;
+      }else{
+        answerHtml=`
+          <div style="margin:8px 0;color:#cbd5e1">
+            <span style="color:#94a3b8">✍️ إجابة الطالب:</span>
+            <div style="margin-top:5px;padding:8px;border-radius:8px;background:#06111f;border:1px solid #22d3ee22">${escapeHtml(userAnswer || "لا يوجد")}</div>
+          </div>
+        `;
+      }
+
+      div.innerHTML+=`
+        <div id="teacherQuestion_${i}" style="border:1px solid ${border};padding:12px;margin:10px 0;border-radius:12px;background:linear-gradient(145deg,#071426,#050b17)">
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap">
+            <b>❓ السؤال ${i+1}: ${escapeHtml(q.text || "")}</b>
+            <span style="font-size:12px;color:#94a3b8">الدرجة الأصلية: ${degree}</span>
+          </div>
+          ${answerHtml}
+
+          <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-top:10px">
+            <div style="flex:1;min-width:180px">
+              <label style="display:block;color:#94a3b8;font-size:12px;margin-bottom:4px">درجة الطالب لهذا السؤال</label>
+              <input
+                type="number"
+                id="questionScore_${i}"
+                min="0"
+                max="${degree}"
+                step="0.5"
+                value="${safeScore}"
+                placeholder="0 - ${degree}"
+                style="margin:0"
+              >
+            </div>
+            <button
+              id="questionBtn_${i}"
+              class="success"
+              style="width:auto!important;min-width:150px;margin:0!important"
+              onclick="saveQuestionScore('${escapeAttr(resultId)}','${escapeAttr(examId)}',${i})">
+              💾 حفظ درجة السؤال
+            </button>
+          </div>
+          <div style="margin-top:6px;font-size:11px;color:#7893a3">
+            ${isMcq
+              ? (isRight ? "✅ الإجابة صحيحة تلقائيًا" : "❌ الإجابة غير صحيحة تلقائيًا")
+              : "📝 سؤال مقالي"}
+            ${manualScores[i]!==undefined && manualScores[i]!==null && manualScores[i]!=="" ? " • ✏️ الدرجة معدلة يدويًا" : ""}
+          </div>
+        </div>
+      `;
+    });
+
+    div.innerHTML+=`
+      <div style="margin-top:14px;padding:12px;border-radius:12px;background:#06111f;border:1px solid #22d3ee44;text-align:center">
+        <div style="font-size:13px;color:#94a3b8">🎯 إجمالي الدرجة بعد التعديلات</div>
+        <strong id="teacherResultTotalBottom" style="display:block;font-size:28px;color:#22d3ee;margin-top:4px">${currentTotal}</strong>
+      </div>
+    `;
+
+    const resultModal=document.getElementById("resultModal");
+    if(resultModal){
+      resultModal.style.display="flex";
+      resultModal.style.zIndex="70000";
+    }
+    document.body.style.overflow="hidden";
+  }catch(err){
+    console.error("OPEN RESULT DETAILS ERROR:",err);
+    showToast("حصل خطأ أثناء تحميل إجابات الطالب ❌");
   }
-  // سيب Popup النتائج مفتوح تحت تفاصيل الإجابات؛ مش محتاج نقفل التفاصيل.
-  document.body.style.overflow="hidden";
 };
 
-window.saveEssayScore=async(resultId,index)=>{
-  const val=document.getElementById(`essayScore_${index}`).value;
-  const score=Number(val);
-  if(isNaN(score)){
-    showToast("ادخل رقم صحيح ❗");
+/* =========================================================
+   TEACHER MANUAL QUESTION GRADING
+   يسمح بتعديل درجة أي سؤال: MCQ أو Essay.
+   الدرجة المعدلة تحفظ في manualQuestionScores[index].
+   total يعاد حسابه من جميع درجات الأسئلة.
+========================================================= */
+window.saveQuestionScore=async(resultId,examId,index)=>{
+  const input=document.getElementById(`questionScore_${index}`);
+  const btn=document.getElementById(`questionBtn_${index}`);
+  if(!input) return;
+
+  const newScore=Number(input.value);
+  if(!Number.isFinite(newScore)){
+    showToast("ادخل درجة صحيحة ❗");
     return;
   }
 
-  const refDoc=doc(db,"results",resultId);
-  const snap=await getDoc(refDoc);
-  const data=snap.data();
-  if(!data) return;
+  try{
+    if(btn){
+      btn.disabled=true;
+      btn.innerText="⏳ جاري الحفظ...";
+    }
 
-  // Firestore لا يقبل undefined داخل الـ arrays.
-  // لو السؤال المقالي رقمه 2 مثلاً، التعيين المباشر قد يترك index 0/1 = undefined.
-  // لذلك نبني Array كاملة ونملأ الخانات الفارغة بـ null.
-  const oldEssayScores=Array.isArray(data.essayScores) ? data.essayScores : [];
-  const essayLength=Math.max(oldEssayScores.length,index+1);
-  const essayScores=Array.from({length:essayLength},(_,i)=>{
-    const v=oldEssayScores[i];
-    return v===undefined || v===null || v==="" ? null : Number(v);
-  });
+    const [resultSnap,examSnap]=await Promise.all([
+      getDoc(doc(db,"results",resultId)),
+      getDoc(doc(db,"exams",examId))
+    ]);
 
-  essayScores[index]=score;
+    if(!resultSnap.exists() || !examSnap.exists()){
+      showToast("النتيجة أو الامتحان غير موجود ❌");
+      return;
+    }
 
-  const mcqScore=Number(data.score||0);
-  const essayTotal=essayScores.reduce((sum,s)=>sum+(s==null?0:Number(s)),0);
+    const data=resultSnap.data() || {};
+    const exam=examSnap.data() || {};
+    const questions=Array.isArray(exam.questions) ? exam.questions : [];
+    const q=questions[index];
 
-  await updateDoc(refDoc,{
-    essayScores: essayScores,
-    total: mcqScore + essayTotal
-  });
+    if(!q){
+      showToast("السؤال غير موجود ❌");
+      return;
+    }
 
-  const btn=document.getElementById(`btn_${index}`);
-  if(btn) btn.innerText="تم الحفظ ✅";
+    const maxDegree=Math.max(0,Number(q.degree ?? 0));
+    if(newScore<0 || newScore>maxDegree){
+      showToast(`الدرجة لازم تكون من 0 إلى ${maxDegree} ❗`);
+      return;
+    }
 
-  showToast("تم حفظ درجة المقالي ✅🔥");
+    // بناء Array كاملة بدون undefined لأن Firestore لا يقبل undefined.
+    const oldManual=Array.isArray(data.manualQuestionScores) ? data.manualQuestionScores : [];
+    const oldEssay=Array.isArray(data.essayScores) ? data.essayScores : [];
+    const answers=Array.isArray(data.answers) ? data.answers : [];
+
+    const length=Math.max(questions.length,index+1);
+    const manualScores=Array.from({length},(_,i)=>{
+      const v=oldManual[i];
+      return v===undefined || v===null || v==="" ? null : Number(v);
+    });
+
+    manualScores[index]=newScore;
+
+    // احسب الدرجة النهائية لكل سؤال:
+    // المعدل يدويًا يأخذ الأولوية، وإلا نستخدم التصحيح التلقائي.
+    const finalQuestionScores=questions.map((question,i)=>{
+      const manual=manualScores[i];
+      if(manual!==undefined && manual!==null && Number.isFinite(Number(manual))){
+        return Number(manual);
+      }
+
+      const degree=Math.max(0,Number(question.degree ?? 0));
+
+      if(question.type==="mcq"){
+        const answer=answers[i];
+        return Number(answer)===Number(question.correct) ? degree : 0;
+      }
+
+      const essay=oldEssay[i];
+      return essay===undefined || essay===null || essay==="" ? 0 : Number(essay)||0;
+    });
+
+    const total=finalQuestionScores.reduce((sum,v)=>sum+(Number(v)||0),0);
+
+    await updateDoc(doc(db,"results",resultId),{
+      manualQuestionScores:manualScores,
+      total,
+      score:total,
+      teacherGradedAt:serverTimestamp()
+    });
+
+    // تحديث الدرجة الظاهرة داخل الـModal فورًا.
+    const totalTop=document.getElementById("teacherResultTotal");
+    const totalBottom=document.getElementById("teacherResultTotalBottom");
+    if(totalTop) totalTop.innerText=total;
+    if(totalBottom) totalBottom.innerText=total;
+
+    if(btn){
+      btn.disabled=false;
+      btn.innerText="✅ تم الحفظ";
+    }
+
+    showToast(`تم تعديل درجة السؤال ${index+1} والدرجة النهائية أصبحت ${total} ✅`);
+
+    // إعادة تحميل قائمة نتائج الامتحان خلف الـModal حتى تظهر الدرجة الجديدة.
+    if(currentExamName) renderExamList(`📊 نتائج: ${currentExamName}`);
+  }catch(err){
+    console.error("SAVE QUESTION SCORE ERROR:",err);
+    if(btn){
+      btn.disabled=false;
+      btn.innerText="💾 حفظ درجة السؤال";
+    }
+    showToast(err?.message || "فشل حفظ درجة السؤال ❌");
+  }
+};
+
+/* =========================================================
+   COMPATIBILITY: old essay grading button/function
+   لو فيه أي استدعاء قديم لـ saveEssayScore يظل شغال.
+========================================================= */
+window.saveEssayScore=async(resultId,index)=>{
+  const examId=currentExamCurrentId;
+  if(!examId){
+    showToast("لم يتم تحديد الامتحان ❌");
+    return;
+  }
+  return window.saveQuestionScore(resultId,examId,index);
 };
 
 // إخفاء اسم الصفحة من الـ URL
@@ -4615,8 +4816,8 @@ z-index:70000;
   padding:20px;
   border-radius:12px;
   width:90%;
-  max-width:600px;
-  max-height:80%;
+  max-width:760px;
+  max-height:86%;
   overflow:auto;
   ">
 
