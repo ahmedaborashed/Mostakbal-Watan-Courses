@@ -3886,7 +3886,7 @@ window.loadStudents = async () => {
     // عرض الطلاب
     filteredStudents.forEach(d => {
       const absentCount = attendanceStudentAbsentCount(d);
-      const warning = absentCount > 1;
+      const warning = absentCount > 3;
 
       div.innerHTML += `
         <div class="card ${warning ? "student-attendance-warning-card" : ""}">
