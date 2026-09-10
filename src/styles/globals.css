@@ -1,71 +1,60 @@
-/* src/styles/globals.css */
+/* src/styles/globals.css - Global Base & Typography Styles */
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
 
 html {
   direction: rtl;
   font-family: var(--font-family);
   font-size: var(--font-size-base);
-  color: var(--color-text-primary);
-  background-color: var(--color-bg-main);
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
   min-height: 100vh;
   margin: 0;
   padding: 0;
-  background:
-    radial-gradient(circle at 50% 0%, var(--color-primary-soft), transparent 45%),
-    radial-gradient(circle at 90% 40%, var(--color-gold-bg), transparent 35%),
-    linear-gradient(180deg, var(--color-bg-main) 0%, var(--color-bg-secondary) 100%);
-  color: var(--color-text-primary);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   line-height: var(--line-height-normal);
   position: relative;
   overflow-x: hidden;
 }
 
-/* Subtle background architectural grid texture */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.12;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 85%);
-  z-index: 0;
+/* Accessible focus-visible state */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 /* Smooth selection colors */
 ::selection {
-  background-color: var(--color-primary);
-  color: var(--color-text-inverse);
+  background-color: var(--primary-soft);
+  color: var(--text-primary);
 }
 
-/* Custom modern scrollbar */
+/* Clean, unobtrusive scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-main);
+  background: var(--bg-primary);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-surface-elevated);
+  background: var(--surface-secondary);
   border-radius: var(--radius-pill);
-  border: 2px solid var(--color-bg-main);
+  border: 1px solid var(--bg-primary);
   transition: background-color var(--transition-fast);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-primary);
+  background: var(--primary);
 }
 
 /* Fluid responsive container */
@@ -79,5 +68,15 @@ body::before {
 @media (max-width: 640px) {
   .container {
     width: calc(100% - 1.5rem);
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
