@@ -1,0 +1,39 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isStaff() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'teacher' || 
+        request.auth.token.role == 'admin' ||
+        (request.auth.token.email != null && (
+          request.auth.token.email.matches('.*@system\\.local$') || 
+          request.auth.token.email.matches('.*@admin\\.local$')
+        ))
+      );
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Student Assignment Submissions
+    match /submissions/{assignmentId}/{studentUid}/{fileName} {
+      allow read: if isOwner(studentUid) || isStaff();
+      // Student can only write to their own folder, max 20MB, allowed types
+      allow write: if isOwner(studentUid) 
+                   && request.resource.size < 20 * 1024 * 1024
+                   && request.resource.contentType.matches('application/pdf|application/zip|application/x-zip-compressed|image/.*|application/vnd.openxmlformats-officedocument.wordprocessingml.document|application/msword|text/.*');
+    }
+
+    // Public / Teacher uploaded assets
+    match /course_materials/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isStaff();
+    }
+  }
+}

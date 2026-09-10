@@ -1,0 +1,143 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ========================================================
+    // HELPER FUNCTIONS
+    // ========================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Role detection: checks Custom Claims first, falls back to legacy email suffix
+    function getRole() {
+      return request.auth.token.role != null
+        ? request.auth.token.role
+        : (request.auth.token.email != null && request.auth.token.email.matches('.*@admin\\.local$')
+            ? 'admin'
+            : (request.auth.token.email != null && request.auth.token.email.matches('.*@system\\.local$')
+                ? 'teacher'
+                : 'student'));
+    }
+
+    function isStudent() {
+      return isAuthenticated() && getRole() == 'student';
+    }
+
+    function isTeacher() {
+      return isAuthenticated() && getRole() == 'teacher';
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && getRole() == 'admin';
+    }
+
+    function isStaff() {
+      return isTeacher() || isAdmin();
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ========================================================
+    // 1. USERS COLLECTION (Profile metadata & roles)
+    // ========================================================
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isStaff();
+      allow write: if isAdmin();
+    }
+
+    // ========================================================
+    // 2. STUDENTS COLLECTION
+    // ========================================================
+    match /students/{studentId} {
+      // A student can only get their own record; listing entire collection is restricted to staff
+      allow get: if isStaff() || isOwner(studentId) || (isAuthenticated() && resource.data.studentPhone == request.auth.token.email.replace('@student.local', ''));
+      allow list: if isStaff();
+      allow write: if isStaff();
+    }
+
+    // ========================================================
+    // 3. VIDEOS & LECTURES
+    // ========================================================
+    match /videos/{videoId} {
+      allow read: if isAuthenticated();
+      allow write: if isStaff();
+    }
+
+    // ========================================================
+    // 4. VIDEO LOGS
+    // ========================================================
+    match /video_logs/{logId} {
+      allow read: if isStaff() || (isAuthenticated() && (resource.data.studentId == request.auth.uid || resource.data.studentPhone == request.auth.token.email.replace('@student.local', '')));
+      allow create: if isAuthenticated();
+      allow update, delete: if isStaff();
+    }
+
+    // ========================================================
+    // 5. EXAMS (Secure questions & answer keys)
+    // ========================================================
+    match /exams/{examId} {
+      // Teachers and Admins have full access
+      allow read, write: if isStaff();
+
+      // Student exam attempts subcollection
+      match /attempts/{studentUid} {
+        allow read: if isOwner(studentUid) || isStaff();
+        allow create: if isOwner(studentUid);
+        allow update, delete: if isStaff();
+      }
+    }
+
+    // ========================================================
+    // 6. RESULTS (Prevents client-side score forgery)
+    // ========================================================
+    match /results/{resultId} {
+      // Student can only read their own result
+      allow read: if isStaff() || (isAuthenticated() && (resource.data.studentId == request.auth.uid || resource.data.studentUid == request.auth.uid || resultId.matches('.*' + request.auth.uid + '.*')));
+      // Direct client score creation/update is blocked; Admin SDK in Cloud Functions bypasses rules
+      allow create, update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // ========================================================
+    // 7. ASSIGNMENTS & SUBMISSIONS
+    // ========================================================
+    match /assignments/{assignmentId} {
+      allow read: if isAuthenticated();
+      allow write: if isStaff();
+
+      // New subcollection submissions
+      match /submissions/{studentUid} {
+        allow read: if isOwner(studentUid) || isStaff();
+        allow create: if isOwner(studentUid);
+        allow update: if isStaff() || isOwner(studentUid);
+        allow delete: if isStaff();
+      }
+    }
+
+    // Legacy submissions collection (Backward compatibility)
+    match /submissions/{submissionId} {
+      allow read: if isStaff() || (isAuthenticated() && (resource.data.studentId == request.auth.uid || submissionId.matches('^' + request.auth.uid + '_.*')));
+      allow create: if isAuthenticated();
+      allow update: if isStaff();
+      allow delete: if isStaff();
+    }
+
+    // ========================================================
+    // 8. ATTENDANCE SESSIONS & RECORDS
+    // ========================================================
+    match /attendance_sessions/{sessionId} {
+      // Sessions metadata is readable by all authenticated users
+      allow read: if isAuthenticated();
+      allow write: if isStaff();
+
+      // New subcollection records
+      match /records/{studentUid} {
+        allow read: if isOwner(studentUid) || isStaff();
+        allow write: if isStaff();
+      }
+    }
+  }
+}
