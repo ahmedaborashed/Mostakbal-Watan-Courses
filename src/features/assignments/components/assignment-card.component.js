@@ -25,20 +25,25 @@ export function renderStudentAssignmentCard({ assignment, submission }) {
   }
 
   const contentHtml = `
-    <div class="d-flex items-center justify-between mb-2">
+    <div class="d-flex items-center justify-between mb-3">
       ${statusBadge}
-      <span class="text-xs text-muted">الديدلاين: ${formatDate(assignment.deadline)}</span>
+      <span class="text-xs text-muted">الديدلاين: <strong>${formatDate(assignment.deadline)}</strong></span>
     </div>
-    <h4 class="font-bold mb-2">${escapeHtml(assignment.title || "تاسك بدون عنوان")}</h4>
-    <p class="text-sm text-muted mb-3" style="line-height:1.5;">${escapeHtml(assignment.description || "")}</p>
+    <h4 class="font-extrabold mb-2" style="font-size:1.15rem;line-height:1.4;">${escapeHtml(assignment.title || "تاسك بدون عنوان")}</h4>
+    <p class="text-sm text-muted mb-3" style="line-height:1.6;">${escapeHtml(assignment.description || "")}</p>
     ${
       assignment.fileUrl
-        ? `<a href="${escapeHtml(assignment.fileUrl)}" target="_blank" class="btn btn-outline btn-sm mb-3">تحميل ملف التاسك 📥</a>`
+        ? `<a href="${escapeHtml(assignment.fileUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm mb-3">تحميل ملف التاسك المرفق 📥</a>`
         : ""
     }
     ${
       submission && submission.feedback
-        ? `<div class="p-2 mb-2" style="background:var(--bg-secondary);border-radius:var(--radius-xs);border-right:3px solid var(--accent);"><strong class="text-xs text-accent">ملاحظات المعلم:</strong> <span class="text-xs">${escapeHtml(submission.feedback)}</span></div>`
+        ? `
+      <div class="p-3 mb-2" style="background:var(--color-bg-secondary);border-radius:var(--radius-sm);border-right:3px solid var(--color-primary);">
+        <strong class="text-xs text-accent d-block mb-1">ملاحظات وتقييم المعلم:</strong>
+        <span class="text-xs text-muted" style="line-height:1.5;">${escapeHtml(submission.feedback)}</span>
+      </div>
+    `
         : ""
     }
   `;
@@ -46,13 +51,15 @@ export function renderStudentAssignmentCard({ assignment, submission }) {
   let footerHtml = "";
   if (!isSubmitted && !isExpired) {
     footerHtml = renderButton({
-      text: "تسليم التاسك 📤",
+      text: "تسليم التاسك الآن 📤",
       variant: "primary",
       className: "w-full",
       extraAttrs: `data-open-task-submit="${escapeHtml(assignment.id)}" data-task-title="${escapeHtml(assignment.title || "")}"`
     });
   } else if (isSubmitted) {
-    footerHtml = `<span class="text-xs text-muted text-center w-full">تم إرسال إجابتك بتاريخ ${formatDate(submission.createdAt)}</span>`;
+    footerHtml = `<span class="text-xs text-muted text-center w-full d-block py-1">تم إرسال إجابتك بتاريخ ${formatDate(submission.createdAt)}</span>`;
+  } else {
+    footerHtml = `<span class="text-xs text-muted text-center w-full d-block py-1">انتهى موعد تسليم هذا الواجب</span>`;
   }
 
   return renderCard({
@@ -68,17 +75,17 @@ export function renderStudentAssignmentCard({ assignment, submission }) {
 export function renderTeacherAssignmentCard({ assignment }) {
   const contentHtml = `
     <div class="d-flex items-center justify-between mb-2">
-      ${renderBadge({ text: assignment.group || "ALL", variant: "gold" })}
+      ${renderBadge({ text: assignment.group || "ALL", variant: "gold", icon: "👥" })}
       <span class="text-xs text-muted">الديدلاين: ${formatDate(assignment.deadline)}</span>
     </div>
-    <h4 class="font-bold mb-2">${escapeHtml(assignment.title || "تاسك بدون عنوان")}</h4>
-    <p class="text-sm text-muted mb-3">${escapeHtml(assignment.description || "")}</p>
+    <h4 class="font-bold mb-2" style="font-size:1.05rem;">${escapeHtml(assignment.title || "تاسك بدون عنوان")}</h4>
+    <p class="text-sm text-muted mb-3" style="line-height:1.5;">${escapeHtml(assignment.description || "")}</p>
   `;
 
   const footerHtml = `
     <div class="d-flex items-center justify-between w-full">
       ${renderButton({
-        text: "عرض التسليمات 📋",
+        text: "استعراض التسليمات والتقييم 📋",
         size: "sm",
         variant: "secondary",
         extraAttrs: `data-teacher-view-submissions="${escapeHtml(assignment.id)}" data-task-title="${escapeHtml(assignment.title || "")}"`

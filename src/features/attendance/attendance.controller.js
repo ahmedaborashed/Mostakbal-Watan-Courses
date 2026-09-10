@@ -6,6 +6,7 @@ import { renderStudentAttendanceView } from "./components/attendance-stats.compo
 import { renderAttendanceManagementView } from "./components/attendance-sheet.component.js";
 import { renderLoader } from "../../shared/components/Loader/loader.component.js";
 import { renderEmptyState } from "../../shared/components/EmptyState/empty-state.component.js";
+import { renderErrorState } from "../../shared/components/ErrorState/error-state.component.js";
 import { showToast } from "../../shared/components/Toast/toast.component.js";
 import { setHtml } from "../../shared/utils/dom.utils.js";
 
@@ -32,7 +33,14 @@ export const AttendanceController = {
       setHtml(container, renderStudentAttendanceView({ records, sessions }));
     } catch (err) {
       console.error("Load attendance error:", err);
-      setHtml(container, renderEmptyState({ icon: "❌", title: "خطأ في تحميل سجل الغياب", description: err.message }));
+      setHtml(container, renderErrorState({
+        title: "خطأ في تحميل سجل الغياب",
+        message: err.message,
+        retryBtnId: "retryAttendanceBtn"
+      }));
+      document.getElementById("retryAttendanceBtn")?.addEventListener("click", () => {
+        this.loadStudentAttendance(containerId, currentStudent);
+      });
     }
   },
 
@@ -43,7 +51,7 @@ export const AttendanceController = {
     const container = typeof containerId === "string" ? document.getElementById(containerId) : containerId;
     if (!container) return;
 
-    setHtml(container, renderLoader({ text: "جاري تحميل بيانات الغياب..." }));
+    setHtml(container, renderLoader({ text: "جاري تحميل بيانات كشف الغياب والحضور..." }));
 
     try {
       const [students, sessions] = await Promise.all([
@@ -102,43 +110,41 @@ export const AttendanceController = {
         const saveBtn = document.getElementById("saveAttendanceBatchBtn");
         if (saveBtn) {
           saveBtn.disabled = true;
-          saveBtn.innerText = "جاري حفظ الحضور والغياب... ⏳";
+          saveBtn.classList.add("is-loading");
+          saveBtn.innerText = "جاري الحفظ... ⏳";
         }
 
         try {
-          // 1. Create session
-          const sessionRes = await AttendanceService.createSession(name, date, group);
-          const sessionId = sessionRes?.sessionId || sessionRes?.id;
+          // 1. Create the session
+          const session = await AttendanceService.createSession({ name, date, group });
 
-          // 2. Prepare batch records
-          const visibleChecks = Array.from(container.querySelectorAll(".attendance-check")).filter((chk) => {
-            const tr = chk.closest("tr");
-            return tr && tr.style.display !== "none";
+          // 2. Prepare attendance records from checked states
+          const records = [];
+          container.querySelectorAll(".attendance-check").forEach((chk) => {
+            const studentId = chk.getAttribute("data-student-uid");
+            records.push({
+              studentId,
+              present: chk.checked,
+              status: chk.checked ? "present" : "absent"
+            });
           });
 
-          const records = visibleChecks.map((chk) => ({
-            studentUid: chk.getAttribute("data-student-uid"),
-            status: chk.checked ? "present" : "absent"
-          }));
-
-          // 3. Batch save records
-          await AttendanceService.recordBatch(sessionId, records);
-          showToast("تم حفظ السيشن وتسجيل الحضور والغياب بنجاح ✅", "success");
-
-          // Reset form
-          document.getElementById("sessionNameInput").value = "";
-        } catch (err) {
-          console.error("Save attendance batch error:", err);
-          showToast(err.message, "error");
+          // 3. Save batch records
+          await AttendanceService.saveAttendanceBatch(session.id, records);
+          showToast("تم حفظ واعتماد كشف الحضور بنجاح ✅", "success");
+          this.loadTeacherAttendance(container);
+        } catch (e) {
+          showToast(e.message, "error");
         } finally {
           if (saveBtn) {
             saveBtn.disabled = false;
-            saveBtn.innerText = "حفظ الغياب والسيشن 💾";
+            saveBtn.classList.remove("is-loading");
+            saveBtn.innerText = "حفظ واعتماد الكشف 💾";
           }
         }
       });
     } catch (err) {
-      setHtml(container, renderEmptyState({ icon: "❌", title: "خطأ في تحميل صفحة الغياب", description: err.message }));
+      setHtml(container, renderErrorState({ title: "خطأ في تحميل كشف الحضور", message: err.message }));
     }
   }
 };

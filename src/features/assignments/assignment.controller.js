@@ -3,11 +3,16 @@ import { AssignmentService } from "./assignment.service.js";
 import { assignmentState } from "./assignment.state.js";
 import { renderStudentAssignmentCard, renderTeacherAssignmentCard } from "./components/assignment-card.component.js";
 import { renderSubmissionModal } from "./components/submission-form.component.js";
-import { openModal, closeModal } from "../../shared/components/Modal/modal.component.js";
+import { bindFileUploadZone } from "../../shared/components/FileUpload/file-upload.component.js";
+import { openModal, closeModal, renderModal } from "../../shared/components/Modal/modal.component.js";
 import { renderLoader } from "../../shared/components/Loader/loader.component.js";
 import { renderEmptyState } from "../../shared/components/EmptyState/empty-state.component.js";
+import { renderErrorState } from "../../shared/components/ErrorState/error-state.component.js";
+import { renderTable } from "../../shared/components/Table/table.component.js";
+import { renderBadge } from "../../shared/components/Badge/badge.component.js";
 import { showToast } from "../../shared/components/Toast/toast.component.js";
-import { setHtml } from "../../shared/utils/dom.utils.js";
+import { setHtml, escapeHtml } from "../../shared/utils/dom.utils.js";
+import { formatDate } from "../../shared/utils/date.utils.js";
 
 export const AssignmentController = {
   /**
@@ -23,6 +28,7 @@ export const AssignmentController = {
     if (!document.getElementById("taskSubmissionModal")) {
       document.body.insertAdjacentHTML("beforeend", renderSubmissionModal());
       this.bindSubmissionForm(container, currentStudent);
+      bindFileUploadZone("taskUploadZone", "taskSubmissionFile");
     }
 
     try {
@@ -44,7 +50,7 @@ export const AssignmentController = {
         setHtml(container, renderEmptyState({
           icon: "📋",
           title: "لا توجد تاسكات مطلوبة حالياً",
-          description: "كل التاسكات تم تسليمها أو لم يتم تعيين مهام جديدة بعد."
+          description: "كل التاسكات تم تسليمها بنجاح أو لم يتم تعيين مهام جديدة بعد."
         }));
         return;
       }
@@ -64,15 +70,27 @@ export const AssignmentController = {
 
           const idInp = document.getElementById("submitAssignmentId");
           const titleEl = document.getElementById("submitAssignmentTitle");
+          const previewEl = document.getElementById("taskUploadZone_preview");
+          const form = document.getElementById("taskSubmissionForm");
+
           if (idInp) idInp.value = taskId;
           if (titleEl) titleEl.textContent = taskTitle;
+          if (previewEl) previewEl.textContent = "";
+          if (form) form.reset();
 
           openModal("taskSubmissionModal");
         });
       });
     } catch (err) {
       console.error("Failed to load student assignments:", err);
-      setHtml(container, renderEmptyState({ icon: "❌", title: "تعذر تحميل التاسكات", description: err.message }));
+      setHtml(container, renderErrorState({
+        title: "تعذر تحميل التاسكات",
+        message: err.message,
+        retryBtnId: "retryStudentAssignmentsBtn"
+      }));
+      document.getElementById("retryStudentAssignmentsBtn")?.addEventListener("click", () => {
+        this.loadStudentAssignments(containerId, currentStudent);
+      });
     }
   },
 
@@ -92,6 +110,7 @@ export const AssignmentController = {
       const submitBtn = document.getElementById("submitTaskAnswerBtn");
       if (submitBtn) {
         submitBtn.disabled = true;
+        submitBtn.classList.add("is-loading");
         submitBtn.innerText = "جاري رفع الحل والتسليم... ⏳";
       }
 
@@ -109,7 +128,8 @@ export const AssignmentController = {
       } finally {
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.innerText = "إرسال الحل الآن 🚀";
+          submitBtn.classList.remove("is-loading");
+          submitBtn.innerText = "إرسال الحل والتسليم النهائي 🚀";
         }
       }
     });
@@ -129,17 +149,18 @@ export const AssignmentController = {
       assignmentState.set("assignments", assignments);
 
       const headerHtml = `
-        <div class="card mb-4">
-          <h3 class="card-title mb-3">➕ إضافة وتكليف تاسك جديد</h3>
+        <div class="card mb-6">
+          <h3 class="card-title mb-2">➕ إضافة وتكليف تاسك جديد</h3>
+          <p class="text-xs text-muted mb-4">حدد عنوان التاسك، تاريخ انتهاء التسليم (Deadline)، والمجموعة المستهدفة والمطلوب تنفيذه.</p>
           <form id="createAssignmentForm" class="grid-2" onsubmit="return false;">
-            <input type="text" id="newTaskTitle" class="form-input" placeholder="عنوان التاسك" required />
+            <input type="text" id="newTaskTitle" class="form-input" placeholder="عنوان التاسك (مثال: إنشاء برنامج حاسبة بالـ Python)" required />
             <input type="date" id="newTaskDeadline" class="form-input" required />
-            <select id="newTaskGroup" class="form-select">
+            <select id="newTaskGroup" class="form-select" style="grid-column:1/-1;">
               <option value="ALL">جميع المجموعات (ALL)</option>
               <option value="مجموعة الأحد والأربعاء | 7:00 - 8:30">مجموعة الأحد والأربعاء | 7:00 - 8:30</option>
               <option value="مجموعة الأحد والأربعاء | 9:00 - 10:30">مجموعة الأحد والأربعاء | 9:00 - 10:30</option>
             </select>
-            <textarea id="newTaskDesc" class="form-textarea" placeholder="تفاصيل ومطلوب التاسك..." style="grid-column:1/-1;" rows="3"></textarea>
+            <textarea id="newTaskDesc" class="form-textarea" placeholder="تفاصيل ومطلوب التاسك وشروط الكود..." style="grid-column:1/-1;" rows="3"></textarea>
             <div class="text-left mt-2" style="grid-column:1/-1;">
               <button type="submit" id="saveNewTaskBtn" class="btn btn-primary">حفظ وتعيين التاسك 🚀</button>
             </div>
@@ -152,7 +173,7 @@ export const AssignmentController = {
         listHtml = renderEmptyState({
           icon: "📋",
           title: "لا توجد تاسكات منشورة",
-          description: "قم بإنشاء تاسك جديد باستخدام النموذج أعلاه."
+          description: "قم بإنشاء وتكليف تاسك جديد باستخدام النموذج أعلاه."
         });
       } else {
         listHtml = `
@@ -184,8 +205,80 @@ export const AssignmentController = {
           showToast(e.message, "error");
         }
       });
+
+      // Bind teacher view submissions buttons
+      container.querySelectorAll("[data-teacher-view-submissions]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const taskId = btn.getAttribute("data-teacher-view-submissions");
+          const title = btn.getAttribute("data-task-title") || "التاسك";
+          this.showTeacherSubmissionsModal(taskId, title);
+        });
+      });
     } catch (err) {
-      setHtml(container, renderEmptyState({ icon: "❌", title: "خطأ في تحميل التاسكات", description: err.message }));
+      setHtml(container, renderErrorState({ title: "خطأ في تحميل التاسكات", message: err.message }));
+    }
+  },
+
+  /**
+   * Displays modal with submissions list for an assignment.
+   */
+  async showTeacherSubmissionsModal(taskId, taskTitle) {
+    let modalEl = document.getElementById("teacherSubmissionsModal");
+    if (!modalEl) {
+      const modalHtml = renderModal({
+        id: "teacherSubmissionsModal",
+        title: `<span id="teacherSubmissionsModalTitle">استعراض تسليمات الطلاب</span>`,
+        bodyHtml: `<div id="teacherSubmissionsBody"></div>`,
+        maxWidth: "750px"
+      });
+      document.body.insertAdjacentHTML("beforeend", modalHtml);
+    }
+
+    const titleEl = document.getElementById("teacherSubmissionsModalTitle");
+    const bodyEl = document.getElementById("teacherSubmissionsBody");
+    if (titleEl) titleEl.textContent = `📋 تسليمات: ${taskTitle}`;
+    if (bodyEl) setHtml(bodyEl, renderLoader({ text: "جاري جلب تسليمات الطلاب... ⏳" }));
+
+    openModal("teacherSubmissionsModal");
+
+    try {
+      const submissions = await AssignmentService.getTaskSubmissions(taskId);
+      if (!submissions || submissions.length === 0) {
+        if (bodyEl) {
+          setHtml(bodyEl, renderEmptyState({
+            icon: "📭",
+            title: "لا توجد تسليمات حتى الآن",
+            description: "لم يقم أي طالب برفع حل لهذا الواجب بعد."
+          }));
+        }
+        return;
+      }
+
+      const headers = ["الطالب", "تاريخ التسليم", "الملف المرفق", "الدرجة", "الحالة"];
+      const rows = submissions.map((sub) => {
+        const studentName = sub.studentName || sub.name || "طالب";
+        const fileLink = sub.fileUrl
+          ? `<a href="${escapeHtml(sub.fileUrl)}" target="_blank" class="btn btn-outline btn-sm">فتح الملف 📥</a>`
+          : `<span class="text-xs text-muted">نصي فقط</span>`;
+        const gradeText = sub.grade !== undefined && sub.grade !== null ? `${sub.grade}/100` : "قيد التقييم";
+        const statusBadge = sub.grade !== undefined && sub.grade !== null
+          ? renderBadge({ text: "تم التقييم", variant: "success" })
+          : renderBadge({ text: "جديد", variant: "primary" });
+
+        return [
+          `<strong>${escapeHtml(studentName)}</strong>`,
+          formatDate(sub.createdAt),
+          fileLink,
+          `<strong class="text-accent">${escapeHtml(gradeText)}</strong>`,
+          statusBadge
+        ];
+      });
+
+      if (bodyEl) {
+        setHtml(bodyEl, renderTable({ headers, rows }));
+      }
+    } catch (e) {
+      if (bodyEl) setHtml(bodyEl, renderErrorState({ message: e.message }));
     }
   }
 };
