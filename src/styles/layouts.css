@@ -1,0 +1,285 @@
+/* src/styles/layouts.css */
+
+/* App Layout Shell (Student / Teacher / Admin) */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ========================================================
+   1. SIDEBAR
+   ======================================================== */
+.sidebar {
+  width: 280px;
+  background: var(--panel-glass);
+  backdrop-filter: blur(16px);
+  border-left: 1px solid var(--border-primary);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  box-sizing: border-box;
+  z-index: 100;
+  transition: transform var(--transition-normal);
+  flex-shrink: 0;
+}
+
+.sidebar .brand {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.sidebar .brand-mark {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--gold);
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle, #1b4029, #07170d 70%);
+}
+
+.sidebar .brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sidebar .brand-info h1 {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.sidebar .brand-info p {
+  font-size: 0.78rem;
+  color: var(--gold-light);
+  font-weight: 700;
+}
+
+/* User Box in Sidebar */
+.sidebar-user-box {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.sidebar-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--accent-glow-subtle);
+  color: var(--accent);
+  border: 1px solid var(--border-primary);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.sidebar-user-info {
+  overflow: hidden;
+}
+
+.sidebar-user-info strong {
+  display: block;
+  font-size: 0.92rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.sidebar-user-info small {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  display: block;
+  direction: ltr;
+  text-align: right;
+}
+
+/* Navigation Menu */
+.sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.sidebar-menu-title {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin: 0.5rem 0.5rem 0.25rem;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.95rem;
+  border: 1px solid transparent;
+  background: none;
+  cursor: pointer;
+  text-align: right;
+  width: 100%;
+  transition: all var(--transition-fast);
+}
+
+.sidebar-item:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sidebar-item.active {
+  color: var(--text-inverse);
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+  box-shadow: 0 4px 14px var(--accent-glow);
+  border-color: transparent;
+}
+
+.sidebar-item.active .side-icon {
+  filter: brightness(0.2);
+}
+
+.sidebar-footer {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: auto;
+}
+
+/* ========================================================
+   2. MAIN VIEW AREA
+   ======================================================== */
+.main-view {
+  flex: 1;
+  min-width: 0;
+  padding: 1.75rem 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+  flex-wrap: wrap;
+}
+
+.page-title {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Tab Sections */
+.tab-content {
+  display: none;
+  animation: fadeIn 0.25s ease forwards;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========================================================
+   3. MOBILE DRAWER & RESPONSIVENESS
+   ======================================================== */
+.mobile-header {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  background: var(--panel-glass);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-primary);
+  position: sticky;
+  top: 0;
+  z-index: 99;
+}
+
+.mobile-menu-btn {
+  background: none;
+  border: none;
+  color: var(--text-main);
+  font-size: 1.75rem;
+  cursor: pointer;
+}
+
+.mobile-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 95;
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .mobile-header {
+    display: flex;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    transform: translateX(100%);
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+    z-index: 101;
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .mobile-overlay.active {
+    display: block;
+  }
+
+  .main-view {
+    padding: 1.25rem 1rem;
+  }
+}

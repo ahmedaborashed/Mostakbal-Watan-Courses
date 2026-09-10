@@ -1,0 +1,105 @@
+/* src/styles/variables.css */
+:root {
+  /* Default Brand Accents (Theme: Green) */
+  --accent: #00e676;
+  --accent-secondary: #12c96b;
+  --accent-glow: rgba(0, 230, 118, 0.4);
+  --accent-glow-subtle: rgba(0, 230, 118, 0.15);
+
+  /* Neutrals & Dark Surfaces */
+  --bg-primary: #020a06;
+  --bg-secondary: #06140d;
+  --panel-bg: #071b12;
+  --panel-secondary: #0a2417;
+  --panel-glass: rgba(7, 27, 18, 0.85);
+
+  /* Gold Highlights */
+  --gold: #d8ad55;
+  --gold-glow: rgba(216, 173, 85, 0.4);
+  --gold-light: #f2d27b;
+
+  /* Feedback Colors */
+  --color-danger: #ef4444;
+  --color-danger-bg: rgba(239, 68, 68, 0.15);
+  --color-success: #10b981;
+  --color-success-bg: rgba(16, 185, 129, 0.15);
+  --color-warning: #f59e0b;
+  --color-warning-bg: rgba(245, 158, 11, 0.15);
+  --color-info: #38bdf8;
+  --color-info-bg: rgba(56, 189, 248, 0.15);
+
+  /* Text Colors */
+  --text-main: #f5f8f6;
+  --text-muted: #94a3b8;
+  --text-subtle: #64748b;
+  --text-inverse: #020a06;
+
+  /* Borders */
+  --border-primary: rgba(0, 230, 118, 0.18);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-focus: var(--accent);
+
+  /* Sizing & Radius */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 25px 70px rgba(0, 0, 0, 0.55);
+  --shadow-accent: 0 0 20px var(--accent-glow);
+
+  /* Typography */
+  --font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+  --font-size-base: 16px;
+
+  /* Transitions */
+  --transition-fast: 0.18s ease;
+  --transition-normal: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Cyan Theme Variant */
+[data-theme="cyan"] {
+  --accent: #22d3ee;
+  --accent-secondary: #06b6d4;
+  --accent-glow: rgba(34, 211, 238, 0.4);
+  --accent-glow-subtle: rgba(34, 211, 238, 0.15);
+  --bg-primary: #020617;
+  --bg-secondary: #0b132b;
+  --panel-bg: #0f172a;
+  --panel-secondary: #1e293b;
+  --panel-glass: rgba(15, 23, 42, 0.85);
+  --border-primary: rgba(34, 211, 238, 0.22);
+}
+
+/* Purple Theme Variant */
+[data-theme="purple"] {
+  --accent: #a855f7;
+  --accent-secondary: #9333ea;
+  --accent-glow: rgba(168, 85, 247, 0.4);
+  --accent-glow-subtle: rgba(168, 85, 247, 0.15);
+  --bg-primary: #0b0714;
+  --bg-secondary: #140d24;
+  --panel-bg: #1c1333;
+  --panel-secondary: #271b46;
+  --panel-glass: rgba(28, 19, 51, 0.85);
+  --border-primary: rgba(168, 85, 247, 0.22);
+}
+
+/* Gold Theme Variant */
+[data-theme="gold"] {
+  --accent: #fbbf24;
+  --accent-secondary: #d97706;
+  --accent-glow: rgba(251, 191, 36, 0.4);
+  --accent-glow-subtle: rgba(251, 191, 36, 0.15);
+  --bg-primary: #0f0c05;
+  --bg-secondary: #1a150a;
+  --panel-bg: #241d0e;
+  --panel-secondary: #302714;
+  --panel-glass: rgba(36, 29, 14, 0.85);
+  --border-primary: rgba(251, 191, 36, 0.22);
+}

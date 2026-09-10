@@ -2,17 +2,20 @@
 import { auth } from "./firebase.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { appStore } from "./store.js";
+import { ROLES } from "./constants.js";
 
 /**
  * Modern Route Guard based on Custom Claims (with fallback to legacy email suffix).
  * @param {string|string[]} allowedRoles - 'student', 'teacher', 'admin', or array of roles
+ * @returns {Promise<{user: object, role: string, claims: object}>}
  */
 export function protectRoute(allowedRoles) {
   const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
 
-  return new Promise((resolve) => {
-    onAuthStateChanged(auth, async (user) => {
+  return new Promise((resolve, reject) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
+        unsubscribe();
         window.location.replace("index.html");
         return;
       }
@@ -26,10 +29,10 @@ export function protectRoute(allowedRoles) {
         // Determine user role
         let role = claims.role;
         if (!role) {
-          if (email.endsWith("@admin.local")) role = "admin";
-          else if (email.endsWith("@system.local")) role = "teacher";
-          else if (email.endsWith("@student.local")) role = "student";
-          else role = "student";
+          if (email.endsWith("@admin.local")) role = ROLES.ADMIN;
+          else if (email.endsWith("@system.local")) role = ROLES.TEACHER;
+          else if (email.endsWith("@student.local")) role = ROLES.STUDENT;
+          else role = ROLES.STUDENT;
         }
 
         appStore.set("user", user);
@@ -37,16 +40,19 @@ export function protectRoute(allowedRoles) {
         appStore.set("claims", claims);
 
         if (!roles.includes(role)) {
-          alert("غير مصرح لك بالدخول لهذه الصفحة 🚫");
+          unsubscribe();
           await signOut(auth);
           window.location.replace("index.html");
           return;
         }
 
+        unsubscribe();
         resolve({ user, role, claims });
       } catch (err) {
         console.error("Auth guard verification error:", err);
+        unsubscribe();
         window.location.replace("index.html");
+        reject(err);
       }
     });
   });

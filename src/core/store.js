@@ -3,15 +3,17 @@
 /**
  * Lightweight, zero-dependency Reactive Store using JS Proxy and Pub-Sub.
  */
-class Store {
+export class Store {
   constructor(initialState = {}) {
     this.subscribers = new Map();
-    this.state = new Proxy(initialState, {
+    this._target = { ...initialState };
+    this.state = new Proxy(this._target, {
       set: (target, key, value) => {
+        const prevValue = target[key];
         target[key] = value;
-        if (this.subscribers.has(key)) {
+        if (this.subscribers.has(key) && prevValue !== value) {
           this.subscribers.get(key).forEach(callback => {
-            try { callback(value); } catch (err) { console.error(`Store listener error on [${String(key)}]:`, err); }
+            try { callback(value, prevValue); } catch (err) { console.error(`Store listener error on [${String(key)}]:`, err); }
           });
         }
         return true;
@@ -25,7 +27,7 @@ class Store {
     }
     this.subscribers.get(key).add(callback);
     if (this.state[key] !== undefined) {
-      callback(this.state[key]);
+      try { callback(this.state[key], undefined); } catch (err) { console.error(`Store initial call error on [${String(key)}]:`, err); }
     }
     return () => this.subscribers.get(key)?.delete(callback);
   }
@@ -36,6 +38,12 @@ class Store {
 
   get(key) {
     return this.state[key];
+  }
+
+  update(partial) {
+    Object.entries(partial).forEach(([k, v]) => {
+      this.state[k] = v;
+    });
   }
 }
 
