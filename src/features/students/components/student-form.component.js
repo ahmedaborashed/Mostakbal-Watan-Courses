@@ -6,7 +6,7 @@ import { GROUPS } from "../../../core/constants.js";
 
 export function renderAddStudentModal() {
   const groupOptions = [
-    { value: "", label: "-- اختر المجموعة --" },
+    { value: "", label: "-- اختر المجموعة الدراسية --" },
     ...GROUPS.map((g) => ({ value: g, label: g }))
   ];
 
@@ -21,20 +21,21 @@ export function renderAddStudentModal() {
 
       ${renderInput({
         id: "newStudentPhone",
-        label: "رقم الهاتف (اسم المستخدم)",
+        label: "رقم الهاتف (سيكون اسم المستخدم لتسجيل الدخول)",
         placeholder: "010xxxxxxxx",
-        required: true
+        required: true,
+        hint: "سيتم إنشاء حساب تلقائي بكلمة مرور افتراضية (123456) أو رقم الهاتف"
       })}
 
       ${renderInput({
         id: "newStudentNationalId",
         label: "الرقم القومي (اختياري)",
-        placeholder: "14 رقم"
+        placeholder: "14 رقم قومي"
       })}
 
       ${renderInput({
         id: "newStudentAddress",
-        label: "العنوان (اختياري)",
+        label: "العنوان ومحل الإقامة (اختياري)",
         placeholder: "المحلة الكبرى - ..."
       })}
 
@@ -45,13 +46,13 @@ export function renderAddStudentModal() {
         required: true
       })}
 
-      <div class="mt-4 text-left">
+      <div class="mt-6 text-left">
         ${renderButton({
           id: "submitAddStudentBtn",
-          text: "إضافة الطالب وتوليد الحساب 🚀",
+          text: "إضافة الطالب وتوليد الحساب الأكاديمي 🚀",
           type: "submit",
           variant: "primary",
-          className: "w-full"
+          className: "w-full btn-lg"
         })}
       </div>
     </form>
@@ -59,8 +60,9 @@ export function renderAddStudentModal() {
 
   return renderModal({
     id: "addStudentModal",
-    title: "👥 إضافة طالب جديد",
-    bodyHtml
+    title: "👥 إضافة طالب جديد إلى المنصة",
+    bodyHtml,
+    maxWidth: "600px"
   });
 }
 
@@ -68,23 +70,26 @@ export function renderResetPasswordModal() {
   const bodyHtml = `
     <form id="resetStudentPasswordForm" onsubmit="return false;">
       <input type="hidden" id="resetPasswordStudentUid" value="" />
-      <p class="text-sm text-muted mb-3" id="resetPasswordStudentNameHint"></p>
+      <div class="p-3 mb-4" style="background:var(--color-bg-secondary);border-radius:var(--radius-sm);border:1px solid var(--color-border-subtle);">
+        <span class="text-xs text-muted d-block mb-1">تعيين كلمة مرور جديدة للطالب:</span>
+        <strong id="resetPasswordStudentNameHint" class="text-accent font-extrabold" style="font-size:1.1rem;"></strong>
+      </div>
 
       ${renderInput({
         id: "resetNewPasswordInput",
         type: "password",
         label: "كلمة المرور الجديدة",
-        placeholder: "6 أحرف على الأقل",
+        placeholder: "6 أحرف أو أرقام على الأقل",
         required: true
       })}
 
-      <div class="mt-4">
+      <div class="mt-6">
         ${renderButton({
           id: "submitResetPasswordBtn",
           text: "حفظ كلمة المرور الجديدة 🔐",
           type: "submit",
           variant: "primary",
-          className: "w-full"
+          className: "w-full btn-lg"
         })}
       </div>
     </form>
@@ -92,7 +97,8 @@ export function renderResetPasswordModal() {
 
   return renderModal({
     id: "resetStudentPasswordModal",
-    title: "🔐 إعادة تعيين كلمة المرور",
-    bodyHtml
+    title: "🔐 إعادة تعيين كلمة المرور لطالب",
+    bodyHtml,
+    maxWidth: "480px"
   });
 }

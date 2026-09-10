@@ -7,6 +7,8 @@ import { validateStudentData } from "../../shared/validators/student.validator.j
 import { openModal, closeModal } from "../../shared/components/Modal/modal.component.js";
 import { renderLoader } from "../../shared/components/Loader/loader.component.js";
 import { showToast } from "../../shared/components/Toast/toast.component.js";
+import { showConfirmDialog } from "../../shared/components/ConfirmDialog/confirm-dialog.component.js";
+import { renderErrorState } from "../../shared/components/ErrorState/error-state.component.js";
 import { setHtml } from "../../shared/utils/dom.utils.js";
 
 export const StudentsController = {
@@ -37,6 +39,17 @@ export const StudentsController = {
     } catch (err) {
       console.error("Failed to load students:", err);
       showToast(err.message, "error");
+      setHtml(
+        container,
+        renderErrorState({
+          title: "تعذر تحميل قائمة الطلاب",
+          message: err.message || "حدث خطأ غير متوقع أثناء استرجاع بيانات الطلاب من الخادم.",
+          retryBtnText: "إعادة المحاولة 🔄",
+        })
+      );
+      container.querySelector("#retryBtn")?.addEventListener("click", () => {
+        this.loadStudentsList(containerId, { canDelete });
+      });
     }
   },
 
@@ -131,7 +144,15 @@ export const StudentsController = {
           const uid = btn.getAttribute("data-delete-student");
           const name = btn.getAttribute("data-student-name");
 
-          if (confirm(`هل أنت متأكد من حذف حساب الطالب "${name}" نهائياً؟ ⚠️\nسيتم حذف بيانات الحساب بالكامل.`)) {
+          const confirmed = await showConfirmDialog({
+            title: "حذف حساب طالب",
+            message: `هل أنت متأكد من حذف حساب الطالب "${name}" نهائياً؟ ⚠️ لا يمكن التراجع عن هذه الخطوة وسيتم حذف الحساب وبياناته بالكامل.`,
+            confirmText: "نعم، حذف الحساب 🗑️",
+            confirmVariant: "danger",
+            cancelText: "إلغاء",
+          });
+
+          if (confirmed) {
             try {
               await StudentsService.deleteStudent(uid);
               showToast("تم حذف حساب الطالب بنجاح", "info");
