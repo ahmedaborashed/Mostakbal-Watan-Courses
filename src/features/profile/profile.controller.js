@@ -29,23 +29,23 @@ export const ProfileController = {
               id: "profileNewPassword",
               type: "password",
               label: "كلمة المرور الجديدة",
-              placeholder: "6 أحرف على الأقل",
+              placeholder: "6 أحرف أو أرقام على الأقل",
               required: true
             })}
             ${renderInput({
               id: "profileConfirmPassword",
               type: "password",
-              label: "تأكيد كلمة المرور",
+              label: "تأكيد كلمة المرور الجديدة",
               placeholder: "أعد كتابة كلمة المرور",
               required: true
             })}
-            <div class="mt-4">
+            <div class="mt-6">
               ${renderButton({
                 id: "submitUserPasswordBtn",
                 text: "تأكيد تغيير كلمة المرور 🔐",
                 type: "submit",
                 variant: "primary",
-                className: "w-full"
+                className: "w-full btn-lg"
               })}
             </div>
           </form>
@@ -82,7 +82,7 @@ export const ProfileController = {
         ProfileService.applyTheme(theme);
         profileState.set("theme", theme);
         this.loadSettingsView(container);
-        showToast(`تم تطبيق اللون الجديد: ${theme} 🎨`, "success");
+        showToast(`تم تطبيق السمة اللونية الجديدة بنجاح 🎨`, "success");
       });
     });
 
@@ -103,37 +103,48 @@ export const ProfileController = {
 
     // Bind language select
     document.getElementById("platformLanguageSelect")?.addEventListener("change", (e) => {
-      const lang = e.target.value;
-      ProfileService.applyLanguage(lang);
-      profileState.set("language", lang);
-      showToast("تم تحديث لغة المنصة", "info");
+      const selected = e.target.value;
+      ProfileService.applyLanguage(selected);
+      profileState.set("language", selected);
+      showToast(`تم ضبط لغة المنصة: ${selected === "ar" ? "العربية" : "English"} 🌐`, "info");
     });
   },
 
+  /**
+   * Binds change password form submission.
+   */
   bindPasswordForm() {
     const form = document.getElementById("userChangePasswordForm");
     form?.addEventListener("submit", async () => {
-      const newPass = document.getElementById("profileNewPassword")?.value;
-      const confirmPass = document.getElementById("profileConfirmPassword")?.value;
-      const submitBtn = document.getElementById("submitUserPasswordBtn");
+      const newPass = document.getElementById("profileNewPassword")?.value || "";
+      const confirmPass = document.getElementById("profileConfirmPassword")?.value || "";
 
       try {
-        const validatedPass = validatePasswordChange(newPass, confirmPass);
+        validatePasswordChange(newPass, confirmPass);
+      } catch (validationErr) {
+        showToast(validationErr.message, "warning");
+        return;
+      }
 
-        if (submitBtn) {
-          submitBtn.disabled = true;
-          submitBtn.innerText = "جاري التحديث... ⏳";
-        }
+      const submitBtn = document.getElementById("submitUserPasswordBtn");
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add("is-loading");
+        submitBtn.innerText = "جاري تحديث كلمة المرور... ⏳";
+      }
 
-        await ProfileService.updatePassword(validatedPass);
-        showToast("تم تغيير كلمة المرور بنجاح 🔐", "success");
+      try {
+        await ProfileService.updatePassword(newPass);
+        showToast("تم تحديث كلمة المرور بنجاح ✅", "success");
         closeModal("userChangePasswordModal");
         form.reset();
       } catch (err) {
+        console.error("Password change failed:", err);
         showToast(err.message, "error");
       } finally {
         if (submitBtn) {
           submitBtn.disabled = false;
+          submitBtn.classList.remove("is-loading");
           submitBtn.innerText = "تأكيد تغيير كلمة المرور 🔐";
         }
       }
