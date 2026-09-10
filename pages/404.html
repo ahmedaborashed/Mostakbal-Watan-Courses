@@ -1,43 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mostakbal Watan</title>
+  <title>Mostakbal Watan Courses</title>
 
   <script>
     const path = window.location.pathname;
 
-    if (path.endsWith("/teacher")) {
+    if (path.endsWith("/teacher") || path.endsWith("/teacher.html")) {
       window.location.replace(
-        "/Mostakbal-Watan-Courses/teacher.html" +
+        "/Mostakbal-Watan-Courses/pages/teacher.html" +
         window.location.search +
         window.location.hash
       );
     }
-
-    else if (path.endsWith("/student")) {
+    else if (path.endsWith("/student") || path.endsWith("/student.html")) {
       window.location.replace(
-        "/Mostakbal-Watan-Courses/student.html" +
+        "/Mostakbal-Watan-Courses/pages/student.html" +
         window.location.search +
         window.location.hash
       );
     }
-
-    else if (path.endsWith("/admin")) {
+    else if (path.endsWith("/admin") || path.endsWith("/admin.html")) {
       window.location.replace(
-        "/Mostakbal-Watan-Courses/admin.html" +
+        "/Mostakbal-Watan-Courses/pages/admin.html" +
         window.location.search +
         window.location.hash
       );
     }
-
     else {
       window.location.replace("/Mostakbal-Watan-Courses/");
     }
   </script>
 </head>
-
 <body>
 </body>
 </html>

@@ -33,6 +33,30 @@
     ],
     "rewrites": [
       {
+        "source": "/student",
+        "destination": "/pages/student.html"
+      },
+      {
+        "source": "/student.html",
+        "destination": "/pages/student.html"
+      },
+      {
+        "source": "/teacher",
+        "destination": "/pages/teacher.html"
+      },
+      {
+        "source": "/teacher.html",
+        "destination": "/pages/teacher.html"
+      },
+      {
+        "source": "/admin",
+        "destination": "/pages/admin.html"
+      },
+      {
+        "source": "/admin.html",
+        "destination": "/pages/admin.html"
+      },
+      {
         "source": "/api/**",
         "function": "api"
       }

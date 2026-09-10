@@ -64,9 +64,9 @@ export const AuthService = {
       appStore.set("role", role);
       appStore.set("claims", claims);
 
-      let redirectPage = "student.html";
-      if (role === ROLES.ADMIN) redirectPage = "admin.html";
-      else if (role === ROLES.TEACHER) redirectPage = "teacher.html";
+      let redirectPage = "pages/student.html";
+      if (role === ROLES.ADMIN) redirectPage = "pages/admin.html";
+      else if (role === ROLES.TEACHER) redirectPage = "pages/teacher.html";
 
       return {
         user,
@@ -85,7 +85,8 @@ export const AuthService = {
       appStore.set("user", null);
       appStore.set("role", null);
       appStore.set("claims", null);
-      window.location.replace("index.html");
+      const isPagesDir = window.location.pathname.includes("/pages/");
+      window.location.replace(isPagesDir ? "../index.html" : "index.html");
     } catch (err) {
       console.error("Logout Error:", err);
       window.location.replace("index.html");

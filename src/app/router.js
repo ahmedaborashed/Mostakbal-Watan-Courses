@@ -12,12 +12,20 @@ export const Router = {
   },
 
   navigateToRole(role) {
-    if (role === ROLES.ADMIN) window.location.href = "admin.html";
-    else if (role === ROLES.TEACHER) window.location.href = "teacher.html";
-    else window.location.href = "student.html";
+    const isPagesDir = window.location.pathname.includes("/pages/");
+    const prefix = isPagesDir ? "" : "pages/";
+
+    if (role === ROLES.ADMIN) {
+      window.location.href = `${prefix}admin.html`;
+    } else if (role === ROLES.TEACHER) {
+      window.location.href = `${prefix}teacher.html`;
+    } else {
+      window.location.href = `${prefix}student.html`;
+    }
   },
 
   navigateToLogin() {
-    window.location.href = "index.html";
+    const isPagesDir = window.location.pathname.includes("/pages/");
+    window.location.href = isPagesDir ? "../index.html" : "index.html";
   }
 };
