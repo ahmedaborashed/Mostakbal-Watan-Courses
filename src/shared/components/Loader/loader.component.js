@@ -3,13 +3,16 @@ import { escapeHtml } from "../../utils/dom.utils.js";
 
 /**
  * Returns HTML string for an inline loader.
+ * @param {object} options
+ * @param {string} [options.text]
+ * @param {"normal"|"sm"} [options.size]
  */
 export function renderLoader({ text = "جاري التحميل... ⏳", size = "normal" } = {}) {
   const sizeClass = size === "sm" ? "spinner-sm" : "";
   return `
-    <div class="text-center py-4">
+    <div class="text-center py-6" role="status" aria-live="polite">
       <div class="spinner ${sizeClass}"></div>
-      ${text ? `<p class="text-muted mt-2">${escapeHtml(text)}</p>` : ""}
+      ${text ? `<p class="text-muted text-sm mt-3 font-semibold">${escapeHtml(text)}</p>` : ""}
     </div>
   `;
 }
@@ -25,6 +28,7 @@ export function showLoadingScreen(message = "أهلاً بيك 🚀") {
     if (text) text.innerText = message;
     if (count) count.innerText = "⏳";
     screen.style.display = "flex";
+    screen.setAttribute("aria-hidden", "false");
   }
 }
 
@@ -35,5 +39,6 @@ export function hideLoadingScreen() {
   const screen = document.getElementById("loadingScreen");
   if (screen) {
     screen.style.display = "none";
+    screen.setAttribute("aria-hidden", "true");
   }
 }

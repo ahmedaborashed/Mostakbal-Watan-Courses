@@ -17,21 +17,27 @@ function ensureContainer() {
 /**
  * Displays a toast message with icon and auto-dismiss.
  * @param {string} message - Message text
- * @param {"info"|"success"|"error"|"warning"} type - Status type
- * @param {number} duration - Display time in ms
+ * @param {"info"|"success"|"error"|"warning"} [type="info"] - Status type
+ * @param {number} [duration=3400] - Display time in ms
  */
-export function showToast(message, type = "info", duration = 3200) {
+export function showToast(message, type = "info", duration = 3400) {
   ensureContainer();
 
   const item = document.createElement("div");
-  item.className = "toast-item";
+  item.className = `toast-item toast-${type}`;
+  item.setAttribute("role", "status");
+  item.setAttribute("aria-live", "polite");
 
   let icon = "ℹ️";
   if (type === "success") icon = "✅";
   if (type === "error") icon = "❌";
   if (type === "warning") icon = "⚠️";
 
-  item.innerHTML = `<span>${icon}</span> <span>${escapeHtml(message)}</span>`;
+  item.innerHTML = `
+    <span class="toast-icon" aria-hidden="true">${icon}</span>
+    <span class="toast-text">${escapeHtml(message)}</span>
+  `;
+
   toastContainer.appendChild(item);
 
   // Animate in
@@ -41,7 +47,7 @@ export function showToast(message, type = "info", duration = 3200) {
 
   setTimeout(() => {
     item.classList.remove("show");
-    setTimeout(() => item.remove(), 300);
+    setTimeout(() => item.remove(), 280);
   }, duration);
 }
 

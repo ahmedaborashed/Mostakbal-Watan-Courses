@@ -1,6 +1,9 @@
 // src/shared/components/Input/input.component.js
 import { escapeHtml } from "../../utils/dom.utils.js";
 
+/**
+ * Standard Text / Number / Tel Input
+ */
 export function renderInput({
   id = "",
   name = "",
@@ -11,12 +14,14 @@ export function renderInput({
   required = false,
   disabled = false,
   error = "",
+  hint = "",
+  className = "",
   extraAttrs = ""
-}) {
+} = {}) {
   const inputId = id || (name ? `inp_${name}` : "");
   return `
-    <div class="form-group">
-      ${label ? `<label class="form-label" for="${escapeHtml(inputId)}">${escapeHtml(label)}</label>` : ""}
+    <div class="form-group ${escapeHtml(className)}">
+      ${label ? `<label class="form-label" for="${escapeHtml(inputId)}"><span>${escapeHtml(label)}</span>${required ? '<span class="text-danger">*</span>' : ''}</label>` : ""}
       <input
         class="form-input ${error ? "has-error" : ""}"
         type="${escapeHtml(type)}"
@@ -28,11 +33,15 @@ export function renderInput({
         ${disabled ? "disabled" : ""}
         ${extraAttrs}
       />
+      ${hint && !error ? `<div class="form-hint">${escapeHtml(hint)}</div>` : ""}
       ${error ? `<div class="form-error">⚠️ ${escapeHtml(error)}</div>` : ""}
     </div>
   `;
 }
 
+/**
+ * Password Input with show/hide toggle
+ */
 export function renderPasswordInput({
   id = "password",
   name = "password",
@@ -40,12 +49,13 @@ export function renderPasswordInput({
   placeholder = "••••••••",
   required = false,
   error = "",
+  hint = "",
   extraAttrs = ""
-}) {
+} = {}) {
   const toggleId = `${id}Toggle`;
   return `
     <div class="form-group">
-      ${label ? `<label class="form-label" for="${escapeHtml(id)}">${escapeHtml(label)}</label>` : ""}
+      ${label ? `<label class="form-label" for="${escapeHtml(id)}"><span>${escapeHtml(label)}</span>${required ? '<span class="text-danger">*</span>' : ''}</label>` : ""}
       <div class="password-input-wrapper">
         <input
           class="form-input ${error ? "has-error" : ""}"
@@ -53,6 +63,7 @@ export function renderPasswordInput({
           id="${escapeHtml(id)}"
           name="${escapeHtml(name)}"
           placeholder="${escapeHtml(placeholder)}"
+          autocomplete="current-password"
           ${required ? "required" : ""}
           ${extraAttrs}
         />
@@ -60,34 +71,39 @@ export function renderPasswordInput({
           type="button"
           id="${escapeHtml(toggleId)}"
           class="password-toggle-btn"
+          aria-label="إظهار أو إخفاء كلمة المرور"
           title="إظهار / إخفاء كلمة المرور"
           data-toggle-target="${escapeHtml(id)}"
         >
           👁️
         </button>
       </div>
+      ${hint && !error ? `<div class="form-hint">${escapeHtml(hint)}</div>` : ""}
       ${error ? `<div class="form-error">⚠️ ${escapeHtml(error)}</div>` : ""}
     </div>
   `;
 }
 
+/**
+ * Select Dropdown Input
+ */
 export function renderSelect({
   id = "",
   name = "",
   label = "",
-  options = [], // [{ value: '', label: '' }] or string[]
+  options = [],
   selected = "",
   required = false,
   disabled = false,
   error = "",
   extraAttrs = ""
-}) {
+} = {}) {
   const selectId = id || (name ? `sel_${name}` : "");
   return `
     <div class="form-group">
-      ${label ? `<label class="form-label" for="${escapeHtml(selectId)}">${escapeHtml(label)}</label>` : ""}
+      ${label ? `<label class="form-label" for="${escapeHtml(selectId)}"><span>${escapeHtml(label)}</span>${required ? '<span class="text-danger">*</span>' : ''}</label>` : ""}
       <select
-        class="form-select"
+        class="form-select ${error ? "has-error" : ""}"
         id="${escapeHtml(selectId)}"
         name="${escapeHtml(name || selectId)}"
         ${required ? "required" : ""}
@@ -108,6 +124,9 @@ export function renderSelect({
   `;
 }
 
+/**
+ * Textarea Input
+ */
 export function renderTextarea({
   id = "",
   name = "",
@@ -118,14 +137,15 @@ export function renderTextarea({
   required = false,
   disabled = false,
   error = "",
+  hint = "",
   extraAttrs = ""
-}) {
+} = {}) {
   const textId = id || (name ? `txt_${name}` : "");
   return `
     <div class="form-group">
-      ${label ? `<label class="form-label" for="${escapeHtml(textId)}">${escapeHtml(label)}</label>` : ""}
+      ${label ? `<label class="form-label" for="${escapeHtml(textId)}"><span>${escapeHtml(label)}</span>${required ? '<span class="text-danger">*</span>' : ''}</label>` : ""}
       <textarea
-        class="form-textarea"
+        class="form-textarea ${error ? "has-error" : ""}"
         id="${escapeHtml(textId)}"
         name="${escapeHtml(name || textId)}"
         rows="${rows}"
@@ -134,12 +154,34 @@ export function renderTextarea({
         ${disabled ? "disabled" : ""}
         ${extraAttrs}
       >${escapeHtml(value)}</textarea>
+      ${hint && !error ? `<div class="form-hint">${escapeHtml(hint)}</div>` : ""}
       ${error ? `<div class="form-error">⚠️ ${escapeHtml(error)}</div>` : ""}
     </div>
   `;
 }
 
-// Password toggle global event listener
+/**
+ * Switch Toggle Control
+ */
+export function renderSwitch({
+  id = "",
+  name = "",
+  label = "",
+  checked = false,
+  extraAttrs = ""
+} = {}) {
+  return `
+    <label class="custom-control" for="${escapeHtml(id)}">
+      <div class="custom-switch">
+        <input type="checkbox" id="${escapeHtml(id)}" name="${escapeHtml(name || id)}" ${checked ? "checked" : ""} ${extraAttrs} />
+        <span class="switch-slider"></span>
+      </div>
+      ${label ? `<span class="font-bold text-sm">${escapeHtml(label)}</span>` : ""}
+    </label>
+  `;
+}
+
+// Global delegated listener for password visibility toggling
 if (typeof document !== "undefined") {
   document.addEventListener("click", (e) => {
     const btn = e.target.closest(".password-toggle-btn");

@@ -1,105 +1,242 @@
-/* src/styles/variables.css */
+/* src/styles/variables.css - Centralized Design Tokens System */
+
 :root {
-  /* Default Brand Accents (Theme: Green) */
-  --accent: #00e676;
-  --accent-secondary: #12c96b;
-  --accent-glow: rgba(0, 230, 118, 0.4);
-  --accent-glow-subtle: rgba(0, 230, 118, 0.15);
+  /* ========================================================
+     1. TYPOGRAPHY
+     ======================================================== */
+  --font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-md: 1.125rem;   /* 18px */
+  --font-size-lg: 1.25rem;    /* 20px */
+  --font-size-xl: 1.5rem;     /* 24px */
+  --font-size-2xl: 1.875rem;  /* 30px */
+  --font-size-3xl: 2.25rem;   /* 36px */
+  --font-size-4xl: 3rem;      /* 48px */
 
-  /* Neutrals & Dark Surfaces */
-  --bg-primary: #020a06;
-  --bg-secondary: #06140d;
-  --panel-bg: #071b12;
-  --panel-secondary: #0a2417;
-  --panel-glass: rgba(7, 27, 18, 0.85);
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-weight-black: 900;
 
-  /* Gold Highlights */
-  --gold: #d8ad55;
-  --gold-glow: rgba(216, 173, 85, 0.4);
-  --gold-light: #f2d27b;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.7;
 
-  /* Feedback Colors */
-  --color-danger: #ef4444;
-  --color-danger-bg: rgba(239, 68, 68, 0.15);
-  --color-success: #10b981;
-  --color-success-bg: rgba(16, 185, 129, 0.15);
-  --color-warning: #f59e0b;
-  --color-warning-bg: rgba(245, 158, 11, 0.15);
-  --color-info: #38bdf8;
-  --color-info-bg: rgba(56, 189, 248, 0.15);
+  /* ========================================================
+     2. SPACING SCALE (4px base)
+     ======================================================== */
+  --space-0: 0;
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+  --space-20: 5rem;    /* 80px */
 
-  /* Text Colors */
-  --text-main: #f5f8f6;
-  --text-muted: #94a3b8;
-  --text-subtle: #64748b;
-  --text-inverse: #020a06;
-
-  /* Borders */
-  --border-primary: rgba(0, 230, 118, 0.18);
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-focus: var(--accent);
-
-  /* Sizing & Radius */
+  /* ========================================================
+     3. BORDER RADIUS
+     ======================================================== */
   --radius-xs: 4px;
   --radius-sm: 8px;
   --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
-  --radius-full: 9999px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-2xl: 30px;
+  --radius-pill: 9999px;
 
-  /* Shadows */
-  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.25);
-  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 25px 70px rgba(0, 0, 0, 0.55);
-  --shadow-accent: 0 0 20px var(--accent-glow);
+  /* ========================================================
+     4. TRANSITIONS & TIMINGS
+     ======================================================== */
+  --transition-fast: 0.16s ease;
+  --transition-normal: 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* Typography */
-  --font-family: 'Cairo', system-ui, -apple-system, sans-serif;
-  --font-size-base: 16px;
+  /* ========================================================
+     5. STATUS & FEEDBACK COLORS (Common across themes)
+     ======================================================== */
+  --color-success: #10b981;
+  --color-success-hover: #059669;
+  --color-success-bg: rgba(16, 185, 129, 0.12);
+  --color-success-border: rgba(16, 185, 129, 0.3);
 
-  /* Transitions */
-  --transition-fast: 0.18s ease;
-  --transition-normal: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  --color-warning: #f59e0b;
+  --color-warning-hover: #d97706;
+  --color-warning-bg: rgba(245, 158, 11, 0.12);
+  --color-warning-border: rgba(245, 158, 11, 0.3);
+
+  --color-danger: #ef4444;
+  --color-danger-hover: #dc2626;
+  --color-danger-bg: rgba(239, 68, 68, 0.12);
+  --color-danger-border: rgba(239, 68, 68, 0.3);
+
+  --color-info: #0ea5e9;
+  --color-info-hover: #0284c7;
+  --color-info-bg: rgba(14, 165, 233, 0.12);
+  --color-info-border: rgba(14, 165, 233, 0.3);
+
+  /* Brand Egyptian Gold Accent */
+  --color-gold: #d8ad55;
+  --color-gold-light: #f3d484;
+  --color-gold-bg: rgba(216, 173, 85, 0.15);
+  --color-gold-border: rgba(216, 173, 85, 0.35);
+
+  /* ========================================================
+     6. DEFAULT THEME: GREEN (Dark Mode)
+     ======================================================== */
+  --color-primary: #00e676;
+  --color-primary-hover: #12c96b;
+  --color-primary-active: #00b359;
+  --color-primary-soft: rgba(0, 230, 118, 0.12);
+  --color-primary-glow: rgba(0, 230, 118, 0.35);
+
+  --color-accent: var(--color-primary);
+  --color-accent-hover: var(--color-primary-hover);
+  --accent: var(--color-primary);
+  --accent-secondary: var(--color-primary-hover);
+  --accent-glow: var(--color-primary-glow);
+  --accent-glow-subtle: var(--color-primary-soft);
+
+  --color-bg-main: #020a06;
+  --color-bg-secondary: #06140d;
+  --color-surface-card: #081c12;
+  --color-surface-elevated: #0d281a;
+  --color-surface-glass: rgba(8, 28, 18, 0.88);
+
+  --bg-primary: var(--color-bg-main);
+  --bg-secondary: var(--color-bg-secondary);
+  --panel-bg: var(--color-surface-card);
+  --panel-secondary: var(--color-surface-elevated);
+  --panel-glass: var(--color-surface-glass);
+
+  --color-text-primary: #f5f8f6;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #8fa394;
+  --color-text-inverse: #020a06;
+  --text-main: var(--color-text-primary);
+  --text-muted: var(--color-text-muted);
+  --text-subtle: #64748b;
+  --text-inverse: var(--color-text-inverse);
+
+  --color-border-primary: rgba(0, 230, 118, 0.2);
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
+  --color-border-focus: var(--color-primary);
+  --border-primary: var(--color-border-primary);
+  --border-subtle: var(--color-border-subtle);
+  --border-focus: var(--color-border-focus);
+
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.6);
+  --shadow-accent: 0 0 24px var(--color-primary-glow);
+
+  --gold: var(--color-gold);
+  --gold-light: var(--color-gold-light);
+  --gold-glow: rgba(216, 173, 85, 0.4);
 }
 
-/* Cyan Theme Variant */
+/* ========================================================
+   7. THEME: CYAN (Azure / Modern Tech)
+   ======================================================== */
 [data-theme="cyan"] {
-  --accent: #22d3ee;
-  --accent-secondary: #06b6d4;
-  --accent-glow: rgba(34, 211, 238, 0.4);
-  --accent-glow-subtle: rgba(34, 211, 238, 0.15);
-  --bg-primary: #020617;
-  --bg-secondary: #0b132b;
-  --panel-bg: #0f172a;
-  --panel-secondary: #1e293b;
-  --panel-glass: rgba(15, 23, 42, 0.85);
-  --border-primary: rgba(34, 211, 238, 0.22);
+  --color-primary: #06b6d4;
+  --color-primary-hover: #22d3ee;
+  --color-primary-active: #0891b2;
+  --color-primary-soft: rgba(6, 182, 212, 0.14);
+  --color-primary-glow: rgba(6, 182, 212, 0.38);
+
+  --color-bg-main: #020617;
+  --color-bg-secondary: #0b1329;
+  --color-surface-card: #0f172a;
+  --color-surface-elevated: #1e293b;
+  --color-surface-glass: rgba(15, 23, 42, 0.88);
+
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+
+  --color-border-primary: rgba(6, 182, 212, 0.24);
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
+  --shadow-accent: 0 0 24px rgba(6, 182, 212, 0.4);
 }
 
-/* Purple Theme Variant */
+/* ========================================================
+   8. THEME: PURPLE (Violet / Creative LMS)
+   ======================================================== */
 [data-theme="purple"] {
-  --accent: #a855f7;
-  --accent-secondary: #9333ea;
-  --accent-glow: rgba(168, 85, 247, 0.4);
-  --accent-glow-subtle: rgba(168, 85, 247, 0.15);
-  --bg-primary: #0b0714;
-  --bg-secondary: #140d24;
-  --panel-bg: #1c1333;
-  --panel-secondary: #271b46;
-  --panel-glass: rgba(28, 19, 51, 0.85);
-  --border-primary: rgba(168, 85, 247, 0.22);
+  --color-primary: #a855f7;
+  --color-primary-hover: #c084fc;
+  --color-primary-active: #9333ea;
+  --color-primary-soft: rgba(168, 85, 247, 0.14);
+  --color-primary-glow: rgba(168, 85, 247, 0.38);
+
+  --color-bg-main: #090514;
+  --color-bg-secondary: #130c25;
+  --color-surface-card: #1c1236;
+  --color-surface-elevated: #281a4a;
+  --color-surface-glass: rgba(28, 18, 54, 0.88);
+
+  --color-text-primary: #faf5ff;
+  --color-text-secondary: #e9d5ff;
+  --color-text-muted: #a89bb8;
+
+  --color-border-primary: rgba(168, 85, 247, 0.24);
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
+  --shadow-accent: 0 0 24px rgba(168, 85, 247, 0.4);
 }
 
-/* Gold Theme Variant */
+/* ========================================================
+   9. THEME: GOLD (Warm Amber / Executive LMS)
+   ======================================================== */
 [data-theme="gold"] {
-  --accent: #fbbf24;
-  --accent-secondary: #d97706;
-  --accent-glow: rgba(251, 191, 36, 0.4);
-  --accent-glow-subtle: rgba(251, 191, 36, 0.15);
-  --bg-primary: #0f0c05;
-  --bg-secondary: #1a150a;
-  --panel-bg: #241d0e;
-  --panel-secondary: #302714;
-  --panel-glass: rgba(36, 29, 14, 0.85);
-  --border-primary: rgba(251, 191, 36, 0.22);
+  --color-primary: #f59e0b;
+  --color-primary-hover: #fbbf24;
+  --color-primary-active: #d97706;
+  --color-primary-soft: rgba(245, 158, 11, 0.14);
+  --color-primary-glow: rgba(245, 158, 11, 0.38);
+
+  --color-bg-main: #0f0b04;
+  --color-bg-secondary: #1a1407;
+  --color-surface-card: #251d0b;
+  --color-surface-elevated: #33280f;
+  --color-surface-glass: rgba(37, 29, 11, 0.88);
+
+  --color-text-primary: #fffbeb;
+  --color-text-secondary: #fef3c7;
+  --color-text-muted: #b8a682;
+
+  --color-border-primary: rgba(245, 158, 11, 0.24);
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
+  --shadow-accent: 0 0 24px rgba(245, 158, 11, 0.4);
+}
+
+/* ========================================================
+   10. LIGHT MODE SUPPORT (System Adaptive or Explicit)
+   ======================================================== */
+[data-mode="light"] {
+  --color-bg-main: #f8fafc;
+  --color-bg-secondary: #f1f5f9;
+  --color-surface-card: #ffffff;
+  --color-surface-elevated: #ffffff;
+  --color-surface-glass: rgba(255, 255, 255, 0.92);
+
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748b;
+  --color-text-inverse: #ffffff;
+
+  --color-border-subtle: #e2e8f0;
+  --color-border-primary: rgba(0, 180, 90, 0.3);
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.12);
 }
