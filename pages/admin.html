@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="cyan">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#020617">
+  <title>لوحة الإدارة العامة | حزب مستقبل وطن</title>
+
+  <!-- Modular Design System Styles -->
+  <link rel="stylesheet" href="src/styles/variables.css">
+  <link rel="stylesheet" href="src/styles/reset.css">
+  <link rel="stylesheet" href="src/styles/globals.css">
+  <link rel="stylesheet" href="src/styles/components.css">
+  <link rel="stylesheet" href="src/styles/layouts.css">
+  <link rel="stylesheet" href="src/styles/utilities.css">
+</head>
+<body>
+
+  <!-- Root Mount Node -->
+  <div id="appRoot">
+    <div class="text-center" style="padding: 5rem 1rem;">
+      <div class="spinner"></div>
+      <p class="text-muted mt-2">جاري التحقق من صلاحيات المدير العام... 🔐</p>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container"></div>
+
+  <!-- Application Bootstrap & Controller Wiring -->
+  <script type="module">
+    import { Router } from "./src/app/router.js";
+    import { ROLES } from "./src/core/constants.js";
+    import { mountAdminLayout } from "./src/shared/layouts/AdminLayout/admin-layout.component.js";
+    import { StudentsController } from "./src/features/students/students.controller.js";
+    import { AttendanceController } from "./src/features/attendance/attendance.controller.js";
+    import { ProfileController } from "./src/features/profile/profile.controller.js";
+    import { AuthController } from "./src/features/auth/auth.controller.js";
+    import { bootstrapApp } from "./src/app/bootstrap.js";
+
+    bootstrapApp();
+
+    try {
+      // 1. Enforce Admin Security
+      const { user } = await Router.guard(ROLES.ADMIN);
+
+      // 2. Mount Admin Layout
+      const root = document.getElementById("appRoot");
+      const layout = mountAdminLayout(root, {
+        onLogout: () => AuthController.logout(),
+        onTabChange: (tabId) => {
+          if (tabId === "attendance") {
+            AttendanceController.loadTeacherAttendance("adminAttendanceContainer");
+          } else if (tabId === "students") {
+            StudentsController.loadStudentsList("adminStudentsContainer", { canDelete: true });
+          } else if (tabId === "settings") {
+            ProfileController.loadSettingsView("adminSettingsContainer");
+          }
+        }
+      });
+
+      layout.updateProfile({
+        name: "مدير النظام",
+        email: user.email || "admin@admin.local"
+      });
+
+      // 3. Initial Tab Activation
+      AttendanceController.loadTeacherAttendance("adminAttendanceContainer");
+
+    } catch (err) {
+      console.error("Admin page initialization error:", err);
+    }
+  </script>
+</body>
+</html>

@@ -9,12 +9,15 @@ import { renderBadge } from "../../components/Badge/badge.component.js";
 export function mountAdminLayout(container, { onLogout, onTabChange }) {
   if (!container) return;
 
+  const isSubdir = window.location.pathname.includes("/pages/");
+  const logoSrc = isSubdir ? "../assets/images/logo.jpeg" : "assets/images/logo.jpeg";
+
   container.innerHTML = `
     <!-- Mobile Header -->
     <header class="mobile-header">
       <div class="d-flex items-center gap-3">
         <div class="brand-mark" style="width:36px;height:36px;">
-          <img src="logo.jpeg" alt="شعار مستقبل وطن" />
+          <img src="${logoSrc}" alt="شعار مستقبل وطن" />
         </div>
         <div>
           <strong id="mobileAdminName" class="text-sm d-block font-extrabold">الإدارة العامة</strong>
@@ -33,7 +36,7 @@ export function mountAdminLayout(container, { onLogout, onTabChange }) {
       <aside id="adminSidebar" class="sidebar" aria-label="القائمة الجانبية للمدير">
         <div class="brand">
           <div class="brand-mark">
-            <img src="logo.jpeg" alt="شعار مستقبل وطن" />
+            <img src="${logoSrc}" alt="شعار مستقبل وطن" />
           </div>
           <div class="brand-info">
             <h1>مستقبل وطن</h1>

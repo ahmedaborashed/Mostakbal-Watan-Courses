@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="gold">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#06140d">
+  <title>لوحة تحكم المعلم | حزب مستقبل وطن</title>
+
+  <!-- Modular Design System Styles -->
+  <link rel="stylesheet" href="src/styles/variables.css">
+  <link rel="stylesheet" href="src/styles/reset.css">
+  <link rel="stylesheet" href="src/styles/globals.css">
+  <link rel="stylesheet" href="src/styles/components.css">
+  <link rel="stylesheet" href="src/styles/layouts.css">
+  <link rel="stylesheet" href="src/styles/utilities.css">
+</head>
+<body>
+
+  <!-- Root Mount Node -->
+  <div id="appRoot">
+    <div class="text-center" style="padding: 5rem 1rem;">
+      <div class="spinner"></div>
+      <p class="text-muted mt-2">جاري التحقق من صلاحيات المعلم... ⏳</p>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container"></div>
+
+  <!-- Application Bootstrap & Controller Wiring -->
+  <script type="module">
+    import { Router } from "./src/app/router.js";
+    import { ROLES } from "./src/core/constants.js";
+    import { mountTeacherLayout } from "./src/shared/layouts/TeacherLayout/teacher-layout.component.js";
+    import { renderVideoPlayerModal } from "./src/features/lectures/components/video-player-modal.component.js";
+    import { LecturesController } from "./src/features/lectures/lectures.controller.js";
+    import { ExamController } from "./src/features/exams/exam.controller.js";
+    import { AssignmentController } from "./src/features/assignments/assignment.controller.js";
+    import { StudentsController } from "./src/features/students/students.controller.js";
+    import { AttendanceController } from "./src/features/attendance/attendance.controller.js";
+    import { ProfileController } from "./src/features/profile/profile.controller.js";
+    import { AuthController } from "./src/features/auth/auth.controller.js";
+    import { bootstrapApp } from "./src/app/bootstrap.js";
+
+    bootstrapApp();
+
+    try {
+      // 1. Guard Teacher / Admin Route
+      const { user, role } = await Router.guard([ROLES.TEACHER, ROLES.ADMIN]);
+
+      // 2. Mount Teacher Layout
+      const root = document.getElementById("appRoot");
+      const layout = mountTeacherLayout(root, {
+        onLogout: () => AuthController.logout(),
+        onTabChange: (tabId) => {
+          if (tabId === "data") {
+            LecturesController.loadTeacherLectures("teacherDataContainer");
+          } else if (tabId === "exams") {
+            ExamController.loadTeacherExams("teacherExamsContainer");
+          } else if (tabId === "assignments") {
+            AssignmentController.loadTeacherAssignments("teacherAssignmentsContainer");
+          } else if (tabId === "students") {
+            StudentsController.loadStudentsList("teacherStudentsContainer", { canDelete: false });
+          } else if (tabId === "attendance") {
+            AttendanceController.loadTeacherAttendance("teacherAttendanceContainer");
+          } else if (tabId === "settings") {
+            ProfileController.loadSettingsView("teacherSettingsContainer");
+          }
+        }
+      });
+
+      layout.updateProfile({
+        name: "المعلم",
+        email: user.email || "teacher@system.local"
+      });
+
+      // 3. Mount Video Preview Modal into DOM
+      document.body.insertAdjacentHTML("beforeend", renderVideoPlayerModal());
+
+      // 4. Initial Tab Activation
+      LecturesController.loadTeacherLectures("teacherDataContainer");
+
+    } catch (err) {
+      console.error("Teacher page initialization error:", err);
+    }
+  </script>
+</body>
+</html>
