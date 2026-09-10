@@ -1944,65 +1944,7 @@ opacity:0;transform:translateY(20px);transition:all .4s ease;pointer-events:none
 
       </div>
     </div>
-    
-<div class="section" id="settings">
-<div class="section-card settings-box">
-<div class="title">⚙️ الإعدادات</div>
-<div class="settings-grid-teacher">
-<!-- 🎨 اختيار لون الواجهة -->
-<div class="settings-item">
-<h3>🎨 لون الواجهة</h3>
-<p>اختار اللون الأساسي للمنصة.</p>
-<div class="color-picks">
-<button class="color-pick active" onclick="teacherAccent('#22d3ee','#0ea5e9',this)" style="background:#22d3ee;color:#22d3ee">
-</button>
-<button class="color-pick" onclick="teacherAccent('#a78bfa','#7c3aed',this)" style="background:#8b5cf6;color:#8b5cf6">
-</button>
-<button class="color-pick" onclick="teacherAccent('#4ade80','#16a34a',this)" style="background:#22c55e;color:#22c55e">
-</button>
-<button class="color-pick" onclick="teacherAccent('#fbbf24','#d97706',this)" style="background:#fbbf24;color:#fbbf24">
-</button>
-</div>
-</div>
-<!-- 🔤 حجم الخط -->
-<div class="settings-item">
-<h3>🔤 حجم الخط</h3>
-<p>كبر أو صغر الخط في المنصة.</p>
-<div class="font-row-teacher">
-<button onclick="teacherFont(-1)">
-                A−
-              </button>
-<span id="teacherFontValue">
-                100%
-              </span>
-<button onclick="teacherFont(1)">
-                A+
-              </button>
-</div>
-</div>
-<!-- 🌐 اللغة -->
-<div class="settings-item setting-wide-teacher">
-<h3>🌐 اللغة</h3>
-<p>اختار لغة واجهة المنصة.</p>
-<select id="teacherLanguageSelect" onchange="teacherLanguage(this.value)">
-<option value="ar">العربية</option>
-<option value="en">English</option>
-</select>
-</div>
-<!-- 🔐 تغيير كلمة السر -->
-<div class="settings-item password-setting-card setting-wide-teacher">
-<div class="password-setting-icon">🔐</div>
-<div class="password-setting-content">
-<h3>تغيير كلمة السر</h3>
-<p>غيّر كلمة سر أكونت المنصة بأمان من هنا.</p>
-<button class="password-setting-btn" onclick="openTeacherPasswordModal()">
-                🔑 تغيير كلمة سر 
-              </button>
-</div>
-</div>
-</div>
-</div>
-</div>
+
 <!-- 👥 STUDENTS -->
 <div class="section" id="students">
 <div class="section-card">
@@ -2071,16 +2013,18 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   const email = (user.email || "").toLowerCase();
+  const tokenResult = await user.getIdTokenResult().catch(() => ({ claims: {} }));
+  const role = tokenResult.claims?.role || (email.endsWith("@admin.local") ? "admin" : "");
 
   // ❌ الحساب مش Admin
-  if (!email.endsWith("@admin.local")) {
+  if (role !== "admin" && !email.endsWith("@admin.local")) {
     await signOut(auth);
     window.location.replace("index.html");
     return;
   }
 
   // ✅ Admin مسجل دخول
-  console.log("✅ Admin authenticated:", email);
+  console.log("✅ Admin authenticated:", email, "Role:", role);
 
 });
 

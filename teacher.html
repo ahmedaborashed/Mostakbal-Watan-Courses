@@ -2502,16 +2502,18 @@ onAuthStateChanged(auth, async (user) => {
 
   // 👤 معرفة نوع الحساب
   const email = (user.email || "").toLowerCase();
+  const tokenResult = await user.getIdTokenResult().catch(() => ({ claims: {} }));
+  const role = tokenResult.claims?.role || (email.endsWith("@system.local") ? "teacher" : (email.endsWith("@admin.local") ? "admin" : ""));
 
-  // ❌ مش مدرس
-  if (!email.endsWith("@system.local")) {
+  // ❌ مش مدرس ولا أدمن
+  if (role !== "teacher" && role !== "admin" && !email.endsWith("@system.local") && !email.endsWith("@admin.local")) {
     await signOut(auth);
     window.location.replace("index.html");
     return;
   }
 
   // ✅ مدرس مسجل دخول
-  console.log("✅ Teacher authenticated:", email);
+  console.log("✅ Teacher authenticated:", email, "Role:", role);
 
 });
 

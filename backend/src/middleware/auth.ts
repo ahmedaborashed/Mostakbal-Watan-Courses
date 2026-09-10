@@ -11,7 +11,7 @@ export interface AuthenticatedUser {
 
 /**
  * Extracts and verifies the authenticated user from the CallableRequest.
- * Supports Custom Claims with fallback to legacy email suffixes during migration.
+ * Supports Custom Claims with fallback to legasuffixes during migration.
  */
 export function getAuthenticatedUser(request: CallableRequest): AuthenticatedUser {
   if (!request.auth) {

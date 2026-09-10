@@ -29,12 +29,11 @@ import {
   syncUserClaimsHandler
 } from "./modules/auth";
 
-// Set global options: European or standard region, timeout, memory
+// Set global options: European region, timeout, memory
 setGlobalOptions({
   region: "europe-west1",
   maxInstances: 10,
-  timeoutSeconds: 60,
-  cors: true
+  timeoutSeconds: 60
 });
 
 // ==========================================

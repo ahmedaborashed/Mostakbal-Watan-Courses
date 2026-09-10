@@ -1,100 +1,68 @@
-import { auth } from "./firebase.js";
-import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+// script.js - Refactored with AuthService & Custom Claims Architecture
+import { AuthService } from "./src/services/auth.service.js";
 
-// 🔥 loading function
-function startLoading(redirectPage) {
-  const loadingScreen = document.getElementById("loadingScreen");
-  const countText = document.getElementById("loadingCount");
-
-  let time = 5;
-
-  // اقفل الفورم
-  document.getElementById("login").style.display = "none";
-
-  // افتح شاشة اللودينج
-  loadingScreen.style.display = "flex";
-
-  countText.innerText = time;
-
-  const interval = setInterval(() => {
-    time--;
-    countText.innerText = time;
-
-    if (time <= 0) {
-      clearInterval(interval);
-      window.location.href = redirectPage;
-    }
-  }, 1000);
-}
-
-window.openContactOptions = function(){
-  document.getElementById("contactModal").classList.add("show");
-};
-
-window.closeContactOptions = function(){
-  document.getElementById("contactModal").classList.remove("show");
-};
-
-window.addEventListener("click", function(e){
+// Contact modal handlers
+window.openContactOptions = function() {
   const modal = document.getElementById("contactModal");
+  if (modal) modal.classList.add("show");
+};
 
-  if(e.target === modal){
-    closeContactOptions();
+window.closeContactOptions = function() {
+  const modal = document.getElementById("contactModal");
+  if (modal) modal.classList.remove("show");
+};
+
+window.addEventListener("click", function(e) {
+  const modal = document.getElementById("contactModal");
+  if (e.target === modal) {
+    window.closeContactOptions();
   }
 });
 
-// 🔐 login الرئيسي
+// Fast loading transition
+function startLoading(redirectPage) {
+  const loadingScreen = document.getElementById("loadingScreen");
+  const countText = document.getElementById("loadingCount");
+  const loginForm = document.getElementById("login");
+
+  if (loginForm) loginForm.style.display = "none";
+  if (loadingScreen) {
+    loadingScreen.style.display = "flex";
+    if (countText) countText.innerText = "🚀";
+  }
+
+  // Smooth fast transition (0.5s instead of 5s)
+  setTimeout(() => {
+    window.location.href = redirectPage;
+  }, 500);
+}
+
+// Unified Login Handler
 window.login = async () => {
+  const usernameInput = document.getElementById("loginUsername")?.value.trim();
+  const passwordInput = document.getElementById("loginPassword")?.value.trim();
 
-  let usernameInput = document.getElementById("loginUsername").value.trim();
-  let passwordInput = document.getElementById("loginPassword").value.trim();
-
-  if(!usernameInput || !passwordInput){
+  if (!usernameInput || !passwordInput) {
     alert("ادخل البيانات ❗");
     return;
   }
 
-  // 🔐 نجرب الأول الإداري
-  let adminEmail = usernameInput + "@admin.local";
-
-  try {
-    await signInWithEmailAndPassword(auth, adminEmail, passwordInput);
-
-    // لو نجح → Admin
-    startLoading("admin.html");
-    return;
-
-  } catch (adminErr) {
-    // مش إداري → نكمل ونحاول مدرس
+  const loginBtn = document.querySelector("#login button");
+  const originalText = loginBtn ? loginBtn.innerText : "";
+  if (loginBtn) {
+    loginBtn.disabled = true;
+    loginBtn.innerText = "جاري التحقق... ⏳";
   }
 
-  // 🔥 نجرب Teacher ثم Student
-  let teacherEmail = usernameInput + "@system.local";
-  let studentEmail = usernameInput + "@student.local";
-
   try {
-
-    // 👨‍🏫 نحاول كمدرس
-    await signInWithEmailAndPassword(auth, teacherEmail, passwordInput);
-
-    startLoading("teacher.html");
-    return;
-
-  } catch (err1) {
-
-    try {
-
-      // 👨‍🎓 نحاول كطالب
-      await signInWithEmailAndPassword(auth, studentEmail, passwordInput);
-
-      startLoading("student.html");
-      return;
-
-    } catch (err2) {
-
-      alert("بيانات غلط ❌");
-      console.error(err2);
-
+    const { redirectPage } = await AuthService.login(usernameInput, passwordInput);
+    startLoading(redirectPage);
+  } catch (error) {
+    console.error("Login Error:", error);
+    alert(error.message || "بيانات الدخول غير صحيحة ❌");
+    if (loginBtn) {
+      loginBtn.disabled = false;
+      loginBtn.innerText = originalText;
     }
   }
 };

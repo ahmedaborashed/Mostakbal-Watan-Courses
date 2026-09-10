@@ -1285,6 +1285,7 @@ import {
   getDocs,
   query,
   where,
+  limit,
   onSnapshot,
   setDoc,
   runTransaction,
@@ -1309,7 +1310,10 @@ onAuthStateChanged(auth, async (user) => {
   // 🔒 تأكيد إن الحساب Student
   const email = (user.email || "").toLowerCase();
 
-  if (!email.endsWith("@student.local")) {
+  const tokenResult = await user.getIdTokenResult().catch(() => ({ claims: {} }));
+  const userRole = tokenResult.claims?.role || (email.endsWith("@student.local") ? "student" : "");
+
+  if (userRole !== "student" && !email.endsWith("@student.local")) {
     await signOut(auth);
     window.location.replace("index.html");
     return;
@@ -1321,32 +1325,39 @@ onAuthStateChanged(auth, async (user) => {
   try {
 
     /* =========================================================
-       LOAD STUDENT
+       LOAD STUDENT (Direct O(1) Lookup + Scoped Fallback)
        ========================================================= */
 
     const username = (user.email || "").split("@")[0];
-
-    const snapshot = await getDocs(
-      collection(db, "students")
-    );
-
     let found = null;
 
-    snapshot.forEach(studentDoc => {
-
-      const data = studentDoc.data();
-
-      if (
-        String(data.studentPhone || "") ===
-        String(username)
-      ) {
+    // 1. فحص مباشر وسريع O(1) باستخدام Auth UID
+    try {
+      const directSnap = await getDoc(doc(db, "students", user.uid));
+      if (directSnap.exists()) {
         found = {
-          firestoreId: studentDoc.id,
-          ...data
+          firestoreId: directSnap.id,
+          ...directSnap.data()
         };
       }
+    } catch (_) {}
 
-    });
+    // 2. فحص محدد ومفلتر برقم الهاتف مع limit(1) لمنع تحميل قاعدة البيانات كاملة
+    if (!found) {
+      const q = query(
+        collection(db, "students"),
+        where("studentPhone", "==", String(username)),
+        limit(1)
+      );
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        const studentDoc = snapshot.docs[0];
+        found = {
+          firestoreId: studentDoc.id,
+          ...studentDoc.data()
+        };
+      }
+    }
 
     // ❌ بيانات الطالب مش موجودة
     if (!found) {
@@ -2053,9 +2064,10 @@ async function renderTasks(){
   list.innerHTML=`<div class="card empty">${t("loading")}</div>`;
 
   try{
-    const [assignmentsSnap,submissionsSnap]=await Promise.all([
-      getDocs(collection(db,"assignments")),
-      getDocs(collection(db,"submissions"))
+    const sKey = studentKey();
+    const [assignmentsSnap, submissionsSnap] = await Promise.all([
+      getDocs(collection(db, "assignments")),
+      getDocs(query(collection(db, "submissions"), where("studentId", "==", sKey)))
     ]);
 
     const submissions=submissionsSnap.docs.map(d=>({id:d.id,...d.data()}));
