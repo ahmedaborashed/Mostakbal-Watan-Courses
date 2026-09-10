@@ -16,7 +16,7 @@ export function renderThemePickerView({ currentTheme = "green", currentFont = 10
             type="button"
             class="btn btn-sm ${currentTheme === "green" ? "btn-primary" : "btn-secondary"}"
             data-theme-choice="green"
-            style="border-color:#00e676;"
+            style="border-color:#10b981;"
           >
             🟢 الأخضر (الرسمي)
           </button>
@@ -24,7 +24,7 @@ export function renderThemePickerView({ currentTheme = "green", currentFont = 10
             type="button"
             class="btn btn-sm ${currentTheme === "cyan" ? "btn-primary" : "btn-secondary"}"
             data-theme-choice="cyan"
-            style="border-color:#06b6d4;"
+            style="border-color:#0284c7;"
           >
             🔵 الأزرق السماوي
           </button>
@@ -32,7 +32,7 @@ export function renderThemePickerView({ currentTheme = "green", currentFont = 10
             type="button"
             class="btn btn-sm ${currentTheme === "purple" ? "btn-primary" : "btn-secondary"}"
             data-theme-choice="purple"
-            style="border-color:#a855f7;"
+            style="border-color:#7c3aed;"
           >
             🟣 البنفسجي الملكي
           </button>
@@ -40,7 +40,7 @@ export function renderThemePickerView({ currentTheme = "green", currentFont = 10
             type="button"
             class="btn btn-sm ${currentTheme === "gold" ? "btn-primary" : "btn-secondary"}"
             data-theme-choice="gold"
-            style="border-color:#f59e0b;"
+            style="border-color:#d97706;"
           >
             🟡 الذهبي الفاخر
           </button>

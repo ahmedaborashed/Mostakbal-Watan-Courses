@@ -1,4 +1,4 @@
-/* src/styles/layouts.css - LMS SaaS Layout & Shell Styles */
+/* src/styles/layouts.css - LMS SaaS Layout & Shell Styles (Calm & Focused) */
 
 /* ========================================================
    1. APP SHELL CONTAINER
@@ -8,18 +8,16 @@
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
-  background-color: var(--color-bg-main);
+  background-color: var(--bg-primary);
 }
 
 /* ========================================================
    2. SIDEBAR NAVIGATION
    ======================================================== */
 .sidebar {
-  width: 290px;
-  background: var(--color-surface-glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-left: 1px solid var(--color-border-primary);
+  width: 280px;
+  background: var(--surface-primary);
+  border-inline-end: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   padding: var(--space-5) var(--space-4);
@@ -28,7 +26,7 @@
   height: 100vh;
   box-sizing: border-box;
   z-index: 100;
-  transition: transform var(--transition-normal);
+  transition: transform 0.2s ease;
   flex-shrink: 0;
 }
 
@@ -39,19 +37,19 @@
   gap: var(--space-3);
   padding-bottom: var(--space-4);
   margin-bottom: var(--space-4);
-  border-bottom: 1px solid var(--color-border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .sidebar .brand-mark {
-  width: 50px;
-  height: 50px;
-  border-radius: var(--radius-md);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
-  border: 1px solid var(--color-gold);
+  border: 1px solid var(--border-strong);
   display: grid;
   place-items: center;
-  background: radial-gradient(circle, #1b4029, #07170d 75%);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  background: var(--surface-secondary);
+  box-shadow: var(--shadow-sm);
   flex-shrink: 0;
 }
 
@@ -63,25 +61,25 @@
 
 .sidebar .brand-info h1 {
   font-size: var(--font-size-md);
-  font-weight: var(--font-weight-black);
-  color: var(--color-text-primary);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
   line-height: var(--line-height-tight);
   margin: 0;
 }
 
 .sidebar .brand-info p {
   font-size: var(--font-size-xs);
-  color: var(--color-gold-light);
-  font-weight: var(--font-weight-bold);
+  color: var(--text-muted);
+  font-weight: var(--font-weight-medium);
   margin: 0.15rem 0 0;
 }
 
 /* Sidebar User Box */
 .sidebar-user-box {
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-md);
-  padding: var(--space-3) var(--space-4);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-3);
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -96,15 +94,15 @@
 .sidebar-user-info strong {
   display: block;
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-extrabold);
-  color: var(--color-text-primary);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
 }
 
 .sidebar-user-info small {
-  color: var(--color-text-muted);
+  color: var(--text-muted);
   font-size: var(--font-size-xs);
   display: block;
   direction: ltr;
@@ -123,20 +121,20 @@
 
 .sidebar-menu-title {
   font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-extrabold);
-  color: var(--color-text-muted);
-  letter-spacing: 0.05em;
-  margin: var(--space-3) var(--space-3) var(--space-1);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  margin: var(--space-3) var(--space-2) var(--space-1);
 }
 
 .sidebar-item {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-md);
-  color: var(--color-text-secondary);
-  font-weight: var(--font-weight-bold);
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
   font-size: var(--font-size-sm);
   border: 1px solid transparent;
   background: none;
@@ -148,32 +146,35 @@
 }
 
 .sidebar-item:hover {
-  color: var(--color-text-primary);
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  background: var(--surface-hover);
 }
 
+/* Calm Active Sidebar Item */
 .sidebar-item.active {
-  color: var(--color-text-inverse);
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
-  box-shadow: 0 4px 16px var(--color-primary-glow);
+  color: var(--primary);
+  background: var(--primary-soft);
   border-color: transparent;
+  border-inline-start: 3px solid var(--primary);
+  font-weight: var(--font-weight-bold);
 }
 
 .sidebar-item.active .side-icon {
-  filter: brightness(0.2);
+  opacity: 1;
 }
 
 .side-icon {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
+  width: 22px;
+  opacity: 0.85;
 }
 
 .sidebar-footer {
   padding-top: var(--space-3);
-  border-top: 1px solid var(--color-border-subtle);
+  border-top: 1px solid var(--border-subtle);
   margin-top: auto;
 }
 
@@ -191,11 +192,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-4) var(--space-8);
-  background: var(--color-surface-glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--color-border-subtle);
+  padding: var(--space-3) var(--space-8);
+  background: var(--surface-primary);
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 50;
@@ -207,11 +206,11 @@
   align-items: center;
   gap: var(--space-2);
   font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+  color: var(--text-muted);
 }
 
 .topbar-breadcrumb strong {
-  color: var(--color-text-primary);
+  color: var(--text-primary);
 }
 
 .topbar-actions {
@@ -242,9 +241,9 @@
 }
 
 .page-title {
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-black);
-  color: var(--color-text-primary);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -253,7 +252,7 @@
 
 .page-subtitle {
   font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+  color: var(--text-muted);
   margin-top: 0.25rem;
 }
 
@@ -266,17 +265,17 @@
 /* Tab Sections */
 .tab-content {
   display: none;
-  animation: fadeInSlide 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 0.2s ease forwards;
 }
 
 .tab-content.active {
   display: block;
 }
 
-@keyframes fadeInSlide {
+@keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -291,11 +290,9 @@
   display: none;
   align-items: center;
   justify-content: space-between;
-  padding: 0.85rem 1.25rem;
-  background: var(--color-surface-glass);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--color-border-primary);
+  padding: 0.75rem 1.25rem;
+  background: var(--surface-primary);
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 99;
@@ -304,8 +301,8 @@
 .mobile-menu-btn {
   background: none;
   border: none;
-  color: var(--color-text-primary);
-  font-size: 1.75rem;
+  color: var(--text-primary);
+  font-size: 1.5rem;
   cursor: pointer;
   padding: 0.25rem;
   display: flex;
@@ -317,11 +314,11 @@
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   z-index: 95;
-  transition: opacity var(--transition-normal);
+  transition: opacity 0.2s ease;
 }
 
 /* ========================================================
@@ -346,7 +343,7 @@
     right: 0;
     bottom: 0;
     transform: translateX(100%);
-    box-shadow: -15px 0 40px rgba(0, 0, 0, 0.6);
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.4);
     z-index: 101;
   }
 
@@ -363,7 +360,7 @@
   }
 
   .page-title {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
   }
 }
 
