@@ -1,8 +1,10 @@
 // src/shared/layouts/StudentLayout/student-layout.component.js
 import { escapeHtml } from "../../utils/dom.utils.js";
+import { renderAvatar } from "../../components/Avatar/avatar.component.js";
+import { renderBadge } from "../../components/Badge/badge.component.js";
 
 /**
- * Mounts the complete Student Application Shell Layout into a root container.
+ * Mounts the complete modern Student Application Shell Layout into a root container.
  */
 export function mountStudentLayout(container, { onLogout, onTabChange }) {
   if (!container) return;
@@ -10,11 +12,16 @@ export function mountStudentLayout(container, { onLogout, onTabChange }) {
   container.innerHTML = `
     <!-- Mobile Header -->
     <header class="mobile-header">
-      <div class="d-flex items-center gap-2">
-        <div class="sidebar-avatar" style="width:34px;height:34px;font-size:.9rem;">ط</div>
-        <strong id="mobileStudentName" class="text-sm">الطالب</strong>
+      <div class="d-flex items-center gap-3">
+        <div class="brand-mark" style="width:36px;height:36px;">
+          <img src="logo.jpeg" alt="شعار مستقبل وطن" />
+        </div>
+        <div>
+          <strong id="mobileStudentName" class="text-sm d-block font-extrabold">الطالب</strong>
+          <span class="text-xs text-muted">بوابة الطالب</span>
+        </div>
       </div>
-      <button type="button" id="mobileMenuToggle" class="mobile-menu-btn" aria-label="القائمة">
+      <button type="button" id="mobileMenuToggle" class="mobile-menu-btn" aria-label="فتح القائمة الجانبية">
         ☰
       </button>
     </header>
@@ -22,8 +29,8 @@ export function mountStudentLayout(container, { onLogout, onTabChange }) {
     <div id="mobileOverlay" class="mobile-overlay"></div>
 
     <div class="app-shell">
-      <!-- Sidebar -->
-      <aside id="appSidebar" class="sidebar">
+      <!-- Sidebar Navigation -->
+      <aside id="appSidebar" class="sidebar" aria-label="القائمة الجانبية">
         <div class="brand">
           <div class="brand-mark">
             <img src="logo.jpeg" alt="شعار مستقبل وطن" />
@@ -34,108 +41,162 @@ export function mountStudentLayout(container, { onLogout, onTabChange }) {
           </div>
         </div>
 
+        <!-- Student Profile Box -->
         <div class="sidebar-user-box">
-          <div class="sidebar-avatar" id="sidebarAvatar">ط</div>
+          <div id="sidebarAvatarSlot">
+            ${renderAvatar({ name: "ط", size: "md" })}
+          </div>
           <div class="sidebar-user-info">
             <strong id="sidebarName">الطالب</strong>
             <small id="sidebarPhone">—</small>
           </div>
         </div>
 
-        <div class="sidebar-menu-title">القائمة الرئيسية</div>
-        <nav class="sidebar-menu" id="sidebarNav">
+        <div class="sidebar-menu-title">المحتوى الأكاديمي</div>
+        <nav class="sidebar-menu" id="sidebarNav" role="navigation">
           <button type="button" class="sidebar-item active" data-section="videos">
-            <span class="side-icon">📚</span>
-            <span>الداتا</span>
+            <span class="side-icon" aria-hidden="true">📚</span>
+            <span>الداتا والدروس</span>
           </button>
 
           <button type="button" class="sidebar-item" data-section="exams">
-            <span class="side-icon">📝</span>
+            <span class="side-icon" aria-hidden="true">📝</span>
             <span>الامتحانات</span>
           </button>
 
           <button type="button" class="sidebar-item" data-section="tasks">
-            <span class="side-icon">📋</span>
-            <span>التاسكات</span>
+            <span class="side-icon" aria-hidden="true">📋</span>
+            <span>التاسكات والواجبات</span>
           </button>
 
           <button type="button" class="sidebar-item" data-section="attendance">
-            <span class="side-icon">📊</span>
+            <span class="side-icon" aria-hidden="true">📊</span>
             <span>الغياب والحضور</span>
           </button>
 
+          <div class="sidebar-menu-title">الحساب والتفضيلات</div>
+
           <button type="button" class="sidebar-item" data-section="profile">
-            <span class="side-icon">👤</span>
-            <span>حسابي</span>
+            <span class="side-icon" aria-hidden="true">👤</span>
+            <span>حسابي الشخصي</span>
           </button>
 
           <button type="button" class="sidebar-item" data-section="settings">
-            <span class="side-icon">⚙️</span>
-            <span>الإعدادات</span>
+            <span class="side-icon" aria-hidden="true">⚙️</span>
+            <span>الإعدادات والمظهر</span>
           </button>
         </nav>
 
         <div class="sidebar-footer">
           <button type="button" class="sidebar-item text-danger" id="sidebarLogoutBtn">
-            <span class="side-icon">🚪</span>
+            <span class="side-icon" aria-hidden="true">🚪</span>
             <span>تسجيل الخروج</span>
           </button>
         </div>
       </aside>
 
-      <!-- Main View Area with Feature Content Slots -->
-      <main class="main-view">
-        <section id="sec-videos" class="tab-content active">
-          <div class="page-header">
-            <h2 class="page-title">📚 الداتا والدروس</h2>
+      <!-- Main Content Area -->
+      <div class="main-wrapper">
+        <!-- Desktop Topbar -->
+        <header class="topbar">
+          <div class="topbar-breadcrumb">
+            <span>منصة مستقبل وطن</span>
+            <span>/</span>
+            <strong id="topbarCurrentTab">📚 الداتا والدروس</strong>
           </div>
-          <div id="videoListContainer"></div>
-        </section>
+          <div class="topbar-actions">
+            ${renderBadge({ text: "طالب مسجل", variant: "primary", icon: "🎓" })}
+            <div id="topbarUserInitial" class="avatar avatar-sm">ط</div>
+          </div>
+        </header>
 
-        <section id="sec-exams" class="tab-content">
-          <div class="page-header">
-            <h2 class="page-title">📝 الامتحانات</h2>
-          </div>
-          <div id="examListContainer"></div>
-          <div id="activeExamContainer" class="d-none"></div>
-        </section>
+        <main class="main-view" role="main">
+          <!-- Lectures Section -->
+          <section id="sec-videos" class="tab-content active" aria-labelledby="heading-videos">
+            <div class="page-header">
+              <div>
+                <h2 id="heading-videos" class="page-title">📚 الداتا والمحاضرات التعليمية</h2>
+                <p class="page-subtitle">شروحات منهج الـ Python والمحاضرات المسجلة والمواد التدريبية.</p>
+              </div>
+            </div>
+            <div id="videoListContainer"></div>
+          </section>
 
-        <section id="sec-tasks" class="tab-content">
-          <div class="page-header">
-            <h2 class="page-title">📋 التاسكات والواجبات</h2>
-          </div>
-          <div id="taskListContainer"></div>
-        </section>
+          <!-- Exams Section -->
+          <section id="sec-exams" class="tab-content" aria-labelledby="heading-exams">
+            <div class="page-header">
+              <div>
+                <h2 id="heading-exams" class="page-title">📝 الاختبارات والتقييمات</h2>
+                <p class="page-subtitle">اختبر مستواك البرمجي، تابع نتائجك السابقة ودرجاتك بالتفصيل.</p>
+              </div>
+            </div>
+            <div id="examListContainer"></div>
+            <div id="activeExamContainer" class="d-none"></div>
+          </section>
 
-        <section id="sec-attendance" class="tab-content">
-          <div class="page-header">
-            <h2 class="page-title">📊 الغياب والحضور</h2>
-          </div>
-          <div id="attendanceContainer"></div>
-        </section>
+          <!-- Tasks Section -->
+          <section id="sec-tasks" class="tab-content" aria-labelledby="heading-tasks">
+            <div class="page-header">
+              <div>
+                <h2 id="heading-tasks" class="page-title">📋 التاسكات والواجبات العملية</h2>
+                <p class="page-subtitle">قم برفع وتسليم حلول المهام البرمجية لمتابعة تقييم المعلم.</p>
+              </div>
+            </div>
+            <div id="taskListContainer"></div>
+          </section>
 
-        <section id="sec-profile" class="tab-content">
-          <div class="page-header">
-            <h2 class="page-title">👤 حسابي الشخصي</h2>
-          </div>
-          <div id="profileContainer"></div>
-        </section>
+          <!-- Attendance Section -->
+          <section id="sec-attendance" class="tab-content" aria-labelledby="heading-attendance">
+            <div class="page-header">
+              <div>
+                <h2 id="heading-attendance" class="page-title">📊 سجل الحضور والغياب</h2>
+                <p class="page-subtitle">متابعة دقيقة لنسبة التزامك في المحاضرات الأوفلاين والأونلاين.</p>
+              </div>
+            </div>
+            <div id="attendanceContainer"></div>
+          </section>
 
-        <section id="sec-settings" class="tab-content">
-          <div class="page-header">
-            <h2 class="page-title">⚙️ الإعدادات</h2>
-          </div>
-          <div id="settingsContainer"></div>
-        </section>
-      </main>
+          <!-- Profile Section -->
+          <section id="sec-profile" class="tab-content" aria-labelledby="heading-profile">
+            <div class="page-header">
+              <div>
+                <h2 id="heading-profile" class="page-title">👤 الملف التعريفي للطالب</h2>
+                <p class="page-subtitle">بيانات الحساب الشخصي، المجموعة الدراسية، وإدارة كلمة المرور.</p>
+              </div>
+            </div>
+            <div id="profileContainer"></div>
+          </section>
+
+          <!-- Settings Section -->
+          <section id="sec-settings" class="tab-content" aria-labelledby="heading-settings">
+            <div class="page-header">
+              <div>
+                <h2 id="heading-settings" class="page-title">⚙️ تخصيص المنصة والمظهر</h2>
+                <p class="page-subtitle">اختيار لون الواجهة المميز، تكبير أو تصغير الخط، وتغيير اللغة.</p>
+              </div>
+            </div>
+            <div id="settingsContainer"></div>
+          </section>
+        </main>
+      </div>
     </div>
   `;
 
-  // Wire up sidebar switching
+  // Wire up sidebar switching and mobile drawer
   const sidebar = document.getElementById("appSidebar");
   const overlay = document.getElementById("mobileOverlay");
   const toggleBtn = document.getElementById("mobileMenuToggle");
   const navItems = container.querySelectorAll(".sidebar-item[data-section]");
+  const topbarBreadcrumb = document.getElementById("topbarCurrentTab");
+
+  const tabLabels = {
+    videos: "📚 الداتا والدروس",
+    exams: "📝 الامتحانات",
+    tasks: "📋 التاسكات والواجبات",
+    attendance: "📊 الغياب والحضور",
+    profile: "👤 حسابي الشخصي",
+    settings: "⚙️ الإعدادات والمظهر"
+  };
 
   function closeMobile() {
     sidebar?.classList.remove("mobile-open");
@@ -163,6 +224,10 @@ export function mountStudentLayout(container, { onLogout, onTabChange }) {
       target.classList.add("active");
     }
 
+    if (topbarBreadcrumb && tabLabels[sectionId]) {
+      topbarBreadcrumb.textContent = tabLabels[sectionId];
+    }
+
     closeMobile();
     if (typeof onTabChange === "function") {
       onTabChange(sectionId);
@@ -188,12 +253,14 @@ export function mountStudentLayout(container, { onLogout, onTabChange }) {
       const nameEl = document.getElementById("sidebarName");
       const phoneEl = document.getElementById("sidebarPhone");
       const mobileNameEl = document.getElementById("mobileStudentName");
-      const avatarEl = document.getElementById("sidebarAvatar");
+      const avatarSlot = document.getElementById("sidebarAvatarSlot");
+      const topbarAvatar = document.getElementById("topbarUserInitial");
 
       if (name) {
         if (nameEl) nameEl.textContent = name;
         if (mobileNameEl) mobileNameEl.textContent = name;
-        if (avatarEl) avatarEl.textContent = name.trim().charAt(0);
+        if (avatarSlot) avatarSlot.innerHTML = renderAvatar({ name, size: "md" });
+        if (topbarAvatar) topbarAvatar.textContent = name.trim().charAt(0);
       }
       if (phone && phoneEl) {
         phoneEl.textContent = phone;

@@ -5,7 +5,9 @@ import { renderStudentVideoCard, renderTeacherVideoCard } from "./components/vid
 import { openModal, closeModal } from "../../shared/components/Modal/modal.component.js";
 import { renderLoader } from "../../shared/components/Loader/loader.component.js";
 import { renderEmptyState } from "../../shared/components/EmptyState/empty-state.component.js";
+import { renderErrorState } from "../../shared/components/ErrorState/error-state.component.js";
 import { showToast } from "../../shared/components/Toast/toast.component.js";
+import { showConfirmDialog } from "../../shared/components/ConfirmDialog/confirm-dialog.component.js";
 import { setHtml } from "../../shared/utils/dom.utils.js";
 
 export const LecturesController = {
@@ -60,11 +62,14 @@ export const LecturesController = {
       });
     } catch (err) {
       console.error("Failed to load student lectures:", err);
-      setHtml(container, renderEmptyState({
-        icon: "❌",
+      setHtml(container, renderErrorState({
         title: "تعذر تحميل الدروس",
-        description: err.message
+        message: err.message,
+        retryBtnId: "retryLoadLecturesBtn"
       }));
+      document.getElementById("retryLoadLecturesBtn")?.addEventListener("click", () => {
+        this.loadStudentLectures(containerId, currentStudent);
+      });
     }
   },
 
@@ -80,16 +85,27 @@ export const LecturesController = {
     const titleEl = document.getElementById("videoPlayerTitle");
     const frameEl = document.getElementById("videoPlayerFrame");
 
+    let cleanId = videoId;
+    if (videoId.includes("v=")) cleanId = videoId.split("v=")[1].split("&")[0];
+    else if (videoId.includes("youtu.be/")) cleanId = videoId.split("youtu.be/")[1].split("?")[0];
+
     if (titleEl) titleEl.textContent = videoName || "مشاهدة الدرس";
     if (frameEl) {
-      // Clean up YouTube ID if full URL was provided
-      let cleanId = videoId;
-      if (videoId.includes("v=")) cleanId = videoId.split("v=")[1].split("&")[0];
-      else if (videoId.includes("youtu.be/")) cleanId = videoId.split("youtu.be/")[1].split("?")[0];
       frameEl.src = `https://www.youtube.com/embed/${cleanId}?autoplay=1&rel=0`;
     }
 
     openModal("videoPlayerModal");
+
+    // Clear frame src when modal is closed to stop video playing in background
+    const modal = document.getElementById("videoPlayerModal");
+    if (modal && !modal.hasAttribute("data-player-cleanup")) {
+      modal.setAttribute("data-player-cleanup", "true");
+      modal.querySelectorAll("[data-modal-close]").forEach((c) => {
+        c.addEventListener("click", () => {
+          if (frameEl) frameEl.src = "";
+        });
+      });
+    }
 
     // Record log in background if student is present
     if (currentStudent) {
@@ -116,11 +132,12 @@ export const LecturesController = {
       lecturesState.set("lectures", lectures);
 
       const headerHtml = `
-        <div class="card mb-4">
-          <h3 class="card-title mb-3">➕ إضافة درس جديد</h3>
+        <div class="card mb-6">
+          <h3 class="card-title mb-3">➕ إضافة درس ومحاضرة جديدة</h3>
+          <p class="text-xs text-muted mb-4">أدخل عنوان المحاضرة ورابط أو كود فيديو يوتيوب وحدد المجموعة المستهدفة.</p>
           <form id="addLectureForm" class="grid-3" onsubmit="return false;">
-            <input type="text" id="lectureTitleInput" class="form-input" placeholder="عنوان الدرس" required />
-            <input type="text" id="lectureVideoIdInput" class="form-input" placeholder="YouTube Video ID أو الرابط" required />
+            <input type="text" id="lectureTitleInput" class="form-input" placeholder="عنوان الدرس (مثال: الشرح الأول للـ Variables)" required />
+            <input type="text" id="lectureVideoIdInput" class="form-input" placeholder="YouTube Video ID أو الرابط الكامل" required />
             <select id="lectureGroupSelect" class="form-select">
               <option value="ALL">جميع المجموعات (ALL)</option>
               <option value="مجموعة الأحد والأربعاء | 7:00 - 8:30">مجموعة الأحد والأربعاء | 7:00 - 8:30</option>
@@ -138,7 +155,7 @@ export const LecturesController = {
         listHtml = renderEmptyState({
           icon: "📚",
           title: "لا توجد فيديوهات منشورة حالياً",
-          description: "استخدم النموذج أعلاه لإضافة الدرس الأول."
+          description: "استخدم النموذج أعلاه لإضافة ونشر الدرس الأول."
         });
       } else {
         listHtml = `
@@ -173,7 +190,7 @@ export const LecturesController = {
         }
       });
 
-      // Bind preview, edit and delete buttons
+      // Bind preview and delete buttons
       container.querySelectorAll("[data-teacher-preview]").forEach((btn) => {
         btn.addEventListener("click", () => {
           const videoId = btn.getAttribute("data-video-id");
@@ -184,7 +201,16 @@ export const LecturesController = {
       container.querySelectorAll("[data-teacher-delete]").forEach((btn) => {
         btn.addEventListener("click", async () => {
           const id = btn.getAttribute("data-teacher-delete");
-          if (confirm("هل أنت متأكد من رغبتك في حذف هذا الفيديو؟ ⚠️")) {
+          const name = btn.getAttribute("data-video-name") || "هذا الفيديو";
+
+          const confirmed = await showConfirmDialog({
+            title: "حذف الفيديو",
+            message: `هل أنت متأكد من رغبتك في حذف "${name}"؟ لن يتمكن الطلاب من مشاهدته بعد الآن.`,
+            confirmText: "حذف نهائي",
+            variant: "danger"
+          });
+
+          if (confirmed) {
             try {
               await LecturesService.deleteLecture(id);
               showToast("تم حذف الفيديو بنجاح", "info");
@@ -196,7 +222,7 @@ export const LecturesController = {
         });
       });
     } catch (err) {
-      setHtml(container, renderEmptyState({ icon: "❌", title: "خطأ في تحميل الفيديوهات", description: err.message }));
+      setHtml(container, renderErrorState({ title: "خطأ في تحميل الفيديوهات", message: err.message }));
     }
   }
 };

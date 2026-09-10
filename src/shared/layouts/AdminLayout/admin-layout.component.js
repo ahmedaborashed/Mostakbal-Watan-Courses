@@ -1,5 +1,7 @@
 // src/shared/layouts/AdminLayout/admin-layout.component.js
 import { escapeHtml } from "../../utils/dom.utils.js";
+import { renderAvatar } from "../../components/Avatar/avatar.component.js";
+import { renderBadge } from "../../components/Badge/badge.component.js";
 
 /**
  * Mounts the complete Admin Application Shell Layout into a root container.
@@ -10,11 +12,16 @@ export function mountAdminLayout(container, { onLogout, onTabChange }) {
   container.innerHTML = `
     <!-- Mobile Header -->
     <header class="mobile-header">
-      <div class="d-flex items-center gap-2">
-        <div class="sidebar-avatar" style="width:34px;height:34px;font-size:.9rem;background:rgba(239,68,68,0.2);color:var(--color-danger);">أ</div>
-        <strong id="mobileAdminName" class="text-sm">لوحة الإدارة العامة</strong>
+      <div class="d-flex items-center gap-3">
+        <div class="brand-mark" style="width:36px;height:36px;">
+          <img src="logo.jpeg" alt="شعار مستقبل وطن" />
+        </div>
+        <div>
+          <strong id="mobileAdminName" class="text-sm d-block font-extrabold">الإدارة العامة</strong>
+          <span class="text-xs text-muted">صلاحيات كاملة</span>
+        </div>
       </div>
-      <button type="button" id="mobileAdminMenuToggle" class="mobile-menu-btn" aria-label="القائمة">
+      <button type="button" id="mobileAdminMenuToggle" class="mobile-menu-btn" aria-label="فتح القائمة">
         ☰
       </button>
     </header>
@@ -23,7 +30,7 @@ export function mountAdminLayout(container, { onLogout, onTabChange }) {
 
     <div class="app-shell">
       <!-- Sidebar -->
-      <aside id="adminSidebar" class="sidebar">
+      <aside id="adminSidebar" class="sidebar" aria-label="القائمة الجانبية للمدير">
         <div class="brand">
           <div class="brand-mark">
             <img src="logo.jpeg" alt="شعار مستقبل وطن" />
@@ -35,53 +42,90 @@ export function mountAdminLayout(container, { onLogout, onTabChange }) {
         </div>
 
         <div class="sidebar-user-box">
-          <div class="sidebar-avatar" id="adminSidebarAvatar" style="background:rgba(239,68,68,0.2);color:var(--color-danger);">أ</div>
+          <div id="adminAvatarSlot">
+            ${renderAvatar({ name: "أ", size: "md", className: "bg-danger text-inverse" })}
+          </div>
           <div class="sidebar-user-info">
             <strong id="adminSidebarName">مدير النظام</strong>
             <small id="adminSidebarEmail">صلاحيات كاملة</small>
           </div>
         </div>
 
-        <div class="sidebar-menu-title">الإدارة العامة</div>
-        <nav class="sidebar-menu" id="adminSidebarNav">
+        <div class="sidebar-menu-title">الإشراف والإدارة</div>
+        <nav class="sidebar-menu" id="adminSidebarNav" role="navigation">
           <button type="button" class="sidebar-item active" data-section="attendance">
-            <span class="side-icon">📋</span>
-            <span>الغياب والحضور</span>
+            <span class="side-icon" aria-hidden="true">📊</span>
+            <span>الغياب والحضور العام</span>
           </button>
 
           <button type="button" class="sidebar-item" data-section="students">
-            <span class="side-icon">👥</span>
-            <span>الطلاب</span>
+            <span class="side-icon" aria-hidden="true">👥</span>
+            <span>إدارة شؤون الطلاب</span>
           </button>
 
+          <div class="sidebar-menu-title">النظام العام</div>
+
           <button type="button" class="sidebar-item" data-section="settings">
-            <span class="side-icon">⚙️</span>
-            <span>الإعدادات</span>
+            <span class="side-icon" aria-hidden="true">⚙️</span>
+            <span>إعدادات النظام والمظهر</span>
           </button>
         </nav>
 
         <div class="sidebar-footer">
           <button type="button" class="sidebar-item text-danger" id="adminLogoutBtn">
-            <span class="side-icon">🚪</span>
+            <span class="side-icon" aria-hidden="true">🚪</span>
             <span>تسجيل الخروج</span>
           </button>
         </div>
       </aside>
 
-      <!-- Main View Area with Feature Content Slots -->
-      <main class="main-view">
-        <section id="sec-attendance" class="tab-content active">
-          <div id="adminAttendanceContainer"></div>
-        </section>
+      <!-- Main Content Area -->
+      <div class="main-wrapper">
+        <!-- Desktop Topbar -->
+        <header class="topbar">
+          <div class="topbar-breadcrumb">
+            <span>لوحة الإدارة</span>
+            <span>/</span>
+            <strong id="adminTopbarCurrentTab">📊 الغياب والحضور العام</strong>
+          </div>
+          <div class="topbar-actions">
+            ${renderBadge({ text: "مدير النظام", variant: "danger", icon: "🛡️" })}
+            <div id="adminTopbarUserInitial" class="avatar avatar-sm">أ</div>
+          </div>
+        </header>
 
-        <section id="sec-students" class="tab-content">
-          <div id="adminStudentsContainer"></div>
-        </section>
+        <main class="main-view" role="main">
+          <section id="sec-attendance" class="tab-content active" aria-labelledby="heading-a-attendance">
+            <div class="page-header">
+              <div>
+                <h2 id="heading-a-attendance" class="page-title">📊 إدارة الغياب والحضور العام</h2>
+                <p class="page-subtitle">تسجيل الحضور المركزي لجميع المجموعات ومتابعة السجلات التاريخية.</p>
+              </div>
+            </div>
+            <div id="adminAttendanceContainer"></div>
+          </section>
 
-        <section id="sec-settings" class="tab-content">
-          <div id="adminSettingsContainer"></div>
-        </section>
-      </main>
+          <section id="sec-students" class="tab-content" aria-labelledby="heading-a-students">
+            <div class="page-header">
+              <div>
+                <h2 id="heading-a-students" class="page-title">👥 الإدارة الشاملة للطلاب</h2>
+                <p class="page-subtitle">إضافة وتعديل وحذف الطلاب، البحث والفلترة وتوليد بيانات الدخول.</p>
+              </div>
+            </div>
+            <div id="adminStudentsContainer"></div>
+          </section>
+
+          <section id="sec-settings" class="tab-content" aria-labelledby="heading-a-settings">
+            <div class="page-header">
+              <div>
+                <h2 id="heading-a-settings" class="page-title">⚙️ إعدادات النظام وتخصيص المظهر</h2>
+                <p class="page-subtitle">تعديل سمة الألوان للمنصة، حجم الخط، واللغة المفضلة.</p>
+              </div>
+            </div>
+            <div id="adminSettingsContainer"></div>
+          </section>
+        </main>
+      </div>
     </div>
   `;
 
@@ -89,6 +133,13 @@ export function mountAdminLayout(container, { onLogout, onTabChange }) {
   const overlay = document.getElementById("mobileAdminOverlay");
   const toggleBtn = document.getElementById("mobileAdminMenuToggle");
   const navItems = container.querySelectorAll(".sidebar-item[data-section]");
+  const topbarBreadcrumb = document.getElementById("adminTopbarCurrentTab");
+
+  const tabLabels = {
+    attendance: "📊 الغياب والحضور العام",
+    students: "👥 إدارة شؤون الطلاب",
+    settings: "⚙️ إعدادات النظام والمظهر"
+  };
 
   function closeMobile() {
     sidebar?.classList.remove("mobile-open");
@@ -116,6 +167,10 @@ export function mountAdminLayout(container, { onLogout, onTabChange }) {
       target.classList.add("active");
     }
 
+    if (topbarBreadcrumb && tabLabels[sectionId]) {
+      topbarBreadcrumb.textContent = tabLabels[sectionId];
+    }
+
     closeMobile();
     if (typeof onTabChange === "function") {
       onTabChange(sectionId);
@@ -140,8 +195,17 @@ export function mountAdminLayout(container, { onLogout, onTabChange }) {
     updateProfile({ name, email }) {
       const nameEl = document.getElementById("adminSidebarName");
       const emailEl = document.getElementById("adminSidebarEmail");
-      if (name && nameEl) nameEl.textContent = name;
-      if (email && emailEl) emailEl.textContent = email;
+      const avatarSlot = document.getElementById("adminAvatarSlot");
+      const topbarAvatar = document.getElementById("adminTopbarUserInitial");
+
+      if (name) {
+        if (nameEl) nameEl.textContent = name;
+        if (avatarSlot) avatarSlot.innerHTML = renderAvatar({ name, size: "md" });
+        if (topbarAvatar) topbarAvatar.textContent = name.trim().charAt(0);
+      }
+      if (email && emailEl) {
+        emailEl.textContent = email;
+      }
     }
   };
 }
