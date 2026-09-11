@@ -8,8 +8,17 @@ import { GROUPS } from "../../../core/constants.js";
 
 /**
  * Returns HTML string for the student management list view.
+ * @param {object} options
+ * @param {Array} options.students - Filtered student array
+ * @param {boolean} options.canDelete - Whether delete is allowed
+ * @param {number} options.totalCount - Total student count (before filter)
  */
-export function renderStudentListView({ students = [], canDelete = false }) {
+export function renderStudentListView({ students = [], canDelete = false, totalCount = 0 }) {
+  const filteredCount = students.length;
+  const countLabel = totalCount > 0
+    ? `عرض <strong>${filteredCount}</strong> طالب من أصل <strong>${totalCount}</strong>`
+    : `<strong>${filteredCount}</strong> طالب`;
+
   const filterToolbarHtml = `
     <div class="card mb-6">
       <div class="d-flex items-center justify-between gap-4 flex-wrap">
@@ -38,16 +47,23 @@ export function renderStudentListView({ students = [], canDelete = false }) {
           })}
         </div>
       </div>
+      <div class="mt-3 text-xs text-muted" id="studentCountIndicator">
+        ${countLabel}
+      </div>
     </div>
   `;
 
-  const headers = ["الطالب", "رقم الهاتف (اسم المستخدم)", "المجموعة", "الإجراءات"];
-  const rows = students.map((s) => {
+  const headers = ["#", "الطالب", "رقم الهاتف (اسم المستخدم)", "المجموعة", "الإجراءات"];
+  const rows = students.map((s, index) => {
     const studentUid = s.id || s.firestoreId;
     const studentName = s.studentName || s.name || "—";
     const studentPhone = s.studentPhone || s.phone || "—";
     const studentGroup = s.studentGroup || s.group || "ALL";
 
+    // Row number
+    const rowNum = `<span class="text-muted font-bold">${index + 1}</span>`;
+
+    // Student cell with avatar
     const studentCell = `
       <div class="d-flex items-center gap-3">
         ${renderAvatar({ name: studentName, size: "sm" })}
@@ -55,21 +71,34 @@ export function renderStudentListView({ students = [], canDelete = false }) {
       </div>
     `;
 
+    // Actions cell with view, edit, reset password, and optionally delete
     const actionsHtml = `
-      <div class="d-flex gap-2 items-center">
+      <div class="d-flex gap-2 items-center flex-wrap">
         ${renderButton({
-          text: "كلمة السر 🔑",
+          text: "👁️",
+          size: "sm",
+          variant: "outline",
+          extraAttrs: `data-view-student="${escapeHtml(studentUid)}" title="عرض تفاصيل الطالب" aria-label="عرض تفاصيل ${escapeHtml(studentName)}"`
+        })}
+        ${renderButton({
+          text: "✏️",
+          size: "sm",
+          variant: "outline",
+          extraAttrs: `data-edit-student="${escapeHtml(studentUid)}" title="تعديل بيانات الطالب" aria-label="تعديل ${escapeHtml(studentName)}"`
+        })}
+        ${renderButton({
+          text: "🔑",
           size: "sm",
           variant: "secondary",
-          extraAttrs: `data-reset-pass="${escapeHtml(studentUid)}" data-student-name="${escapeHtml(studentName)}"`
+          extraAttrs: `data-reset-pass="${escapeHtml(studentUid)}" data-student-name="${escapeHtml(studentName)}" title="إعادة تعيين كلمة المرور"`
         })}
         ${
           canDelete
             ? renderButton({
-                text: "حذف 🗑️",
+                text: "🗑️",
                 size: "sm",
                 variant: "danger",
-                extraAttrs: `data-delete-student="${escapeHtml(studentUid)}" data-student-name="${escapeHtml(studentName)}"`
+                extraAttrs: `data-delete-student="${escapeHtml(studentUid)}" data-student-name="${escapeHtml(studentName)}" title="حذف الحساب"`
               })
             : ""
         }
@@ -77,6 +106,7 @@ export function renderStudentListView({ students = [], canDelete = false }) {
     `;
 
     return [
+      rowNum,
       studentCell,
       `<span style="direction:ltr;display:inline-block;font-weight:700;">${escapeHtml(studentPhone)}</span>`,
       renderBadge({ text: studentGroup, variant: "gold" }),
