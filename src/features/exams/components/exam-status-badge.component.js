@@ -25,10 +25,10 @@ export function getExamStatusInfo(exam, result = null) {
     if (examResult.status === "pending_essay") {
       return {
         status: "pending_essay",
-        label: "قيد الانتظار للتصحيح",
-        variant: "gold",
+        label: "قيد التصحيح",
+        variant: "warning",
         icon: "⏳",
-        html: renderBadge({ text: "قيد الانتظار للتصحيح", variant: "gold", icon: "⏳" })
+        html: renderBadge({ text: "قيد التصحيح", variant: "warning", icon: "⏳" })
       };
     }
     return {
@@ -45,19 +45,19 @@ export function getExamStatusInfo(exam, result = null) {
     return {
       status: "submitted",
       label: "تم التسليم",
-      variant: "success",
+      variant: "info",
       icon: "✓",
-      html: renderBadge({ text: "تم التسليم", variant: "success", icon: "✓" })
+      html: renderBadge({ text: "تم التسليم", variant: "info", icon: "✓" })
     };
   }
 
   if (exam.attemptStatus === "in_progress") {
     return {
       status: "in_progress",
-      label: "قيد الحل",
-      variant: "gold",
-      icon: "⏳",
-      html: renderBadge({ text: "قيد الحل", variant: "gold", icon: "⏳" })
+      label: "متاح الآن",
+      variant: "primary",
+      icon: "●",
+      html: renderBadge({ text: "متاح الآن", variant: "primary", icon: "●" })
     };
   }
 
@@ -101,10 +101,10 @@ export function getExamStatusInfo(exam, result = null) {
     if (!isNaN(startTimestamp) && startTimestamp > Date.now()) {
       return {
         status: "upcoming",
-        label: "لم يبدأ بعد",
-        variant: "info",
+        label: "لم يبدأ",
+        variant: "neutral",
         icon: "⏰",
-        html: renderBadge({ text: "لم يبدأ بعد", variant: "info", icon: "⏰" })
+        html: renderBadge({ text: "لم يبدأ", variant: "neutral", icon: "⏰" })
       };
     }
   }
@@ -112,10 +112,10 @@ export function getExamStatusInfo(exam, result = null) {
   // 6. Available
   return {
     status: "available",
-    label: "متاح",
-    variant: "primary",
-    icon: "⭐",
-    html: renderBadge({ text: "متاح", variant: "primary", icon: "⭐" })
+    label: "متاح الآن",
+    variant: "success",
+    icon: "●",
+    html: renderBadge({ text: "متاح الآن", variant: "success", icon: "●" })
   };
 }
 

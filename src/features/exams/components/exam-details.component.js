@@ -253,6 +253,78 @@ export function renderStudentExamDetailsModal() {
   });
 }
 
+export const PRE_EXAM_CONFIRM_MODAL_ID = "preExamConfirmModal";
+
+/**
+ * Returns HTML string for the Pre-Exam Confirmation Modal.
+ * @param {object} options
+ * @param {object} options.exam
+ * @returns {string}
+ */
+export function renderPreExamConfirmationModal(exam) {
+  const duration = Number(exam?.duration) || 30;
+  const questionsCount =
+    exam?.totalQuestions !== undefined
+      ? exam.totalQuestions
+      : Array.isArray(exam?.questions)
+      ? exam.questions.length
+      : Number(exam?.questionCount) || "—";
+
+  const bodyHtml = `
+    <div class="pre-exam-confirm-card text-center py-2">
+      <div class="confirm-icon-bubble mb-3" style="font-size: 2.75rem;" aria-hidden="true">⏱️</div>
+      <h3 class="font-black text-xl mb-1" style="color: var(--text-primary);">جاهز لبدء الامتحان؟</h3>
+      <p class="text-accent font-bold mb-4" style="font-size: 1.1rem;">
+        ${escapeHtml(exam?.title || "الامتحان")}
+      </p>
+
+      <div class="pre-exam-summary-box mb-4 p-4 text-start" style="background: var(--surface-secondary); border-radius: var(--radius-lg); border: 1px solid var(--border);">
+        <div class="d-flex items-center justify-between py-2" style="border-bottom: 1px solid var(--border-subtle);">
+          <span class="text-xs text-muted font-semibold">عدد الأسئلة:</span>
+          <strong class="text-sm text-primary font-bold">📝 ${questionsCount} سؤال</strong>
+        </div>
+        <div class="d-flex items-center justify-between py-2" style="border-bottom: 1px solid var(--border-subtle);">
+          <span class="text-xs text-muted font-semibold">المدة الزمنية:</span>
+          <strong class="text-sm text-primary font-bold">⏱️ ${duration} دقيقة</strong>
+        </div>
+        <div class="d-flex items-center justify-between py-2">
+          <span class="text-xs text-muted font-semibold">عدد المحاولات:</span>
+          <strong class="text-sm text-primary font-bold">🔒 محاولة واحدة رسمية</strong>
+        </div>
+      </div>
+
+      <div class="alert alert-warning mb-2 text-start text-xs" style="line-height: 1.6;">
+        <span class="font-bold">⚠️ تنبيه هام:</span> بمجرد الضغط على <strong>"أبدأ الآن"</strong> سيبدأ احتساب الوقت الرسمي عبر السيرفر ولن تتمكن من إيقافه.
+      </div>
+    </div>
+  `;
+
+  const footerHtml = `
+    <div class="d-flex items-center gap-3 w-full justify-between">
+      ${renderButton({
+        id: "cancelPreExamBtn",
+        text: "رجوع",
+        variant: "secondary",
+        className: "flex-1 btn-md"
+      })}
+      ${renderButton({
+        id: "confirmStartExamOfficialBtn",
+        text: "أبدأ الآن 🚀",
+        variant: "primary",
+        className: "flex-1 btn-md"
+      })}
+    </div>
+  `;
+
+  return renderModal({
+    id: PRE_EXAM_CONFIRM_MODAL_ID,
+    title: "تأكيد بدء الاختبار الرسمي",
+    bodyHtml,
+    footerHtml,
+    size: "sm"
+  });
+}
+
 /**
  * Returns HTML string for the inner content of the Student Exam Details modal.
  * @param {object} options
@@ -274,49 +346,59 @@ export function renderStudentExamDetailsContent({ exam, result = null }) {
       ? exam.questions.length
       : Number(exam.questionCount) || "—";
 
-  const startDateText = exam.startDate || exam.startAt ? formatDate(exam.startDate || exam.startAt) : "متاح فوراً";
-  const deadlineText = exam.deadline || exam.endAt ? formatDate(exam.deadline || exam.endAt) : "غير محدد";
+  const startDateText = exam.startDate || exam.startAt ? formatDate(exam.startDate || exam.startAt) : "متاح الآن";
+  const deadlineText = exam.deadline || exam.endAt ? formatDate(exam.deadline || exam.endAt) : "مفتوح";
 
-  const isCompleted = statusInfo.status === "graded" || statusInfo.status === "pending_essay" || statusInfo.status === "submitted";
-  const isInProgress = statusInfo.status === "in_progress";
-  const isAvailable = statusInfo.status === "available";
+  const isCompleted =
+    statusInfo.status === "graded" ||
+    statusInfo.status === "pending_essay" ||
+    statusInfo.status === "submitted";
+  const isInProgress = statusInfo.status === "in_progress" || exam.attemptStatus === "in_progress";
+  const isAvailable = statusInfo.status === "available" || statusInfo.status === "in_progress";
 
   return `
     <div class="student-exam-details-content py-2">
       <div class="d-flex items-center justify-between mb-3">
         ${statusInfo.html}
-        <span class="text-xs text-muted font-bold">⏱️ ${duration} دقيقة</span>
+        <span class="text-xs text-muted font-bold d-flex items-center gap-1">
+          <span>⏱️</span>
+          <span>${duration} دقيقة</span>
+        </span>
       </div>
 
-      <h3 class="font-black mb-2" style="font-size: 1.35rem; color: var(--text-primary); line-height: 1.4;">
+      <h3 class="font-black mb-2 student-details-title" style="font-size: 1.35rem; color: var(--text-primary); line-height: 1.4;">
         ${escapeHtml(exam.title || "امتحان بدون عنوان")}
       </h3>
 
       ${
         exam.description
-          ? `<p class="text-muted text-xs mb-4" style="line-height: 1.7;">${escapeHtml(exam.description)}</p>`
+          ? `<p class="student-details-description text-muted text-xs mb-4" style="line-height: 1.7;">${escapeHtml(exam.description)}</p>`
           : ""
       }
 
+      <!-- Section: معلومات الامتحان -->
+      <div class="details-section-header mb-2">
+        <h4 class="font-black text-sm text-primary m-0">معلومات الامتحان</h4>
+      </div>
       <div class="exam-details-specs-grid mb-5">
         <div class="spec-card">
           <span class="spec-label">عدد الأسئلة</span>
           <strong class="spec-value">📝 ${questionsCount} سؤال</strong>
         </div>
         <div class="spec-card">
-          <span class="spec-label">مدة الاختبار</span>
+          <span class="spec-label">المدة</span>
           <strong class="spec-value">⏱️ ${duration} دقيقة</strong>
         </div>
         <div class="spec-card">
-          <span class="spec-label">وقت البداية</span>
+          <span class="spec-label">موعد البداية</span>
           <strong class="spec-value">🟢 ${escapeHtml(startDateText)}</strong>
         </div>
         <div class="spec-card">
-          <span class="spec-label">وقت النهاية</span>
+          <span class="spec-label">موعد النهاية</span>
           <strong class="spec-value">🔴 ${escapeHtml(deadlineText)}</strong>
         </div>
         <div class="spec-card">
-          <span class="spec-label">المحاولات المسموحة</span>
+          <span class="spec-label">المحاولة المسموحة</span>
           <strong class="spec-value">🔒 محاولة واحدة رسمية</strong>
         </div>
         <div class="spec-card">
@@ -325,13 +407,42 @@ export function renderStudentExamDetailsContent({ exam, result = null }) {
         </div>
       </div>
 
+      <!-- Section: التعليمات -->
+      <div class="details-section-header mb-2">
+        <h4 class="font-black text-sm text-primary m-0">تعليمات وإرشادات هامة</h4>
+      </div>
+      <div class="exam-instructions-card p-4 mb-4" style="background: var(--surface-secondary); border-radius: var(--radius-lg); border: 1px solid var(--border);">
+        <ul class="exam-instructions-list m-0 p-0 text-xs" style="list-style: none; display: flex; flex-direction: column; gap: 0.6rem; line-height: 1.6;">
+          <li class="d-flex items-start gap-2">
+            <span class="instruction-dot" style="color: var(--primary);">✓</span>
+            <span>بمجرد بدء الاختبار سيبدأ احتساب الوقت الرسمي تنازلياً عبر السيرفر ولن يتوقف.</span>
+          </li>
+          <li class="d-flex items-start gap-2">
+            <span class="instruction-dot" style="color: var(--primary);">✓</span>
+            <span>يُرجى التحقق من استقرار اتصال الإنترنت والتركيز داخل نافذة الامتحان.</span>
+          </li>
+          <li class="d-flex items-start gap-2">
+            <span class="instruction-dot" style="color: var(--primary);">✓</span>
+            <span>إجاباتك تُحفظ في الذاكرة تدريجياً، ويمكنك مراجعة جميع الأسئلة قبل تأكيد التسليم.</span>
+          </li>
+          <li class="d-flex items-start gap-2">
+            <span class="instruction-dot" style="color: var(--primary);">✓</span>
+            <span>عند انتهاء الوقت المخصص، يتم اعتماد وتسليم إجاباتك تلقائياً دون فقدان.</span>
+          </li>
+          <li class="d-flex items-start gap-2">
+            <span class="instruction-dot" style="color: var(--warning);">⚠️</span>
+            <span>وفقاً لنظام المنصة، لا يُسمح بإعادة الاختبار بعد تسليمه النهائي.</span>
+          </li>
+        </ul>
+      </div>
+
       ${
         isCompleted && result
           ? `
         <div class="p-4 mb-4 text-center" style="background: var(--surface-secondary); border-radius: var(--radius-lg); border: 1px solid var(--border);">
-          <span class="text-xs text-muted d-block mb-1">النتيجة المسجلة:</span>
+          <span class="text-xs text-muted d-block mb-1">النتيجة الرسمية المسجلة:</span>
           <strong class="text-accent font-black" style="font-size: 1.8rem;">
-            ${result.score ?? "—"} <span class="text-xs text-muted">/ ${result.totalQuestions || 100}</span>
+            ${result.score ?? "—"} <span class="text-xs text-muted">/ ${result.total || result.totalQuestions || 100}</span>
           </strong>
         </div>
       `
@@ -343,14 +454,14 @@ export function renderStudentExamDetailsContent({ exam, result = null }) {
         ${
           isCompleted
             ? renderButton({
-                text: "عرض التقرير والنتيجة التفصيلية 📊",
+                text: "عرض النتيجة 📊",
                 variant: "primary",
                 className: "btn-lg w-full",
                 extraAttrs: `data-action-view-result="${escapeHtml(exam.id)}"`
               })
             : isInProgress
             ? renderButton({
-                text: "متابعة الامتحان الآن ⏳",
+                text: "متابعة الامتحان ⏳",
                 variant: "primary",
                 className: "btn-lg w-full",
                 extraAttrs: `data-action-start-exam="${escapeHtml(exam.id)}"`

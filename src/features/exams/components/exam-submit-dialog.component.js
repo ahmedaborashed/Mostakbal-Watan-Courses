@@ -17,22 +17,26 @@ export function renderExamSubmitDialog({ answeredCount = 0, totalQuestions = 0 }
   const isAllAnswered = unansweredCount === 0;
 
   const bodyHtml = `
-    <div class="text-center py-4">
-      <div class="modal-icon-header ${isAllAnswered ? "icon-success" : "icon-warning"}" style="font-size: 3rem; margin-bottom: 1rem;" aria-hidden="true">
-        ${isAllAnswered ? "🎉" : "⚠️"}
+    <div class="text-center py-3">
+      <div class="modal-icon-header ${isAllAnswered ? "icon-success" : "icon-warning"}" style="font-size: 2.75rem; margin-bottom: 0.75rem;" aria-hidden="true">
+        ${isAllAnswered ? "📝" : "⚠️"}
       </div>
 
-      <h3 class="font-extrabold mb-2" style="font-size: 1.3rem; color: var(--text-primary);">
-        هل أنت متأكد من تسليم إجاباتك؟
+      <h3 class="font-black mb-3" style="font-size: 1.3rem; color: var(--text-primary);">
+        هل أنت متأكد من تسليم الامتحان؟
       </h3>
 
       <div class="exam-submit-summary-box mb-4">
+        <div class="summary-item total">
+          <span class="summary-label">إجمالي الأسئلة:</span>
+          <strong class="summary-val">${totalQuestions} سؤال</strong>
+        </div>
         <div class="summary-item answered">
           <span class="summary-label">تمت الإجابة عن:</span>
           <strong class="summary-val">${answeredCount} / ${totalQuestions}</strong>
         </div>
         <div class="summary-item ${isAllAnswered ? "completed" : "unanswered"}">
-          <span class="summary-label">الأسئلة المتبقية:</span>
+          <span class="summary-label">غير مجاب:</span>
           <strong class="summary-val">${unansweredCount}</strong>
         </div>
       </div>
@@ -41,18 +45,18 @@ export function renderExamSubmitDialog({ answeredCount = 0, totalQuestions = 0 }
         !isAllAnswered
           ? `
         <div class="alert alert-warning mb-4 text-start text-xs" style="line-height: 1.6;">
-          <strong>تنبيه:</strong> لديك <strong>${unansweredCount}</strong> أسئلة دون إجابة. سيتم احتساب درجات ما قمت بحله فقط.
+          <strong>تنبيه:</strong> لديك <strong>${unansweredCount}</strong> أسئلة دون إجابة. سيتم احتساب درجات ما قمت بإجابته فقط.
         </div>
       `
           : `
-        <p class="text-muted text-sm mb-4">
-          أحسنت! قمت بالإجابة عن جميع الأسئلة.
-        </p>
+        <div class="alert alert-success mb-4 text-start text-xs" style="line-height: 1.6;">
+          <strong>أحسنت!</strong> تمت الإجابة عن جميع أسئلة الامتحان.
+        </div>
       `
       }
 
-      <p class="text-muted text-xs mb-0">
-        بمجرد الضغط على تأكيد التسليم، سيتم قفل الامتحان وإرسال إجاباتك للتصحيح المعتمد ولن تتمكن من التعديل.
+      <p class="text-muted text-xs mb-1 font-semibold" style="line-height: 1.6;">
+        بعد التسليم لن تتمكن من تعديل الإجابات وفقًا لسياسة الامتحان.
       </p>
     </div>
   `;
@@ -61,15 +65,15 @@ export function renderExamSubmitDialog({ answeredCount = 0, totalQuestions = 0 }
     <div class="d-flex items-center gap-3 w-full justify-between">
       ${renderButton({
         id: "cancelSubmitExamBtn",
-        text: "متابعة الإجابة ↵",
+        text: "الرجوع",
         variant: "secondary",
-        className: "flex-1"
+        className: "flex-1 btn-md"
       })}
       ${renderButton({
         id: "confirmFinalSubmitExamBtn",
-        text: "تأكيد وتسليم الامتحان 🚀",
+        text: "تأكيد التسليم 🚀",
         variant: "primary",
-        className: "flex-1"
+        className: "flex-1 btn-md"
       })}
     </div>
   `;

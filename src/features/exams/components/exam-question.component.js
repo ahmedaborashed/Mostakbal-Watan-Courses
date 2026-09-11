@@ -25,7 +25,7 @@ export function renderExamQuestion({
     optionsHtml = `
       <div class="mt-4 essay-input-wrapper">
         <label class="form-label mb-2 d-flex items-center justify-between" for="essay_q_${index}">
-          <span class="font-bold">اكتب إجابتك التحريرية أو الكود البرمجي:</span>
+          <span class="font-bold">اكتب إجابتك هنا:</span>
           <span id="essayCharCount" class="text-xs text-muted font-medium">${charCount} حرف</span>
         </label>
         <textarea
@@ -33,12 +33,12 @@ export function renderExamQuestion({
           class="form-textarea essay-textarea"
           data-question-index="${index}"
           data-answer-input="essay"
-          rows="7"
-          placeholder="اكتب إجابتك هنا بالتفصيل وبشكل واضح..."
+          rows="8"
+          placeholder="اكتب إجابتك هنا..."
           style="font-family: inherit; font-size: 1rem; line-height: 1.7; width: 100%; resize: vertical;"
         >${escapeHtml(currentAnswer)}</textarea>
         <p class="text-xs text-muted mt-2 mb-0">
-          💡 الإجابة تُحفظ تلقائياً كمسودة عند الكتابة أو الانتقال بين الأسئلة.
+          💡 الإجابة تُحفظ تلقائياً في الذاكرة ويمكنك مراجعتها في أي وقت قبل التسليم.
         </p>
       </div>
     `;
@@ -74,7 +74,7 @@ export function renderExamQuestion({
                 class="sr-only"
               />
               <span class="option-marker" aria-hidden="true">
-                ${isChecked ? "✓" : letter}
+                ${isChecked ? `✓ ${letter}` : letter}
               </span>
               <span class="option-text">${escapeHtml(opt)}</span>
             </label>

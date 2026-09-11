@@ -79,6 +79,12 @@ export function renderExamResult({ exam, result }) {
         ${isPendingEssay ? "⏳" : percentage && percentage >= 50 ? "🏆" : "📝"}
       </div>
 
+      <div class="mb-2">
+        <span class="badge ${isPendingEssay ? "badge-warning" : "badge-success"} font-bold mb-1">
+          تم تسليم الامتحان
+        </span>
+      </div>
+
       <h2 class="result-exam-title mb-1 font-black">
         ${escapeHtml(examTitle)}
       </h2>
@@ -86,7 +92,7 @@ export function renderExamResult({ exam, result }) {
       <p class="text-muted text-sm mb-4">
         ${
           isPendingEssay
-            ? "تم تسجيل إجاباتك بنجاح. النتيجة قيد انتظار تصحيح الأسئلة المقالية."
+            ? "النتيجة قيد التصحيح · سيتم تحديث الدرجة بعد انتهاء التصحيح."
             : "تم تصحيح الامتحان واعتماد نتيجتك الرسمية عبر السيرفر."
         }
       </p>
@@ -96,8 +102,8 @@ export function renderExamResult({ exam, result }) {
         <div class="score-status-badge mb-2">
           ${
             isPendingEssay
-              ? renderBadge({ text: "قيد انتظار التصحيح التحريري", variant: "gold", icon: "⏳" })
-              : renderBadge({ text: "نتيجة معتمدة نهائياً", variant: "success", icon: "✓" })
+              ? renderBadge({ text: "قيد التصحيح", variant: "warning", icon: "⏳" })
+              : renderBadge({ text: "تم التصحيح", variant: "success", icon: "✓" })
           }
         </div>
 
@@ -109,7 +115,7 @@ export function renderExamResult({ exam, result }) {
         ${
           percentage !== null && !isPendingEssay
             ? `
-          <div class="score-percentage-pill mt-2">
+          <div class="score-percentage-pill mt-2 font-bold">
             النسبة المئوية: <strong>${percentage}%</strong>
           </div>
         `
@@ -135,8 +141,8 @@ export function renderExamResult({ exam, result }) {
             ? `
           <div class="breakdown-card">
             <span class="breakdown-label">الأسئلة المقالية / التحريرية</span>
-            <strong class="breakdown-value ${allEssayEvaluated ? "text-success" : "text-gold"}">
-              ${allEssayEvaluated ? `${essaySum} درجة` : "قيد التقييم ⏳"}
+            <strong class="breakdown-value ${allEssayEvaluated ? "text-success" : "text-warning"}">
+              ${allEssayEvaluated ? `${essaySum} درجة` : "قيد التصحيح ⏳"}
             </strong>
           </div>
         `
@@ -153,7 +159,7 @@ export function renderExamResult({ exam, result }) {
         isPendingEssay
           ? `
         <div class="alert alert-info mb-6 text-start text-xs" style="line-height: 1.6;">
-          <strong>ملاحظة:</strong> الدرجة الحالية تشمل درجات الأسئلة الموضوعية فقط. سيقوم المعلم بمراجعة وتقييم إجاباتك المقالية وتحديث النتيجة النهائية تلقائياً.
+          <strong>ملاحظة:</strong> الدرجة المعروضة حالياً خاصة بالأسئلة الموضوعية فقط. سيقوم المعلم بتصحيح وتقييم إجاباتك المقالية واعتماد النتيجة النهائية فور الانتهاء.
         </div>
       `
           : ""

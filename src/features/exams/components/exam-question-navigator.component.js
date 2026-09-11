@@ -12,9 +12,12 @@ import { escapeHtml } from "../../../shared/utils/dom.utils.js";
 export function renderExamQuestionNavigator({
   totalQuestions = 0,
   currentIndex = 0,
-  answers = {}
+  answers = {},
+  isCollapsedOnMobile = false
 }) {
   if (!totalQuestions) return "";
+
+  let answeredCount = 0;
 
   const pillsHtml = Array.from({ length: totalQuestions }, (_, idx) => {
     const isCurrent = idx === currentIndex;
@@ -24,13 +27,15 @@ export function renderExamQuestionNavigator({
       rawAnswer !== null &&
       String(rawAnswer).trim() !== "";
 
+    if (isAnswered) answeredCount++;
+
     let stateClass = "unanswered";
     let stateIcon = "○";
     let stateLabel = "غير مجاب";
 
     if (isAnswered) {
       stateClass = "answered";
-      stateIcon = "●";
+      stateIcon = "✓";
       stateLabel = "مجاب";
     }
 
@@ -45,6 +50,7 @@ export function renderExamQuestionNavigator({
         data-nav-question-index="${idx}"
         aria-current="${isCurrent ? "true" : "false"}"
         aria-label="السؤال ${idx + 1}: ${stateLabel}"
+        title="السؤال ${idx + 1} (${stateLabel})"
       >
         <span class="pill-number">${idx + 1}</span>
         <span class="pill-dot" aria-hidden="true">${stateIcon}</span>
@@ -53,15 +59,34 @@ export function renderExamQuestionNavigator({
   }).join("");
 
   return `
-    <nav class="exam-question-navigator" aria-label="شريط التنقل بين الأسئلة">
+    <nav class="exam-question-navigator ${isCollapsedOnMobile ? "is-collapsed-mobile" : ""}" aria-label="شريط التنقل بين الأسئلة">
       <div class="navigator-header">
-        <span class="navigator-title">فهرس الأسئلة</span>
-        <div class="navigator-legend">
-          <span class="legend-item"><span class="legend-dot answered">●</span> مجاب</span>
-          <span class="legend-item"><span class="legend-dot unanswered">○</span> غير مجاب</span>
+        <div class="d-flex items-center gap-2">
+          <span class="navigator-title">فهرس الأسئلة</span>
+          <span class="badge badge-neutral text-xs font-bold" id="navigatorAnsweredCounter">
+            ${answeredCount} / ${totalQuestions}
+          </span>
+        </div>
+
+        <div class="d-flex items-center gap-3">
+          <div class="navigator-legend">
+            <span class="legend-item"><span class="legend-dot answered" aria-hidden="true">✓</span> مجاب</span>
+            <span class="legend-item"><span class="legend-dot unanswered" aria-hidden="true">○</span> غير مجاب</span>
+          </div>
+
+          <button
+            type="button"
+            class="navigator-mobile-toggle d-md-none btn btn-secondary btn-sm"
+            id="btnToggleQuestionNav"
+            aria-expanded="${isCollapsedOnMobile ? "false" : "true"}"
+            aria-controls="examNavigatorGrid"
+            aria-label="إظهار أو طي فهرس الأسئلة"
+          >
+            <span>${isCollapsedOnMobile ? "عرض الفهرس ▾" : "إخفاء الفهرس ▴"}</span>
+          </button>
         </div>
       </div>
-      <div class="navigator-grid">
+      <div class="navigator-grid" id="examNavigatorGrid">
         ${pillsHtml}
       </div>
     </nav>

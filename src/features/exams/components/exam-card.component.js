@@ -19,57 +19,69 @@ export function renderStudentExamCard({ exam, result = null }) {
       ? exam.questions.length
       : Number(exam.questionCount) || "—";
 
-  // Format date text
-  let dateDisplay = "—";
-  if (exam.deadline || exam.endAt) {
-    dateDisplay = `حتى ${formatDate(exam.deadline || exam.endAt)}`;
-  } else if (exam.startDate || exam.startAt) {
-    dateDisplay = `يبدأ ${formatDate(exam.startDate || exam.startAt)}`;
+  // Format schedule dates (Start time and End time)
+  let scheduleDisplay = "متاح للمشاركين";
+  const startRaw = exam.startDate || exam.startAt;
+  const endRaw = exam.deadline || exam.endAt;
+
+  if (startRaw && endRaw) {
+    scheduleDisplay = `يبدأ ${formatDate(startRaw)} · ينتهي ${formatDate(endRaw)}`;
+  } else if (endRaw) {
+    scheduleDisplay = `ينتهي في ${formatDate(endRaw)}`;
+  } else if (startRaw) {
+    scheduleDisplay = `يبدأ ${formatDate(startRaw)}`;
   } else if (exam.createdAt) {
-    dateDisplay = formatDate(exam.createdAt);
+    scheduleDisplay = formatDate(exam.createdAt);
   }
 
-  const isCompleted = statusInfo.status === "graded" || statusInfo.status === "pending_essay" || statusInfo.status === "submitted";
-  const isInProgress = statusInfo.status === "in_progress";
+  const isCompleted =
+    statusInfo.status === "graded" ||
+    statusInfo.status === "pending_essay" ||
+    statusInfo.status === "submitted";
+  const isInProgress = statusInfo.status === "in_progress" || exam.attemptStatus === "in_progress";
 
   const contentHtml = `
     <div class="student-exam-card-inner">
-      <div class="d-flex items-center justify-between mb-3">
-        ${statusInfo.html}
-        <span class="text-xs text-muted d-flex items-center gap-1 font-semibold">
-          <span>⏱</span>
-          <span>${durationMin} دقيقة</span>
-        </span>
+      <div class="student-exam-card-header d-flex items-center justify-between gap-2 mb-2">
+        <h4 class="font-black student-exam-title m-0">
+          ${escapeHtml(exam.title || "امتحان بدون عنوان")}
+        </h4>
+        <div class="student-exam-badge-wrap">
+          ${statusInfo.html}
+        </div>
       </div>
-
-      <h4 class="font-black mb-2 student-exam-title">
-        ${escapeHtml(exam.title || "امتحان بدون عنوان")}
-      </h4>
 
       ${
         exam.description
-          ? `<p class="student-exam-desc text-muted text-xs mb-4">${escapeHtml(exam.description)}</p>`
+          ? `<p class="student-exam-desc text-muted text-xs mb-3">${escapeHtml(exam.description)}</p>`
           : ""
       }
 
-      <div class="student-exam-meta-grid">
-        <div class="exam-meta-item">
-          <span class="meta-icon" aria-hidden="true">📝</span>
-          <span class="meta-text"><strong>${questionsCount}</strong> سؤال</span>
-        </div>
-        <div class="exam-meta-item">
-          <span class="meta-icon" aria-hidden="true">📅</span>
-          <span class="meta-text">${escapeHtml(dateDisplay)}</span>
-        </div>
+      <!-- Clean Key Specs Row -->
+      <div class="student-exam-specs-row mb-3">
+        <span class="exam-spec-pill">
+          <span class="spec-icon" aria-hidden="true">📝</span>
+          <span><strong>${questionsCount}</strong> سؤال</span>
+        </span>
+        <span class="exam-spec-pill">
+          <span class="spec-icon" aria-hidden="true">⏱</span>
+          <span><strong>${durationMin}</strong> دقيقة</span>
+        </span>
+      </div>
+
+      <!-- Schedule Date Row -->
+      <div class="student-exam-schedule-row mb-3">
+        <span class="schedule-icon" aria-hidden="true">📅</span>
+        <span class="schedule-text text-xs text-muted">${escapeHtml(scheduleDisplay)}</span>
       </div>
 
       ${
         isCompleted && result && result.score !== undefined
           ? `
-        <div class="p-3 mt-3 d-flex items-center justify-between result-quick-bar">
-          <span class="text-xs text-muted font-medium">درجتك:</span>
+        <div class="result-quick-bar p-2 px-3 mt-2 d-flex items-center justify-between">
+          <span class="text-xs text-muted font-bold">النتيجة المسجلة:</span>
           <strong class="text-accent font-black">
-            ${result.score} <span class="text-xs text-muted">/ ${result.totalQuestions || 100}</span>
+            ${result.score} <span class="text-xs text-muted">/ ${result.total || result.totalQuestions || 100}</span>
           </strong>
         </div>
       `
@@ -83,28 +95,21 @@ export function renderStudentExamCard({ exam, result = null }) {
     footerHtml = renderButton({
       text: "عرض النتيجة 📊",
       variant: "secondary",
-      className: "w-full",
+      className: "w-full btn-md",
       extraAttrs: `data-view-exam-result="${escapeHtml(exam.id)}"`
     });
   } else if (isInProgress) {
     footerHtml = renderButton({
       text: "متابعة الامتحان ⏳",
       variant: "primary",
-      className: "w-full",
-      extraAttrs: `data-open-exam-details="${escapeHtml(exam.id)}"`
-    });
-  } else if (statusInfo.status === "available") {
-    footerHtml = renderButton({
-      text: "عرض الامتحان 📝",
-      variant: "primary",
-      className: "w-full",
+      className: "w-full btn-md",
       extraAttrs: `data-open-exam-details="${escapeHtml(exam.id)}"`
     });
   } else {
     footerHtml = renderButton({
       text: "عرض التفاصيل ℹ️",
-      variant: "secondary",
-      className: "w-full",
+      variant: "primary",
+      className: "w-full btn-md",
       extraAttrs: `data-open-exam-details="${escapeHtml(exam.id)}"`
     });
   }

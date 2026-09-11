@@ -10,6 +10,8 @@ export const examState = new Store({
   questions: [],
   answers: {},
   currentQuestionIndex: 0,
+  isInReviewMode: false,
+  isNavigatorCollapsed: false,
   timeRemaining: 0,
   timerActive: false,
   isSubmitting: false,
