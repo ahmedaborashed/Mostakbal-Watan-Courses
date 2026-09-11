@@ -46,14 +46,20 @@ export const StudentsService = {
     }
   },
 
-  /**
-   * Scoped fallback lookup by phone number with limit(1).
-   */
   async getStudentByPhone(phone) {
+    if (!phone) return null;
+    const cleanPhone = String(phone).trim();
     try {
+      // 1. Direct O(1) lookup for legacy documents keyed by phone (complies with get rule)
+      const directSnap = await getDoc(doc(db, COLLECTIONS.STUDENTS, cleanPhone));
+      if (directSnap.exists()) {
+        return { id: directSnap.id, firestoreId: directSnap.id, ...directSnap.data() };
+      }
+
+      // 2. Query fallback with limit(1)
       const q = query(
         collection(db, COLLECTIONS.STUDENTS),
-        where("studentPhone", "==", String(phone)),
+        where("studentPhone", "==", cleanPhone),
         limit(1)
       );
       const snap = await getDocs(q);
@@ -63,7 +69,8 @@ export const StudentsService = {
       }
       return null;
     } catch (err) {
-      throw normalizeError(err);
+      console.warn("Student phone lookup warning:", err?.message || err);
+      return null;
     }
   },
 

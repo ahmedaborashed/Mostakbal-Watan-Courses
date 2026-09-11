@@ -9,6 +9,11 @@ import { ROLES } from "./constants.js";
  * @param {string|string[]} allowedRoles - 'student', 'teacher', 'admin', or array of roles
  * @returns {Promise<{user: object, role: string, claims: object}>}
  */
+function redirectToLogin() {
+  const isPagesDir = window.location.pathname.includes("/pages/");
+  window.location.replace(isPagesDir ? "../index.html" : "index.html");
+}
+
 export function protectRoute(allowedRoles) {
   const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
 
@@ -16,7 +21,7 @@ export function protectRoute(allowedRoles) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         unsubscribe();
-        window.location.replace("index.html");
+        redirectToLogin();
         return;
       }
 
@@ -42,7 +47,7 @@ export function protectRoute(allowedRoles) {
         if (!roles.includes(role)) {
           unsubscribe();
           await signOut(auth);
-          window.location.replace("index.html");
+          redirectToLogin();
           return;
         }
 
@@ -51,7 +56,7 @@ export function protectRoute(allowedRoles) {
       } catch (err) {
         console.error("Auth guard verification error:", err);
         unsubscribe();
-        window.location.replace("index.html");
+        redirectToLogin();
         reject(err);
       }
     });

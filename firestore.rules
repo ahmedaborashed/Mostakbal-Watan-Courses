@@ -40,6 +40,12 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function getAuthPhone() {
+      return request.auth.token.phone != null
+        ? request.auth.token.phone
+        : (request.auth.token.email != null ? request.auth.token.email.split('@')[0] : '');
+    }
+
     // ========================================================
     // 1. USERS COLLECTION (Profile metadata & roles)
     // ========================================================
@@ -53,7 +59,7 @@ service cloud.firestore {
     // ========================================================
     match /students/{studentId} {
       // A student can only get their own record; listing entire collection is restricted to staff
-      allow get: if isStaff() || isOwner(studentId) || (isAuthenticated() && resource.data.studentPhone == request.auth.token.email.replace('@student.local', ''));
+      allow get: if isStaff() || isOwner(studentId) || (isAuthenticated() && resource.data.studentPhone == getAuthPhone());
       allow list: if isStaff();
       allow write: if isStaff();
     }
@@ -70,7 +76,7 @@ service cloud.firestore {
     // 4. VIDEO LOGS
     // ========================================================
     match /video_logs/{logId} {
-      allow read: if isStaff() || (isAuthenticated() && (resource.data.studentId == request.auth.uid || resource.data.studentPhone == request.auth.token.email.replace('@student.local', '')));
+      allow read: if isStaff() || (isAuthenticated() && (resource.data.studentId == request.auth.uid || resource.data.studentPhone == getAuthPhone()));
       allow create: if isAuthenticated();
       allow update, delete: if isStaff();
     }

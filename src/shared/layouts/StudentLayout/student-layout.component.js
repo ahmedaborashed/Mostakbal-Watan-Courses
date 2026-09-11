@@ -20,7 +20,7 @@ export function mountStudentLayout(container, { onLogout, onTabChange }) {
           <img src="${logoSrc}" alt="شعار مستقبل وطن" />
         </div>
         <div>
-          <strong id="mobileStudentName" class="text-sm d-block font-extrabold">${escapeHtml(studentName)}</strong>
+          <strong id="mobileStudentName" class="text-sm d-block font-extrabold">الطالب</strong>
           <span class="text-xs text-muted">بوابة الطالب</span>
         </div>
       </div>

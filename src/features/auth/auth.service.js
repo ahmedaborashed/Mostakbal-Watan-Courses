@@ -23,15 +23,37 @@ export const AuthService = {
     try {
       // 1. If already full email, use directly
       if (cleanUser.includes("@")) {
-        targetEmail = cleanUser;
+        targetEmail = cleanUser.replace(/\s+/g, "");
         userCredential = await signInWithEmailAndPassword(auth, targetEmail, cleanPass);
       } else {
-        // 2. Sequential fallback for existing legacy accounts (@admin.local -> @system.local -> @student.local)
-        const attempts = [
-          `${cleanUser}@admin.local`,
-          `${cleanUser}@system.local`,
-          `${cleanUser}@student.local`
-        ];
+        // Convert Arabic-Indic digits to standard Latin digits and remove spaces/dashes
+        let normalized = cleanUser
+          .replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d))
+          .replace(/[\s\-_]/g, "");
+
+        // Normalize Egyptian phone prefixes (+20, 0020, 201...) to 01...
+        if (normalized.startsWith("+20")) {
+          normalized = "0" + normalized.slice(3);
+        } else if (normalized.startsWith("0020")) {
+          normalized = "0" + normalized.slice(4);
+        } else if (normalized.startsWith("201") && normalized.length === 12) {
+          normalized = "0" + normalized.slice(2);
+        }
+
+        const isPhone = /^01[0125][0-9]{8}$/.test(normalized) || /^[0-9]{8,15}$/.test(normalized);
+
+        // Prioritize @student.local if input is a phone number to minimize latency and prevent rate-limits
+        const attempts = isPhone
+          ? [
+              `${normalized}@student.local`,
+              `${normalized}@admin.local`,
+              `${normalized}@system.local`
+            ]
+          : [
+              `${normalized}@admin.local`,
+              `${normalized}@system.local`,
+              `${normalized}@student.local`
+            ];
 
         let lastError = null;
         for (const email of attempts) {
@@ -41,10 +63,16 @@ export const AuthService = {
             break;
           } catch (err) {
             lastError = err;
+            if (err.code === "auth/too-many-requests") {
+              break;
+            }
           }
         }
 
         if (!userCredential) {
+          if (lastError && lastError.code === "auth/too-many-requests") {
+            throw normalizeError(lastError);
+          }
           throw new AuthError("بيانات الدخول غير صحيحة، يرجى التأكد والمحاولة مرة أخرى ❌");
         }
       }
