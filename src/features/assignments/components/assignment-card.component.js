@@ -116,7 +116,7 @@ export function renderStudentAssignmentCard({ assignment, submission }) {
     : (deadlineInfo.isUrgent ? deadlineInfo.text : deadlineDateStr);
 
   // 4. Action Button Label & Styling
-  let buttonLabel = "فتح وتفاصيل التاسك";
+  let buttonLabel = "فتح التاسك";
   let buttonClass = "";
   if (isSubmitted) {
     buttonLabel = "عرض حلك والتصحيح";
@@ -126,15 +126,29 @@ export function renderStudentAssignmentCard({ assignment, submission }) {
     buttonClass = "is-expired";
   }
 
+  // 5. Attachment Chip
+  let attachmentBadgeHtml = "";
+  if (assignment.fileUrl) {
+    attachmentBadgeHtml = `
+      <span class="assignment-badge is-attachment" title="يوجد ملف مرفق من المعلم">
+        <span class="badge-icon" aria-hidden="true">📎</span>
+        <span>مرفق متاح</span>
+      </span>
+    `;
+  }
+
   return `
-    <article class="student-assignment-card ${isSubmitted ? 'is-submitted' : ''} ${isExpired ? 'is-expired' : ''}" dir="rtl">
-      <div>
+    <article class="student-assignment-card ${isSubmitted ? 'is-submitted' : ''} ${isExpired ? 'is-expired' : ''} ${deadlineInfo.isUrgent ? 'is-urgent' : ''}" dir="rtl">
+      <div class="student-assignment-body">
         <!-- Card Header: Badges -->
         <div class="student-assignment-header">
-          <span class="assignment-badge is-group" title="${escapeHtml(assignment.group || 'عام')}">
-            <span aria-hidden="true">👥</span>
-            <span>${safeGroup}</span>
-          </span>
+          <div class="header-badges-right">
+            <span class="assignment-badge is-group" title="${escapeHtml(assignment.group || 'عام')}">
+              <span class="badge-icon" aria-hidden="true">👥</span>
+              <span>${safeGroup}</span>
+            </span>
+            ${attachmentBadgeHtml}
+          </div>
           ${statusBadgeHtml}
         </div>
 
@@ -149,10 +163,12 @@ export function renderStudentAssignmentCard({ assignment, submission }) {
         </p>
 
         <!-- Card Deadline Strip (Sleek, Modern, Integrated) -->
-        <div class="student-assignment-deadline-strip ${deadlineInfo.isUrgent ? 'is-urgent' : ''} ${isExpired ? 'is-expired' : ''}">
+        <div class="student-assignment-deadline-strip ${deadlineInfo.isUrgent ? 'is-urgent' : ''} ${isExpired ? 'is-expired' : ''} ${isSubmitted ? 'is-submitted' : ''}">
           <div class="deadline-strip-main">
-            <span class="deadline-strip-icon" aria-hidden="true">${isExpired ? '⌛' : (deadlineInfo.isUrgent ? '🟡' : '⏰')}</span>
-            <div>
+            <div class="deadline-strip-icon-box" aria-hidden="true">
+              ${isExpired ? '⌛' : (deadlineInfo.isUrgent ? '⚡' : '⏰')}
+            </div>
+            <div class="deadline-strip-text">
               <span class="deadline-strip-label">${isExpired ? 'حالة الموعد' : 'موعد التسليم'}</span>
               <strong class="deadline-strip-val">${escapeHtml(deadlineValText)}</strong>
             </div>
