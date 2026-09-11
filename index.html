@@ -430,7 +430,7 @@
 
         <button id="submitLoginBtn" class="login-submit-btn" type="submit">
           <span id="btnText">دخول إلى المنصة 🚀</span>
-          <span id="loader" class="spinner d-none" style="width: 18px; height: 18px; border-width: 2px;"></span>
+          <span id="loader" class="spinner spinner-sm d-none"></span>
         </button>
 
         <p class="text-center text-muted text-xs mt-4">
@@ -469,19 +469,26 @@
   </div>
 
   <!-- ============================================================
-       SPLASH LOADING SCREEN
+       SPLASH LOADING SCREEN (Ultra-Modern & Professional)
        ============================================================ -->
   <div id="loadingScreen" class="splash-loading-screen" aria-hidden="true">
     <div class="splash-loading-content">
-      <div class="splash-loading-logo">
-        <img src="assets/images/logo.jpeg" alt="شعار حزب مستقبل وطن">
+      <div class="splash-loading-emblem">
+        <div class="splash-orbital-ring" aria-hidden="true"></div>
+        <div class="splash-inner-ring" aria-hidden="true"></div>
+        <div class="splash-loading-logo">
+          <img src="assets/images/logo.jpeg" alt="شعار حزب مستقبل وطن">
+        </div>
       </div>
 
-      <div class="splash-loading-spinner" aria-hidden="true"></div>
-
       <h2 id="loadingText">أهلاً بيك 🚀</h2>
-      <p id="loadingSubtitle">منصة التعليم الرقمية</p>
-      <div id="loadingCount" class="splash-loading-count">3</div>
+      <p id="loadingSubtitle">منصة التعليم الرقمية - مستقبل وطن</p>
+      
+      <div class="splash-status-chip">
+        <span class="splash-pulse-dot" aria-hidden="true"></span>
+        <span id="loadingStatusDesc">جاري إعداد المنصة...</span>
+        <span id="loadingCount" class="splash-loading-count">3s</span>
+      </div>
 
       <div class="splash-progress-track" aria-hidden="true">
         <div class="splash-progress-bar"></div>
@@ -510,20 +517,20 @@
       screen.setAttribute("aria-hidden", "false");
 
       let remaining = Math.max(1, Number(seconds) || 3);
-      if (count) count.textContent = remaining;
+      if (count) count.textContent = `${remaining}s`;
 
       if (progress) {
         progress.style.transition = "none";
         progress.style.width = "0%";
         void progress.offsetWidth;
-        progress.style.transition = `width ${remaining}s linear`;
+        progress.style.transition = `width ${remaining}s cubic-bezier(0.2, 0, 0.2, 1)`;
         progress.style.width = "100%";
       }
 
       loadingTimer = setInterval(() => {
         remaining--;
         if (remaining > 0) {
-          if (count) count.textContent = remaining;
+          if (count) count.textContent = `${remaining}s`;
         } else {
           clearInterval(loadingTimer);
           loadingTimer = null;

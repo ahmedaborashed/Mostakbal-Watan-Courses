@@ -969,16 +969,20 @@
   transform: translateY(-1px);
 }
 
-/* Splash Loading Screen */
+/* ============================================================
+   SPLASH LOADING SCREEN (Ultra-Modern & Professional)
+   ============================================================ */
 .splash-loading-screen {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: var(--bg-primary);
+  background: radial-gradient(circle at 50% 40%, rgba(16, 185, 129, 0.12) 0%, rgba(18, 21, 25, 0.96) 65%, #0a0c0f 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s ease;
 }
 
 .splash-loading-screen.loading-hide {
@@ -987,20 +991,91 @@
   pointer-events: none;
 }
 
-.splash-loading-content {
-  text-align: center;
-  max-width: 300px;
-  width: 90%;
+/* Atmospheric subtle ambient aura */
+.splash-loading-screen::before {
+  content: "";
+  position: absolute;
+  width: 480px;
+  height: 480px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.16) 0%, rgba(52, 211, 153, 0.05) 50%, transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  animation: splashAuraPulse 4s ease-in-out infinite alternate;
 }
 
+.splash-loading-content {
+  text-align: center;
+  max-width: 360px;
+  width: 90%;
+  padding: var(--space-8) var(--space-6);
+  background: rgba(24, 28, 34, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(16, 185, 129, 0.12);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* Card top luminous streak */
+.splash-loading-content::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 15%;
+  right: 15%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(52, 211, 153, 0.6), transparent);
+}
+
+/* Emblem & Orbiting Rings Wrapper */
+.splash-loading-emblem {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Outer orbital rotating gradient ring */
+.splash-orbital-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--primary);
+  border-right-color: var(--color-primary-light, #34d399);
+  animation: splashOrbit 1.4s linear infinite;
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.7));
+}
+
+/* Inner dashed counter-rotating ring */
+.splash-inner-ring {
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  animation: splashReverseOrbit 8s linear infinite;
+}
+
+/* Central Logo Badge */
 .splash-loading-logo {
   width: 68px;
   height: 68px;
-  margin: 0 auto var(--space-3);
-  border-radius: var(--radius-md);
+  margin: 0 auto;
+  border-radius: 50%;
   overflow: hidden;
-  border: 1px solid var(--border-strong);
-  box-shadow: var(--shadow-sm);
+  background: var(--surface-primary);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(0, 0, 0, 0.5);
+  position: relative;
+  z-index: 2;
+  animation: splashLogoGlow 3s ease-in-out infinite alternate;
 }
 
 .splash-loading-logo img {
@@ -1009,49 +1084,123 @@
   object-fit: cover;
 }
 
-.splash-loading-spinner {
-  width: 38px;
-  height: 38px;
-  border: 2px solid var(--border);
-  border-top-color: var(--primary);
-  border-radius: var(--radius-full);
-  margin: var(--space-4) auto;
-  animation: spin 0.8s linear infinite;
-}
-
+/* Text & Typography */
 .splash-loading-content h2 {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-extrabold);
   color: var(--text-primary);
   margin-bottom: var(--space-1);
+  letter-spacing: -0.01em;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
 .splash-loading-content p {
-  color: var(--text-muted);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--space-4);
+}
+
+/* Status Pill & Pulse Indicator */
+.splash-status-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0.35rem 0.9rem;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: var(--radius-full);
+  margin-bottom: var(--space-4);
+  color: var(--color-primary-light, #34d399);
   font-size: var(--font-size-xs);
-  margin-bottom: var(--space-3);
+  font-weight: var(--font-weight-semibold);
+}
+
+.splash-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 10px var(--primary);
+  animation: splashDotPulse 1.2s ease-in-out infinite alternate;
+  display: inline-block;
+  flex-shrink: 0;
 }
 
 .splash-loading-count {
-  font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
-  color: var(--primary);
-  margin-bottom: var(--space-3);
+  color: #ffffff;
+  display: inline-block;
+  min-width: 18px;
 }
 
+/* Progress Track */
 .splash-progress-track {
   width: 100%;
-  height: 4px;
-  background: var(--surface-secondary);
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-full);
   overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .splash-progress-bar {
   height: 100%;
   width: 0%;
-  background: var(--primary);
-  transition: width 0.8s linear;
+  background: linear-gradient(90deg, #059669 0%, var(--primary) 60%, var(--color-primary-light, #34d399) 100%);
+  border-radius: var(--radius-full);
+  position: relative;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.8);
+}
+
+/* Progress bar leading spark */
+.splash-progress-bar::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  background: #ffffff;
+  border-radius: 50%;
+  filter: blur(1px);
+  box-shadow: 0 0 8px #ffffff, 0 0 14px var(--primary);
+  opacity: 0.9;
+}
+
+/* Keyframe Animations */
+@keyframes splashOrbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes splashReverseOrbit {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes splashLogoGlow {
+  0% {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 12px rgba(16, 185, 129, 0.2);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+  100% {
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5), 0 0 25px rgba(16, 185, 129, 0.5);
+    border-color: rgba(52, 211, 153, 0.4);
+  }
+}
+
+@keyframes splashAuraPulse {
+  0% { transform: scale(0.9) translate3d(0, 0, 0); opacity: 0.6; }
+  100% { transform: scale(1.15) translate3d(0, 0, 0); opacity: 1; }
+}
+
+@keyframes splashDotPulse {
+  0% { transform: scale(0.8); opacity: 0.6; }
+  100% { transform: scale(1.2); opacity: 1; }
 }
 
 /* ============================================================
