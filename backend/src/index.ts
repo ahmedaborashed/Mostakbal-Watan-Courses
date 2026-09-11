@@ -8,6 +8,7 @@ import {
 } from "./modules/students";
 
 import {
+  getAvailableExamsForStudentHandler,
   getExamForStudentHandler,
   startExamAttemptHandler,
   submitExamHandler,
@@ -46,6 +47,7 @@ export const deleteStudent = onCall(deleteStudentHandler);
 // ==========================================
 // 2. EXAMS & SECURE GRADING
 // ==========================================
+export const getAvailableExamsForStudent = onCall(getAvailableExamsForStudentHandler);
 export const getExamForStudent = onCall(getExamForStudentHandler);
 export const startExamAttempt = onCall(startExamAttemptHandler);
 export const submitExam = onCall(submitExamHandler);

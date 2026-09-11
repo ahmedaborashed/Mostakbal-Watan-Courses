@@ -4,6 +4,79 @@ import { db } from "../../config/firebase";
 import { getAuthenticatedUser, requireRole } from "../../middleware/auth";
 import { validateInput } from "../../middleware/validator";
 
+// 0. Get Available Exams for Student (Sanitized Metadata & Scoped Authorization)
+export async function getAvailableExamsForStudentHandler(request: CallableRequest) {
+  const user = getAuthenticatedUser(request);
+
+  // Fetch student profile to resolve group
+  const studentDoc = await db.collection("students").doc(user.uid).get();
+  const studentData = studentDoc.exists ? studentDoc.data()! : {};
+  const studentGroup = studentData.group || studentData.studentGroup || user.group || "ALL";
+
+  const examsSnap = await db.collection("exams").where("active", "==", true).get();
+
+  const availableExams = await Promise.all(
+    examsSnap.docs.map(async (doc) => {
+      const data = doc.data();
+      const examGroup = data.group || "ALL";
+
+      // Group authorization check
+      if (examGroup !== "ALL" && examGroup !== studentGroup) {
+        return null;
+      }
+
+      // Check student attempt & result
+      const [attemptSnap, resultSnap] = await Promise.all([
+        db.collection("exams").doc(doc.id).collection("attempts").doc(user.uid).get(),
+        db.collection("results").doc(`${doc.id}_${user.uid}`).get()
+      ]);
+
+      let attemptStatus: "not_started" | "in_progress" | "submitted" = "not_started";
+      let attemptData: any = null;
+      if (attemptSnap.exists) {
+        attemptData = attemptSnap.data()!;
+        attemptStatus = attemptData.status === "submitted" ? "submitted" : "in_progress";
+      }
+
+      let resultData: any = null;
+      if (resultSnap.exists) {
+        const res = resultSnap.data()!;
+        resultData = {
+          score: res.score,
+          total: res.total,
+          mcqScore: res.mcqScore,
+          essayScores: res.essayScores,
+          status: res.status,
+          submittedAt: res.submittedAt
+        };
+        attemptStatus = "submitted";
+      }
+
+      return {
+        id: doc.id,
+        title: data.title || "",
+        description: data.description || "",
+        duration: Number(data.duration || 30),
+        group: examGroup,
+        startDate: data.startDate || data.startAt || null,
+        deadline: data.deadline || data.endAt || null,
+        passDegree: Number(data.passDegree || 0),
+        totalQuestions: Array.isArray(data.questions) ? data.questions.length : 0,
+        attemptStatus,
+        attempt: attemptData
+          ? {
+              startedAt: attemptData.startedAt,
+              expiresAt: attemptData.expiresAt
+            }
+          : null,
+        result: resultData
+      };
+    })
+  );
+
+  return availableExams.filter(Boolean);
+}
+
 // 1. Get Exam for Student (Sanitized)
 const GetExamSchema = z.object({
   examId: z.string().min(1, "معرف الامتحان مطلوب")

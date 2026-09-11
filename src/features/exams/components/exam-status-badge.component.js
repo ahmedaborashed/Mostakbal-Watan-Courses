@@ -5,9 +5,10 @@ import { isDeadlinePassed } from "../../../shared/utils/date.utils.js";
 /**
  * Computes the semantic status and returns metadata and rendered badge HTML.
  * @param {object} exam
+ * @param {object} [result]
  * @returns {{ status: string, label: string, variant: string, icon: string, html: string }}
  */
-export function getExamStatusInfo(exam) {
+export function getExamStatusInfo(exam, result = null) {
   if (!exam) {
     return {
       status: "unknown",
@@ -18,20 +19,52 @@ export function getExamStatusInfo(exam) {
     };
   }
 
-  const isActive = exam.active !== false;
-  const questionsCount = Array.isArray(exam.questions) ? exam.questions.length : 0;
-
-  // 1. Inactive or Draft
-  if (!isActive) {
-    if (questionsCount === 0 || exam.isDraft) {
+  // 1. Check Result state
+  const examResult = result || exam.result;
+  if (examResult) {
+    if (examResult.status === "pending_essay") {
       return {
-        status: "draft",
-        label: "مسودة",
-        variant: "neutral",
-        icon: "📝",
-        html: renderBadge({ text: "مسودة", variant: "neutral", icon: "📝" })
+        status: "pending_essay",
+        label: "قيد الانتظار للتصحيح",
+        variant: "gold",
+        icon: "⏳",
+        html: renderBadge({ text: "قيد الانتظار للتصحيح", variant: "gold", icon: "⏳" })
       };
     }
+    return {
+      status: "graded",
+      label: "تم التصحيح",
+      variant: "success",
+      icon: "✓",
+      html: renderBadge({ text: "تم التصحيح", variant: "success", icon: "✓" })
+    };
+  }
+
+  // 2. Check Attempt state
+  if (exam.attemptStatus === "submitted") {
+    return {
+      status: "submitted",
+      label: "تم التسليم",
+      variant: "success",
+      icon: "✓",
+      html: renderBadge({ text: "تم التسليم", variant: "success", icon: "✓" })
+    };
+  }
+
+  if (exam.attemptStatus === "in_progress") {
+    return {
+      status: "in_progress",
+      label: "قيد الحل",
+      variant: "gold",
+      icon: "⏳",
+      html: renderBadge({ text: "قيد الحل", variant: "gold", icon: "⏳" })
+    };
+  }
+
+  const isActive = exam.active !== false;
+
+  // 3. Inactive or Draft
+  if (!isActive) {
     return {
       status: "inactive",
       label: "معطل",
@@ -41,46 +74,48 @@ export function getExamStatusInfo(exam) {
     };
   }
 
-  // 2. Expired by Deadline
-  if (exam.deadline && isDeadlinePassed(exam.deadline)) {
+  // 4. Expired by Deadline
+  const deadline = exam.deadline || exam.endAt;
+  if (deadline && isDeadlinePassed(deadline)) {
     return {
       status: "expired",
       label: "منتهي",
-      variant: "warning",
+      variant: "neutral",
       icon: "⌛",
-      html: renderBadge({ text: "منتهي", variant: "warning", icon: "⌛" })
+      html: renderBadge({ text: "منتهي", variant: "neutral", icon: "⌛" })
     };
   }
 
-  // 3. Upcoming by Start Date
-  if (exam.startDate) {
+  // 5. Upcoming by Start Date
+  const startDate = exam.startDate || exam.startAt;
+  if (startDate) {
     let startTimestamp = 0;
-    if (typeof exam.startDate?.toDate === "function") {
-      startTimestamp = exam.startDate.toDate().getTime();
-    } else if (exam.startDate instanceof Date) {
-      startTimestamp = exam.startDate.getTime();
+    if (typeof startDate?.toDate === "function") {
+      startTimestamp = startDate.toDate().getTime();
+    } else if (startDate instanceof Date) {
+      startTimestamp = startDate.getTime();
     } else {
-      startTimestamp = new Date(exam.startDate).getTime();
+      startTimestamp = new Date(startDate).getTime();
     }
 
     if (!isNaN(startTimestamp) && startTimestamp > Date.now()) {
       return {
         status: "upcoming",
-        label: "قريباً",
+        label: "لم يبدأ بعد",
         variant: "info",
         icon: "⏰",
-        html: renderBadge({ text: "قريباً", variant: "info", icon: "⏰" })
+        html: renderBadge({ text: "لم يبدأ بعد", variant: "info", icon: "⏰" })
       };
     }
   }
 
-  // 4. Active
+  // 6. Available
   return {
-    status: "active",
-    label: "نشط",
-    variant: "success",
-    icon: "✓",
-    html: renderBadge({ text: "نشط", variant: "success", icon: "✓" })
+    status: "available",
+    label: "متاح",
+    variant: "primary",
+    icon: "⭐",
+    html: renderBadge({ text: "متاح", variant: "primary", icon: "⭐" })
   };
 }
 

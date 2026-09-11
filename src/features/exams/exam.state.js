@@ -2,13 +2,18 @@
 import { Store } from "../../core/store.js";
 
 export const examState = new Store({
+  // Student Exams State
   exams: [],
+  availableExams: [],
   activeExam: null,
+  activeAttempt: null,
   questions: [],
   answers: {},
+  currentQuestionIndex: 0,
   timeRemaining: 0,
   timerActive: false,
   isSubmitting: false,
+  submissionState: "idle", // "idle" | "submitting" | "submitted" | "error"
   lastResult: null,
   loading: false,
   error: null,

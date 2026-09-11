@@ -18,6 +18,46 @@ import { normalizeError } from "../../core/errors.js";
 
 export const ExamService = {
   /**
+   * Fetches authorized available exams for student (sanitized metadata, attempt status, and result).
+   */
+  async getAvailableExamsForStudent(studentGroup = "ALL", studentUid = "") {
+    try {
+      const data = await callApi("getAvailableExamsForStudent");
+      if (Array.isArray(data)) return data;
+      return [];
+    } catch (err) {
+      console.warn("Cloud function getAvailableExamsForStudent unavailable, attempting scoped fallback:", err);
+      try {
+        const snap = await getDocs(collection(db, COLLECTIONS.EXAMS));
+        const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const filtered = all.filter(
+          (e) => e.active !== false && (!e.group || e.group === "ALL" || e.group === studentGroup)
+        );
+        return await Promise.all(
+          filtered.map(async (exam) => {
+            const res = studentUid ? await this.getResult(exam.id, studentUid) : null;
+            return {
+              id: exam.id,
+              title: exam.title || "",
+              description: exam.description || "",
+              duration: Number(exam.duration || 30),
+              group: exam.group || "ALL",
+              startDate: exam.startDate || exam.startAt || null,
+              deadline: exam.deadline || exam.endAt || null,
+              passDegree: Number(exam.passDegree || 0),
+              totalQuestions: Array.isArray(exam.questions) ? exam.questions.length : 0,
+              attemptStatus: res ? "submitted" : "not_started",
+              result: res
+            };
+          })
+        );
+      } catch (fallbackErr) {
+        throw normalizeError(err);
+      }
+    }
+  },
+
+  /**
    * Fetches sanitized exam questions for student (correct answers stripped on server).
    */
   async getExamForStudent(examId) {
