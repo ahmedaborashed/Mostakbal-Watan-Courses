@@ -1662,6 +1662,15 @@ select option{background:#06111f!important;color:#e9faff!important;}
     font-size: 13px !important;
   }
 }
+
+/* ===== TEACHER GRADE / SCHEDULE CONTROLS ===== */
+.teacher-extra-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.teacher-extra-actions button{flex:1 1 180px}
+.grade-report-table{width:100%;border-collapse:collapse;margin-top:12px;min-width:680px}
+.grade-report-table th,.grade-report-table td{border:1px solid rgba(34,211,238,.18);padding:9px;text-align:right}
+.grade-report-table th{background:rgba(34,211,238,.08);color:#67e8f9}
+.grade-report-wrap{overflow:auto}
+.grade-editor-row{padding:12px;margin:10px 0;border:1px solid rgba(34,211,238,.18);border-radius:12px;background:#06111f}
 </style>
 </head>
 <body>
@@ -1789,7 +1798,13 @@ opacity:0;transform:translateY(20px);transition:all .4s ease;pointer-events:none
         </div>
       </div>
 
-      <div id="resultsBox" class="section-card"></div>
+      <div id="resultsBox" class="section-card">
+        <div class="title">📊 تقرير درجات الامتحانات</div>
+        <div class="teacher-extra-actions">
+          <button class="btn-main" onclick="openAllGradesReport()">📊 كل درجات الطلاب</button>
+        </div>
+        <div id="allGradesReport"></div>
+      </div>
     </div>
 
 
@@ -2784,7 +2799,8 @@ window.loadExams=()=>{
           <p>⏱ ${d.duration} دقيقة</p>
           <span class="badge">👥 ${d.group || "-"}</span>
           <div style="margin-top:10px">
-            <button onclick="toggleExam('${e.id}',${d.active})">${d.active?"🔴 قفل":"🟢 فتح"}</button>
+            <button onclick="toggleExam('${e.id}',${d.active})">${d.active?"🔴 قفل":"🟢 فتح"}</button> 
+            <button onclick="openExamSchedule('${e.id}')">⏰ إعادة الجدولة</button>
             <button onclick="openExam('${e.id}')">📊 النتائج</button>
             <button class="danger" onclick="deleteExam('${e.id}')">🗑 حذف</button>
           </div>
@@ -3232,6 +3248,12 @@ window.loadStudents = async () => {
             <button onclick="resetStudentPassword('${d.firestoreId}')">
               🔐 Reset الباسورد
             </button>
+            <button onclick="openStudentExamGrades('${d.firestoreId}')">
+              📝 درجات الامتحانات
+            </button>
+            <button onclick="openStudentTaskGrades('${d.firestoreId}')">
+              📋 درجات التاسكات
+            </button>
 
             <button
               class="danger"
@@ -3614,6 +3636,7 @@ window.loadAssignments=async()=>{
           ${a.fileUrl?`<p><a href="${escapeAttr(a.fileUrl)}" target="_blank" style="color:#67e8f9">📎 ${escapeHtml(a.fileName||"فتح ملف الاسايمنت")}</a></p>`:""}
           <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
             <button onclick="viewAssignmentSubmissions('${a.id}')">📥 التسليمات</button>
+            <button onclick="editAssignmentDeadline('${a.id}')">⏰ تعديل الديد لاين</button>
             <button onclick="deleteAssignment('${a.id}')" class="danger">🗑 حذف</button>
           </div>
         </div>`;
@@ -3820,6 +3843,192 @@ window.closeAssignmentViewer=()=>{
 };
 window.closeAssignmentViewerOutside=(e)=>{
   if(e.target.id==="assignmentViewerModal") closeAssignmentViewer();
+};
+
+
+/* ===== EXTRA TEACHER CONTROLS ===== */
+let currentScheduleExamId=null;
+
+window.openExamSchedule=async(examId)=>{
+  const snap=await getDoc(doc(db,"exams",examId));
+  if(!snap.exists()){showToast("الامتحان غير موجود ❌");return;}
+  const d=snap.data()||{};
+  currentScheduleExamId=examId;
+  const toInput=v=>{
+    if(!v)return "";
+    const date=v?.toDate?v.toDate():new Date(v);
+    if(isNaN(date))return "";
+    const local=new Date(date.getTime()-date.getTimezoneOffset()*60000);
+    return local.toISOString().slice(0,16);
+  };
+  const groups=Array.isArray(d.groups)&&d.groups.length?d.groups:(d.group?[d.group]:["ALL"]);
+  const checks=GROUPS.map(g=>`
+    <label style="display:flex;align-items:center;gap:8px;margin:8px 0">
+      <input type="checkbox" class="schedule-group" value="${escapeAttr(g)}" ${groups.includes("ALL")||groups.includes(g)?"checked":""}>
+      <span>${escapeHtml(g)}</span>
+    </label>`).join("");
+  openDetailsModal("⏰ إعادة جدولة الامتحان",`
+    <label>⏰ وقت البداية</label>
+    <input type="datetime-local" id="scheduleStart" value="${toInput(d.startAt)}">
+    <label>⛔ وقت النهاية</label>
+    <input type="datetime-local" id="scheduleEnd" value="${toInput(d.endAt)}">
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px">
+      <input type="checkbox" id="scheduleAll" ${groups.includes("ALL")?"checked":""} onchange="toggleScheduleAll()">
+      <span>🌐 كل المجموعات</span>
+    </label>
+    <div id="scheduleGroupList">${checks}</div>
+    <div class="modal-actions">
+      <button class="success" onclick="saveExamSchedule()">💾 حفظ</button>
+      <button class="btn-secondary" onclick="closeDetailsModal()">إلغاء</button>
+    </div>`);
+};
+window.toggleScheduleAll=()=>{
+  const all=document.getElementById("scheduleAll")?.checked;
+  document.querySelectorAll(".schedule-group").forEach(x=>x.checked=!!all);
+};
+window.saveExamSchedule=async()=>{
+  if(!currentScheduleExamId)return;
+  const start=document.getElementById("scheduleStart")?.value;
+  const end=document.getElementById("scheduleEnd")?.value;
+  const all=document.getElementById("scheduleAll")?.checked;
+  const selected=[...document.querySelectorAll(".schedule-group:checked")].map(x=>x.value);
+  if(!start||!end){showToast("حدد البداية والنهاية ❗");return;}
+  const startDate=new Date(start),endDate=new Date(end);
+  if(isNaN(startDate)||isNaN(endDate)||endDate<=startDate){showToast("الأوقات غير صحيحة ❌");return;}
+  if(!all&&!selected.length){showToast("اختر مجموعة واحدة على الأقل ❗");return;}
+  const groups=all?["ALL"]:selected;
+  try{
+    await updateDoc(doc(db,"exams",currentScheduleExamId),{
+      startAt:startDate,endAt:endDate,group:all?"ALL":groups[0],groups,active:true
+    });
+    closeDetailsModal();showToast("تم إعادة جدولة الامتحان وفتحه في الموعد الجديد ✅");loadExams();
+  }catch(err){console.error("RESCHEDULE EXAM:",err);showToast("فشل إعادة جدولة الامتحان ❌");}
+};
+
+window.editAssignmentDeadline=async(assignmentId)=>{
+  const a=assignmentCache.find(x=>x.id===assignmentId);
+  if(!a){showToast("التاسك غير موجود ❌");return;}
+  const old=a.deadline?.toDate?a.deadline.toDate():new Date(a.deadline);
+  const local=new Date(old.getTime()-old.getTimezoneOffset()*60000);
+  const value=isNaN(old)?"":local.toISOString().slice(0,16);
+  openDetailsModal("⏰ تعديل Deadline التاسك",`
+    <label>⏰ الديد لاين الجديد</label>
+    <input type="datetime-local" id="newAssignmentDeadline" value="${value}">
+    <div class="modal-actions">
+      <button class="success" onclick="saveAssignmentDeadline('${escapeAttr(assignmentId)}')">💾 حفظ</button>
+      <button class="btn-secondary" onclick="closeDetailsModal()">إلغاء</button>
+    </div>`);
+};
+window.saveAssignmentDeadline=async(assignmentId)=>{
+  const value=document.getElementById("newAssignmentDeadline")?.value;
+  if(!value){showToast("حدد الديد لاين ❗");return;}
+  const date=new Date(value);
+  if(isNaN(date)){showToast("التاريخ غير صحيح ❌");return;}
+  try{
+    await updateDoc(doc(db,"assignments",assignmentId),{deadline:date});
+    closeDetailsModal();showToast("تم تعديل Deadline التاسك ✅");await loadAssignments();
+  }catch(err){console.error("EDIT ASSIGNMENT DEADLINE:",err);showToast("فشل تعديل Deadline ❌");}
+};
+
+window.openGradeEditor=async(resultId,examId)=>{
+  if(!examId){showToast("معرف الامتحان غير موجود ❌");return;}
+  const [rSnap,eSnap]=await Promise.all([getDoc(doc(db,"results",resultId)),getDoc(doc(db,"exams",examId))]);
+  if(!rSnap.exists()||!eSnap.exists()){showToast("بيانات النتيجة غير موجودة ❌");return;}
+  const r=rSnap.data()||{},exam=eSnap.data()||{},questions=Array.isArray(exam.questions)?exam.questions:[];
+  const old=Array.isArray(r.questionScores)?r.questionScores:[],essay=Array.isArray(r.essayScores)?r.essayScores:[];
+  const scores=questions.map((q,i)=>{
+    if(old[i]!==undefined&&old[i]!==null)return Number(old[i]);
+    if(q.type==="mcq")return Number(r.answers?.[i])===Number(q.correct)?Number(q.degree||0):0;
+    return essay[i]??0;
+  });
+  openDetailsModal("✏️ تعديل درجات الطالب",`
+    <div class="grade-editor-row">
+      <label>🎯 الدرجة النهائية (اختياري)</label>
+      <input type="number" id="finalGradeInput" min="0" step="0.01" value="${r.finalGrade??r.total??r.score??""}">
+      <small style="color:#7893a3">عند كتابة درجة نهائية سيتم اعتمادها كالإجمالي.</small>
+    </div>
+    ${questions.map((q,i)=>`
+      <div class="grade-editor-row">
+        <b>سؤال ${i+1}: ${escapeHtml(q.text||"")}</b>
+        <div style="color:#7893a3;font-size:12px">الدرجة القصوى: ${Number(q.degree||0)}</div>
+        <input type="number" class="question-grade-input" data-index="${i}" min="0" max="${Number(q.degree||0)}" step="0.01" value="${Number(scores[i]||0)}">
+      </div>`).join("")}
+    <div class="modal-actions">
+      <button class="success" onclick="saveGradeEditor('${escapeAttr(resultId)}','${escapeAttr(examId)}')">💾 حفظ الدرجات</button>
+      <button class="btn-secondary" onclick="closeDetailsModal()">إلغاء</button>
+    </div>`);
+};
+window.saveGradeEditor=async(resultId,examId)=>{
+  const ref=doc(db,"results",resultId),snap=await getDoc(ref);
+  if(!snap.exists())return;
+  const data=snap.data()||{};
+  const questionScores=[...document.querySelectorAll(".question-grade-input")].map(x=>{
+    const n=Number(x.value);return Number.isFinite(n)&&n>=0?n:0;
+  });
+  const raw=document.getElementById("finalGradeInput")?.value.trim()||"";
+  const finalGrade=raw===""?null:Number(raw);
+  if(finalGrade!==null&&(!Number.isFinite(finalGrade)||finalGrade<0)){showToast("الدرجة النهائية غير صحيحة ❌");return;}
+  const total=finalGrade!==null?finalGrade:questionScores.reduce((a,b)=>a+Number(b||0),0);
+  const updates={questionScores,total,finalGrade};
+  const eSnap=await getDoc(doc(db,"exams",examId));
+  if(eSnap.exists()){
+    const qs=eSnap.data().questions||[],essayScores=Array.isArray(data.essayScores)?[...data.essayScores]:[];
+    qs.forEach((q,i)=>{if(q.type==="essay")essayScores[i]=questionScores[i]??0;});
+    if(essayScores.length)updates.essayScores=essayScores;
+  }
+  try{await updateDoc(ref,updates);closeDetailsModal();showToast("تم تعديل الدرجات بنجاح ✅");}
+  catch(err){console.error("SAVE GRADE:",err);showToast("فشل حفظ الدرجات ❌");}
+};
+
+window.openAllGradesReport=async()=>{
+  const box=document.getElementById("allGradesReport");if(!box)return;
+  box.innerHTML="⏳ جاري تحميل الدرجات...";
+  try{
+    const [ss,es,rs]=await Promise.all([getDocs(collection(db,"students")),getDocs(collection(db,"exams")),getDocs(collection(db,"results"))]);
+    window._allGradesData={
+      students:ss.docs.map(d=>({firestoreId:d.id,...d.data()})),
+      exams:es.docs.map(d=>({id:d.id,...d.data()})),
+      results:rs.docs.map(d=>({id:d.id,...d.data()}))
+    };
+    box.innerHTML=`<div class="filter-row" style="grid-template-columns:1fr 1fr">
+      <select id="allGradesExamFilter" onchange="renderAllGradesReport()"><option value="ALL">كل الامتحانات</option>${window._allGradesData.exams.map(e=>`<option value="${escapeAttr(e.id)}">${escapeHtml(e.name||e.id)}</option>`).join("")}</select>
+      <select id="allGradesGroupFilter" onchange="renderAllGradesReport()"><option value="ALL">كل المجموعات</option>${GROUPS.map(g=>`<option value="${escapeAttr(g)}">${escapeHtml(g)}</option>`).join("")}</select>
+    </div><div id="allGradesTable" class="grade-report-wrap"></div>`;
+    renderAllGradesReport();
+  }catch(err){console.error("ALL GRADES:",err);box.innerHTML=`<div class="card">❌ ${escapeHtml(err.message||"فشل تحميل الدرجات")}</div>`;}
+};
+window.renderAllGradesReport=()=>{
+  const d=window._allGradesData,t=document.getElementById("allGradesTable");if(!d||!t)return;
+  const ef=document.getElementById("allGradesExamFilter")?.value||"ALL",gf=document.getElementById("allGradesGroupFilter")?.value||"ALL";
+  const exams=ef==="ALL"?d.exams:d.exams.filter(e=>e.id===ef);
+  const students=gf==="ALL"?d.students:d.students.filter(s=>String(s.group||"").trim()===gf);
+  const rows=[];
+  students.forEach(st=>exams.forEach(ex=>{
+    const r=d.results.find(x=>normalizeMatchValue(x.examId||x.examID||x.exam_id)===normalizeMatchValue(ex.id)&&!!findStudentMatch([st],x));
+    rows.push(`<tr><td>${escapeHtml(studentDisplayName(st))}</td><td>${escapeHtml(ex.name||"-")}</td><td>${escapeHtml(st.group||"-")}</td><td>${r?`<strong>${escapeHtml(String(r.finalGrade??r.total??r.score??0))}</strong>`:"لم يدخل"}</td><td>${r?`<button onclick="openGradeEditor('${escapeAttr(r.id)}','${escapeAttr(ex.id)}')">✏️ تعديل</button>`:"—"}</td></tr>`);
+  }));
+  t.innerHTML=rows.length?`<table class="grade-report-table"><thead><tr><th>الطالب</th><th>الامتحان</th><th>المجموعة</th><th>الدرجة</th><th>إجراء</th></tr></thead><tbody>${rows.join("")}</tbody></table>`:`<div class="card">❌ لا توجد بيانات.</div>`;
+};
+
+window.openStudentExamGrades=async(studentId)=>{
+  const ss=await getDoc(doc(db,"students",studentId));if(!ss.exists())return;
+  const st={firestoreId:ss.id,...ss.data()};
+  const [es,rs]=await Promise.all([getDocs(collection(db,"exams")),getDocs(collection(db,"results"))]);
+  const exams=es.docs.map(d=>({id:d.id,...d.data()})),results=rs.docs.map(d=>({id:d.id,...d.data()})).filter(r=>!!findStudentMatch([st],r));
+  openDetailsModal(`📝 درجات امتحانات ${escapeHtml(studentDisplayName(st))}`,results.length?results.map(r=>{
+    const ex=exams.find(e=>normalizeMatchValue(e.id)===normalizeMatchValue(r.examId||r.examID||r.exam_id)||normalizeMatchValue(r.id)===normalizeMatchValue(e.id));
+    return `<div class="data-card"><b>${escapeHtml(ex?.name||"امتحان")}</b><br>🎯 الدرجة: <strong>${escapeHtml(String(r.finalGrade??r.total??r.score??0))}</strong>${ex?`<br><button onclick="openGradeEditor('${escapeAttr(r.id)}','${escapeAttr(ex.id)}')">✏️ تعديل الدرجة</button>`:""}</div>`;
+  }).join(""):`<div class="details-modal-empty">لا توجد نتائج امتحانات لهذا الطالب.</div>`);
+};
+window.openStudentTaskGrades=async(studentId)=>{
+  const ss=await getDoc(doc(db,"students",studentId));if(!ss.exists())return;
+  const st={firestoreId:ss.id,...ss.data()};
+  const [as,subs]=await Promise.all([getDocs(collection(db,"assignments")),getDocs(collection(db,"submissions"))]);
+  const assignments=as.docs.map(d=>({id:d.id,...d.data()})),rows=subs.docs.map(d=>({id:d.id,...d.data()})).filter(x=>!!findStudentMatch([st],x));
+  openDetailsModal(`📋 درجات التاسكات ${escapeHtml(studentDisplayName(st))}`,rows.length?rows.map(r=>{
+    const a=assignments.find(x=>x.id===r.assignmentId);
+    return `<div class="data-card"><b>${escapeHtml(a?.title||"تاسك")}</b><br>🎯 الدرجة: <strong>${escapeHtml(String(r.grade??"لم يتم التقييم"))}</strong></div>`;
+  }).join(""):`<div class="details-modal-empty">لا توجد تسليمات لهذا الطالب.</div>`);
 };
 
 window.deleteAssignment=async(id)=>{
