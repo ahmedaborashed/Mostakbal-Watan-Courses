@@ -127,6 +127,7 @@ export function mountStudentLayout(container, { onLogout, onTabChange }) {
                 <p class="page-subtitle">استكشف المحاضرات والمواد التعليمية الخاصة بمجموعتك.</p>
               </div>
             </div>
+            <div id="attendanceDashboardWidgetContainer"></div>
             <div id="videoListContainer"></div>
           </section>
 
@@ -178,6 +179,7 @@ export function mountStudentLayout(container, { onLogout, onTabChange }) {
               </div>
             </div>
             <div id="profileContainer"></div>
+            <div id="profileAttendanceContainer" class="mt-6"></div>
           </section>
 
           <!-- Settings Section -->
