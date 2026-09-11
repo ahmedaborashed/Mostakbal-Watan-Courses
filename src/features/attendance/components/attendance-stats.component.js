@@ -1,87 +1,333 @@
 // src/features/attendance/components/attendance-stats.component.js
 import { escapeHtml } from "../../../shared/utils/dom.utils.js";
-import { renderBadge } from "../../../shared/components/Badge/badge.component.js";
-import { renderTable } from "../../../shared/components/Table/table.component.js";
-import { renderStatCard } from "../../../shared/components/StatCard/stat-card.component.js";
-import { renderProgressBar } from "../../../shared/components/ProgressBar/progress-bar.component.js";
 import { formatDate } from "../../../shared/utils/date.utils.js";
 
 /**
- * Returns HTML string for student's attendance stats and sessions table.
+ * Returns HTML string for the complete redesigned Student Attendance Dashboard.
  */
-export function renderStudentAttendanceView({ records = [], sessions = [] }) {
-  const sessionMap = new Map();
-  sessions.forEach((s) => sessionMap.set(s.id, s));
+export function renderStudentAttendanceView({
+  attendanceData,
+  activeFilter = "all",
+  sortOrder = "desc"
+}) {
+  if (!attendanceData) return "";
 
-  const total = sessions.length || records.length;
-  let presentCount = 0;
+  const {
+    totalSessions = 0,
+    presentCount = 0,
+    absentCount = 0,
+    attendanceRate = 100,
+    requiredRate = 75,
+    status = "excellent",
+    statusMessage = "معدل حضورك ممتاز ومستقر فوق الحد المطلوب ✅",
+    currentStreak = 0,
+    studentGroup = "ALL",
+    sessions = []
+  } = attendanceData;
 
-  const rows = records.map((rec) => {
-    const session = sessionMap.get(rec.sessionId);
-    const sessionName = session?.name || rec.sessionName || "حصة تدريبية";
-    const sessionDate = session?.date || rec.date;
-    const isPresent = rec.status === "present" || rec.present === true;
+  // If there are 0 sessions recorded yet
+  if (totalSessions === 0 && sessions.length === 0) {
+    return `
+      <div class="attendance-dashboard">
+        <div class="attendance-header">
+          <div class="attendance-title-group">
+            <h2><span>📊</span> سجل الحضور والغياب</h2>
+            <p>تابع التزامك بالمحاضرات ومعدل حضورك الأكاديمي.</p>
+          </div>
+          <div class="attendance-group-pill">
+            <span>👥</span>
+            <span>المجموعة: ${escapeHtml(studentGroup)}</span>
+          </div>
+        </div>
 
-    if (isPresent) presentCount += 1;
+        <div class="empty-state p-8 text-center" style="background:var(--color-surface);border:1px solid var(--color-border-subtle);border-radius:var(--radius-lg);">
+          <div style="font-size:3rem;margin-bottom:1rem;">📋</div>
+          <h3 class="font-extrabold text-lg mb-2" style="color:var(--color-text-primary);">لا توجد سجلات حضور مسجلة حتى الآن</h3>
+          <p class="text-sm text-muted max-w-md mx-auto mb-4">
+            لم يقم المعلم برصد أي كشوفات حضور لمجموعتك حتى هذه اللحظة. سيظهر سجلك الأكاديمي وإحصائيات التزامك هنا فور اعتماد أول جلسة.
+          </p>
+        </div>
+      </div>
+    `;
+  }
 
-    const statusBadge = isPresent
-      ? renderBadge({ text: "حاضر", variant: "success", icon: "✓" })
-      : renderBadge({ text: "غائب", variant: "danger", icon: "✗" });
+  // Determine status styling
+  let heroClass = "";
+  let statusBadgeHtml = "";
+  if (status === "excellent") {
+    heroClass = "";
+    statusBadgeHtml = `<span class="badge badge-success">✓ ممتاز</span>`;
+  } else if (status === "warning") {
+    heroClass = "warning";
+    statusBadgeHtml = `<span class="badge badge-gold">⚠️ يحتاج متابعة</span>`;
+  } else {
+    heroClass = "danger";
+    statusBadgeHtml = `<span class="badge badge-danger">✗ منخفض</span>`;
+  }
 
-    return [
-      `<strong>${escapeHtml(sessionName)}</strong>`,
-      formatDate(sessionDate),
-      statusBadge
-    ];
-  });
+  // Filter and sort sessions
+  let filteredSessions = [...sessions];
+  if (activeFilter === "present") {
+    filteredSessions = filteredSessions.filter((s) => s.status === "present");
+  } else if (activeFilter === "absent") {
+    filteredSessions = filteredSessions.filter((s) => s.status === "absent");
+  }
 
-  const absentCount = Math.max(0, total - presentCount);
-  const percentage = total > 0 ? Math.round((presentCount / total) * 100) : 100;
+  if (sortOrder === "asc") {
+    filteredSessions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  } else {
+    filteredSessions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
 
-  const statsHtml = `
-    <div class="stats-grid">
-      ${renderStatCard({
-        label: "إجمالي السيشنز والمحاضرات",
-        value: total,
-        icon: "📅",
-        color: "var(--color-text-primary)"
-      })}
-      ${renderStatCard({
-        label: "عدد مرات الحضور",
-        value: presentCount,
-        icon: "✅",
-        color: "var(--color-success)"
-      })}
-      ${renderStatCard({
-        label: "عدد مرات الغياب",
-        value: absentCount,
-        icon: "❌",
-        color: "var(--color-danger)"
-      })}
-      ${renderStatCard({
-        label: "نسبة الالتزام الكلية",
-        value: `${percentage}%`,
-        icon: "⭐",
-        color: "var(--color-gold-light)"
-      })}
-    </div>
+  // Render Session Rows for Table
+  const tableRowsHtml = filteredSessions.length > 0
+    ? filteredSessions.map((session, idx) => {
+        let badgeHtml = "";
+        if (session.status === "present") {
+          badgeHtml = `<span class="attendance-badge present">✓ حاضر</span>`;
+        } else if (session.status === "upcoming") {
+          badgeHtml = `<span class="attendance-badge upcoming">⏳ قادمة</span>`;
+        } else {
+          badgeHtml = `<span class="attendance-badge absent">✗ غائب</span>`;
+        }
 
-    <div class="card mb-6" style="background:var(--color-surface-elevated);">
-      <h4 class="font-extrabold mb-1" style="font-size:1.05rem;">معدل الحضور التراكمي</h4>
-      <p class="text-xs text-muted mb-3">نسبة الحضور المطلوبة لاجتياز الدورة بنجاح هي 75% كحد أدنى.</p>
-      ${renderProgressBar({
-        percentage,
-        label: `الالتزام الأكاديمي: ${percentage}%`,
-        colorVariant: percentage >= 75 ? "success" : "danger"
-      })}
+        return `
+          <tr>
+            <td>
+              <strong>${escapeHtml(session.name)}</strong>
+            </td>
+            <td>
+              <span class="text-muted text-sm">${formatDate(session.date)}</span>
+            </td>
+            <td>
+              <span class="badge badge-outline">${escapeHtml(session.group || "ALL")}</span>
+            </td>
+            <td>
+              ${badgeHtml}
+            </td>
+          </tr>
+        `;
+      }).join("")
+    : `
+      <tr>
+        <td colspan="4" class="text-center text-muted p-6">
+          لا توجد جلسات تطابق التصفية الحالية.
+        </td>
+      </tr>
+    `;
+
+  // Render Mobile Cards
+  const mobileCardsHtml = filteredSessions.length > 0
+    ? filteredSessions.map((session) => {
+        let badgeHtml = "";
+        if (session.status === "present") {
+          badgeHtml = `<span class="attendance-badge present">✓ حاضر</span>`;
+        } else if (session.status === "upcoming") {
+          badgeHtml = `<span class="attendance-badge upcoming">⏳ قادمة</span>`;
+        } else {
+          badgeHtml = `<span class="attendance-badge absent">✗ غائب</span>`;
+        }
+
+        return `
+          <div class="attendance-session-card">
+            <div class="attendance-session-card-info">
+              <strong>${escapeHtml(session.name)}</strong>
+              <span>📅 ${formatDate(session.date)} · ${escapeHtml(session.group || "ALL")}</span>
+            </div>
+            <div>
+              ${badgeHtml}
+            </div>
+          </div>
+        `;
+      }).join("")
+    : `
+      <div class="text-center text-muted p-4">لا توجد جلسات تطابق التصفية الحالية.</div>
+    `;
+
+  return `
+    <div class="attendance-dashboard">
+      <!-- 1. Header Bar -->
+      <div class="attendance-header">
+        <div class="attendance-title-group">
+          <h2><span>📊</span> سجل الحضور والغياب</h2>
+          <p>تابع التزامك بالمحاضرات ومعدل حضورك الأكاديمي.</p>
+        </div>
+        <div class="attendance-group-pill">
+          <span>👥</span>
+          <span>المجموعة: ${escapeHtml(studentGroup)}</span>
+        </div>
+      </div>
+
+      <!-- 2. Primary KPI Stats Cards -->
+      <div class="attendance-summary-grid">
+        <!-- Hero: Attendance Rate -->
+        <div class="attendance-stat-card hero-rate ${heroClass}">
+          <div class="attendance-stat-card-header">
+            <span class="attendance-stat-card-label">نسبة الالتزام الكلية</span>
+            ${statusBadgeHtml}
+          </div>
+          <div class="attendance-stat-card-value text-${status === 'excellent' ? 'success' : (status === 'warning' ? 'warning' : 'danger')}">
+            ${attendanceRate}%
+          </div>
+          <div class="attendance-stat-card-footer">
+            <span>الحد الأدنى المطلوب لاجتياز الدورة: ${requiredRate}%</span>
+          </div>
+        </div>
+
+        <!-- Present Sessions -->
+        <div class="attendance-stat-card">
+          <div class="attendance-stat-card-header">
+            <span class="attendance-stat-card-label">المحاضرات المحضورة</span>
+            <span class="attendance-stat-card-icon" style="color:#10b981;">✅</span>
+          </div>
+          <div class="attendance-stat-card-value text-success">
+            ${presentCount}
+          </div>
+          <div class="attendance-stat-card-footer">
+            <span>جلسة تم حضورها بنجاح</span>
+          </div>
+        </div>
+
+        <!-- Absent Sessions -->
+        <div class="attendance-stat-card">
+          <div class="attendance-stat-card-header">
+            <span class="attendance-stat-card-label">المحاضرات المتغيب عنها</span>
+            <span class="attendance-stat-card-icon" style="color:#ef4444;">❌</span>
+          </div>
+          <div class="attendance-stat-card-value text-danger">
+            ${absentCount}
+          </div>
+          <div class="attendance-stat-card-footer">
+            <span>جلسة مسجلة غياب</span>
+          </div>
+        </div>
+
+        <!-- Total Sessions -->
+        <div class="attendance-stat-card">
+          <div class="attendance-stat-card-header">
+            <span class="attendance-stat-card-label">إجمالي المحاضرات</span>
+            <span class="attendance-stat-card-icon" style="color:#60a5fa;">📅</span>
+          </div>
+          <div class="attendance-stat-card-value">
+            ${totalSessions}
+          </div>
+          <div class="attendance-stat-card-footer">
+            <span>جلسة منعقدة لمجموعتك</span>
+          </div>
+        </div>
+
+        <!-- Attendance Streak -->
+        <div class="attendance-stat-card">
+          <div class="attendance-stat-card-header">
+            <span class="attendance-stat-card-label">سلسلة المواظبة</span>
+            <span class="attendance-stat-card-icon" style="color:#f59e0b;">🔥</span>
+          </div>
+          <div class="attendance-stat-card-value" style="color:#f59e0b;">
+            ${currentStreak}
+          </div>
+          <div class="attendance-stat-card-footer">
+            <span>جلسات متتالية دون غياب</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Progress Meter & Status Guidance -->
+      <div class="attendance-progress-card">
+        <div class="attendance-progress-header">
+          <h4 class="attendance-progress-title">مؤشر الالتزام الأكاديمي</h4>
+          <span class="attendance-progress-meta text-${status === 'excellent' ? 'success' : (status === 'warning' ? 'warning' : 'danger')}">
+            المستوى الحالي: ${attendanceRate}%
+          </span>
+        </div>
+
+        <div class="attendance-progress-track">
+          <div class="attendance-progress-fill ${status === 'excellent' ? 'success' : (status === 'warning' ? 'warning' : 'danger')}" style="width:${Math.min(100, Math.max(5, attendanceRate))}%;"></div>
+          <div class="attendance-threshold-marker" title="الحد الأدنى المطلوب: 75%"></div>
+        </div>
+
+        <div class="attendance-progress-legends">
+          <span>0%</span>
+          <span>الحد الأدنى لاجتياز الدورة (75%)</span>
+          <span>100%</span>
+        </div>
+
+        <div class="attendance-status-box ${status}">
+          <span style="font-size:1.25rem;">${status === 'excellent' ? '🌟' : (status === 'warning' ? '⚠️' : '🚨')}</span>
+          <span>${escapeHtml(statusMessage)}</span>
+        </div>
+      </div>
+
+      <!-- 4. Attendance Session History -->
+      <div class="attendance-history-card">
+        <div class="attendance-toolbar">
+          <div class="attendance-filter-tabs">
+            <button type="button" class="attendance-filter-btn ${activeFilter === 'all' ? 'active' : ''}" data-attendance-filter="all">
+              الكل (${sessions.length})
+            </button>
+            <button type="button" class="attendance-filter-btn ${activeFilter === 'present' ? 'active' : ''}" data-attendance-filter="present">
+              حاضر (${presentCount})
+            </button>
+            <button type="button" class="attendance-filter-btn ${activeFilter === 'absent' ? 'active' : ''}" data-attendance-filter="absent">
+              غائب (${absentCount})
+            </button>
+          </div>
+
+          <div>
+            <select id="attendanceSortSelect" class="attendance-sort-select" aria-label="ترتيب الجلسات">
+              <option value="desc" ${sortOrder === 'desc' ? 'selected' : ''}>الأحدث أولاً ⬇️</option>
+              <option value="asc" ${sortOrder === 'asc' ? 'selected' : ''}>الأقدم أولاً ⬆️</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Desktop Table View -->
+        <div class="attendance-table-container">
+          <table class="attendance-table">
+            <thead>
+              <tr>
+                <th scope="col">اسم المحاضرة / الجلسة</th>
+                <th scope="col">تاريخ الانعقاد</th>
+                <th scope="col">المجموعة</th>
+                <th scope="col">حالة الحضور</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRowsHtml}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Mobile Cards View -->
+        <div class="attendance-mobile-cards">
+          ${mobileCardsHtml}
+        </div>
+      </div>
     </div>
   `;
+}
 
-  const tableHtml = renderTable({
-    headers: ["اسم المحاضرة / السيشن", "التاريخ", "الحالة"],
-    rows,
-    emptyMessage: "لم يتم تسجيل أي سجلات غياب لك حتى الآن."
-  });
+/**
+ * Returns skeleton HTML for loading state.
+ */
+export function renderAttendanceSkeleton() {
+  return `
+    <div class="attendance-dashboard">
+      <div class="attendance-header">
+        <div class="attendance-title-group">
+          <h2><span>📊</span> سجل الحضور والغياب</h2>
+          <p>جاري تحميل بيانات حضورك الأكاديمي...</p>
+        </div>
+      </div>
 
-  return statsHtml + `<div>${tableHtml}</div>`;
+      <div class="attendance-skeleton-grid">
+        <div class="attendance-skeleton-card"></div>
+        <div class="attendance-skeleton-card"></div>
+        <div class="attendance-skeleton-card"></div>
+        <div class="attendance-skeleton-card"></div>
+      </div>
+
+      <div class="attendance-skeleton-card" style="height:140px;"></div>
+      <div class="attendance-skeleton-card" style="height:250px;"></div>
+    </div>
+  `;
 }
