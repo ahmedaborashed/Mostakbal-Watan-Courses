@@ -5,7 +5,12 @@ export const assignmentState = new Store({
   assignments: [],
   submissions: new Map(),
   activeAssignment: null,
-  isUploading: false,
+  activeSubmission: null,
+  assignmentLoading: false,
+  submissionLoading: false,
+  uploading: false,
+  submissionSuccess: false,
+  submissionError: null,
   loading: false,
   error: null
 });

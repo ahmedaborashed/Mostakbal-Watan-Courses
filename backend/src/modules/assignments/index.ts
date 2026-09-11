@@ -26,8 +26,24 @@ export async function submitAssignmentHandler(request: CallableRequest) {
 
   const assignmentData = assignmentDoc.data()!;
   if (assignmentData.deadline) {
-    const deadlineDate = assignmentData.deadline.toDate ? assignmentData.deadline.toDate() : new Date(assignmentData.deadline);
-    if (Date.now() > deadlineDate.getTime()) {
+    let deadlineTime: number;
+    if (assignmentData.deadline.toDate) {
+      deadlineTime = assignmentData.deadline.toDate().getTime();
+    } else if (assignmentData.deadline instanceof Date) {
+      deadlineTime = assignmentData.deadline.getTime();
+    } else if (typeof assignmentData.deadline === "string") {
+      const trimmed = assignmentData.deadline.trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        const eod = new Date(`${trimmed}T23:59:59.999`);
+        deadlineTime = isNaN(eod.getTime()) ? new Date(trimmed).getTime() : eod.getTime();
+      } else {
+        deadlineTime = new Date(trimmed).getTime();
+      }
+    } else {
+      deadlineTime = new Date(assignmentData.deadline).getTime();
+    }
+
+    if (!isNaN(deadlineTime) && Date.now() > deadlineTime) {
       throw new HttpsError("deadline-exceeded", "انتهى الموعد المحدد لتسليم هذا الواجب.");
     }
   }
