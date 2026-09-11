@@ -154,7 +154,7 @@ console.log("🧪 Starting Student Lessons Redesign Unit Tests...\n");
   // Conditional Resources Test: Lesson with NO resources
   const lessonNoRes = {
     id: "lec-202",
-    title: "محاضرة بدون مصادر إضافية",
+    title: "محاضرة تجريبية مستقلة",
     description: "وصف المحاضرة",
     resources: []
   };
