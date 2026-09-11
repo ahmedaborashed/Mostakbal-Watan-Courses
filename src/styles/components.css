@@ -2421,3 +2421,507 @@ body.is-in-exam-mode .main-view {
   max-width: 860px;
   margin-inline: auto;
 }
+
+/* ========================================================
+   16. STUDENT ASSIGNMENTS & TASKS ("التاسكات والواجبات")
+   Calm, Classic, Professional & Educational LMS Architecture
+   ======================================================== */
+
+.student-assignments-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4, 1.25rem);
+  margin-block-start: var(--space-4, 1rem);
+}
+
+@media (max-width: 1080px) {
+  .student-assignments-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .student-assignments-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3, 0.875rem);
+  }
+}
+
+/* Student Assignment Card */
+.student-assignment-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-md, 12px);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .student-assignment-card {
+  background: var(--color-surface, #1e242c);
+  border-color: var(--color-border, #2e3846);
+}
+
+.student-assignment-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.08));
+  border-color: var(--color-primary, #10b981);
+}
+
+.student-assignment-card.is-submitted {
+  border-inline-start: 4px solid var(--color-success, #10b981);
+}
+
+.student-assignment-card.is-expired {
+  opacity: 0.85;
+}
+
+/* Card Header */
+.student-assignment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.assignment-group-tag {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #64748b);
+  background: var(--color-bg-secondary, #f1f5f9);
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+[data-theme="dark"] .assignment-group-tag {
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+}
+
+/* Title */
+.student-assignment-title {
+  font-family: "Cairo", sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.4;
+  color: var(--color-text-primary, #0f172a);
+  margin: 0 0 0.5rem 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .student-assignment-title {
+  color: #f8fafc;
+}
+
+/* Description (2-3 lines clamp) */
+.student-assignment-desc {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary, #64748b);
+  margin: 0 0 1rem 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex-grow: 1;
+}
+
+[data-theme="dark"] .student-assignment-desc {
+  color: #94a3b8;
+}
+
+/* Deadline Row */
+.student-assignment-deadline-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--color-bg-secondary, #f8fafc);
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--color-border, #e2e8f0);
+  margin-bottom: 0.75rem;
+  font-size: 0.825rem;
+}
+
+[data-theme="dark"] .student-assignment-deadline-row {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+.student-assignment-deadline-row.is-urgent {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.25);
+  color: #d97706;
+}
+
+[data-theme="dark"] .student-assignment-deadline-row.is-urgent {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+}
+
+.student-assignment-deadline-row.is-expired {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #dc2626;
+}
+
+[data-theme="dark"] .student-assignment-deadline-row.is-expired {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+}
+
+.deadline-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.deadline-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.35;
+}
+
+.deadline-label {
+  font-size: 0.7rem;
+  color: var(--color-text-secondary, #64748b);
+}
+
+.deadline-val {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+/* Status Indicator */
+.student-assignment-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.assignment-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.775rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  line-height: 1.4;
+}
+
+.assignment-status-pill .status-dot {
+  font-size: 0.65rem;
+}
+
+.assignment-status-pill.is-pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+}
+
+.assignment-status-pill.is-urgent {
+  background: rgba(245, 158, 11, 0.15);
+  color: #b45309;
+}
+
+.assignment-status-pill.is-submitted {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+}
+
+.assignment-status-pill.is-graded {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+.assignment-status-pill.is-expired {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.assignment-has-attachment {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #64748b);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Card Action Button */
+.student-assignment-footer {
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.student-assignment-btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-sm, 8px);
+  font-family: "Cairo", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  background: var(--color-primary, #0f766e);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.student-assignment-btn:hover {
+  background: var(--color-primary-hover, #115e59);
+  box-shadow: 0 2px 8px rgba(15, 118, 110, 0.3);
+}
+
+.student-assignment-btn .btn-arrow {
+  transition: transform 0.2s ease;
+}
+
+.student-assignment-btn:hover .btn-arrow {
+  transform: translateX(-4px);
+}
+
+.student-assignment-btn.is-submitted {
+  background: var(--color-bg-secondary, #f1f5f9);
+  color: var(--color-text-primary, #0f172a);
+  border: 1px solid var(--color-border, #cbd5e1);
+}
+
+[data-theme="dark"] .student-assignment-btn.is-submitted {
+  background: rgba(255, 255, 255, 0.05);
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.student-assignment-btn.is-submitted:hover {
+  border-color: var(--color-primary, #10b981);
+}
+
+/* ========================================================
+   Assignment Details Modal Styles
+   ======================================================== */
+.assignment-details-view {
+  color: var(--color-text-primary, #0f172a);
+}
+
+[data-theme="dark"] .assignment-details-view {
+  color: #f8fafc;
+}
+
+.assignment-details-title {
+  font-family: "Cairo", sans-serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.assignment-details-divider {
+  border: none;
+  border-top: 1px solid var(--color-border, #e2e8f0);
+  margin: 1rem 0;
+}
+
+[data-theme="dark"] .assignment-details-divider {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.assignment-section-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--color-text-primary, #0f172a);
+}
+
+[data-theme="dark"] .assignment-section-title {
+  color: #f8fafc;
+}
+
+.assignment-description-box {
+  background: var(--color-bg-secondary, #f8fafc);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-sm, 8px);
+  padding: 0.85rem 1rem;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  color: var(--color-text-secondary, #334155);
+}
+
+[data-theme="dark"] .assignment-description-box {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+}
+
+.assignment-ref-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-bg-secondary, #f8fafc);
+  border: 1px dashed var(--color-border, #cbd5e1);
+  border-radius: var(--radius-sm, 8px);
+}
+
+[data-theme="dark"] .assignment-ref-card {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.ref-file-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.ref-file-info {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ref-file-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+/* Submitted Panel */
+.assignment-submission-panel.is-submitted {
+  background: var(--color-bg-secondary, #f8fafc);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-sm, 8px);
+  padding: 1rem;
+}
+
+[data-theme="dark"] .assignment-submission-panel.is-submitted {
+  background: rgba(16, 185, 129, 0.03);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.submission-success-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.submission-success-banner .success-icon {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--color-success, #10b981);
+  background: rgba(16, 185, 129, 0.15);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.grading-result-box {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-sm, 8px);
+  padding: 0.85rem 1rem;
+}
+
+[data-theme="dark"] .grading-result-box {
+  background: var(--color-surface, #1e242c);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.grading-result-box.is-graded {
+  border-inline-start: 4px solid var(--color-success, #10b981);
+}
+
+.grading-result-box.is-pending {
+  border-inline-start: 4px solid var(--color-warning, #f59e0b);
+}
+
+.grade-score-val {
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.teacher-feedback-note {
+  margin-top: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--color-bg-secondary, #f1f5f9);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+[data-theme="dark"] .teacher-feedback-note {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.submitted-text-box {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 6px;
+  padding: 0.75rem;
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 0.85rem;
+  font-family: monospace, sans-serif;
+}
+
+[data-theme="dark"] .submitted-text-box {
+  background: var(--color-surface, #1e242c);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.submitted-file-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: var(--color-surface, #ffffff);
+  padding: 0.6rem 0.85rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-border, #e2e8f0);
+}
+
+[data-theme="dark"] .submitted-file-row {
+  background: var(--color-surface, #1e242c);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Teacher Assignment Card */
+.teacher-assignment-card {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-md, 12px);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+[data-theme="dark"] .teacher-assignment-card {
+  background: var(--color-surface, #1e242c);
+  border-color: var(--color-border, #2e3846);
+}
+
+.teacher-assignment-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.08));
+}
