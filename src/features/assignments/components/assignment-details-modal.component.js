@@ -4,6 +4,7 @@ import { renderModal } from "../../../shared/components/Modal/modal.component.js
 import { renderFileUploadZone } from "../../../shared/components/FileUpload/file-upload.component.js";
 import { renderBadge } from "../../../shared/components/Badge/badge.component.js";
 import { formatDate, formatDateTime, getDeadlineInfo, isDeadlinePassed } from "../../../shared/utils/date.utils.js";
+import { formatAssignmentContent } from "./assignment-card.component.js";
 
 export const ASSIGNMENT_DETAILS_MODAL_ID = "assignmentDetailsModal";
 
@@ -61,7 +62,8 @@ export function renderAssignmentDetailsContent({ assignment, submission, isSubmi
     });
   }
 
-  const safeTitle = escapeHtml(assignment.title || "تاسك عملي");
+  const { title: displayTitle } = formatAssignmentContent(assignment.title, assignment.description);
+  const safeTitle = escapeHtml(displayTitle || assignment.title || "تاسك عملي");
   const rawDesc = (assignment.description || "").trim();
   const safeDesc = rawDesc ? escapeHtml(rawDesc) : "لا يوجد وصف مختصر مضاف.";
   const groupLabel = assignment.group === "ALL" ? "جميع المجموعات" : (assignment.group || "عام");

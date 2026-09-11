@@ -4,7 +4,8 @@ import { assignmentState } from "./assignment.state.js";
 import {
   renderStudentAssignmentCard,
   renderStudentAssignmentSkeletonGrid,
-  renderTeacherAssignmentCard
+  renderTeacherAssignmentCard,
+  formatAssignmentContent
 } from "./components/assignment-card.component.js";
 import {
   renderAssignmentDetailsModal,
@@ -131,7 +132,8 @@ export const AssignmentController = {
     const modalBody = document.getElementById("assignmentDetailsModalBody");
     const modalTitle = document.getElementById("assignmentDetailsModalTitle");
 
-    if (modalTitle) modalTitle.textContent = assignment.title || "تفاصيل التاسك";
+    const { title: formattedTitle } = formatAssignmentContent(assignment.title, assignment.description);
+    if (modalTitle) modalTitle.textContent = formattedTitle || assignment.title || "تفاصيل التاسك";
     if (modalBody) {
       setHtml(
         modalBody,
