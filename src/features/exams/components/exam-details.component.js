@@ -231,3 +231,141 @@ export function renderExamDetailsModal() {
     maxWidth: "840px"
   });
 }
+
+export const STUDENT_EXAM_DETAILS_MODAL_ID = "studentExamDetailsModal";
+
+/**
+ * Returns HTML string for the Student Exam Details Modal shell.
+ */
+export function renderStudentExamDetailsModal() {
+  return renderModal({
+    id: STUDENT_EXAM_DETAILS_MODAL_ID,
+    title: "تفاصيل الامتحان",
+    bodyHtml: `<div id="studentExamDetailsBodySlot" class="p-2"><div class="spinner"></div></div>`,
+    footerHtml: `
+      <div id="studentExamDetailsFooterSlot" class="d-flex items-center justify-between w-full">
+        <button type="button" class="btn btn-secondary" data-modal-close="${STUDENT_EXAM_DETAILS_MODAL_ID}">
+          إغلاق
+        </button>
+      </div>
+    `,
+    size: "md"
+  });
+}
+
+/**
+ * Returns HTML string for the inner content of the Student Exam Details modal.
+ * @param {object} options
+ * @param {object} options.exam
+ * @param {object} [options.result]
+ * @returns {string}
+ */
+export function renderStudentExamDetailsContent({ exam, result = null }) {
+  if (!exam) {
+    return `<div class="p-6 text-center text-muted">لم يتم العثور على بيانات الامتحان.</div>`;
+  }
+
+  const statusInfo = getExamStatusInfo(exam, result);
+  const duration = Number(exam.duration) || 30;
+  const questionsCount =
+    exam.totalQuestions !== undefined
+      ? exam.totalQuestions
+      : Array.isArray(exam.questions)
+      ? exam.questions.length
+      : Number(exam.questionCount) || "—";
+
+  const startDateText = exam.startDate || exam.startAt ? formatDate(exam.startDate || exam.startAt) : "متاح فوراً";
+  const deadlineText = exam.deadline || exam.endAt ? formatDate(exam.deadline || exam.endAt) : "غير محدد";
+
+  const isCompleted = statusInfo.status === "graded" || statusInfo.status === "pending_essay" || statusInfo.status === "submitted";
+  const isInProgress = statusInfo.status === "in_progress";
+  const isAvailable = statusInfo.status === "available";
+
+  return `
+    <div class="student-exam-details-content py-2">
+      <div class="d-flex items-center justify-between mb-3">
+        ${statusInfo.html}
+        <span class="text-xs text-muted font-bold">⏱️ ${duration} دقيقة</span>
+      </div>
+
+      <h3 class="font-black mb-2" style="font-size: 1.35rem; color: var(--text-primary); line-height: 1.4;">
+        ${escapeHtml(exam.title || "امتحان بدون عنوان")}
+      </h3>
+
+      ${
+        exam.description
+          ? `<p class="text-muted text-xs mb-4" style="line-height: 1.7;">${escapeHtml(exam.description)}</p>`
+          : ""
+      }
+
+      <div class="exam-details-specs-grid mb-5">
+        <div class="spec-card">
+          <span class="spec-label">عدد الأسئلة</span>
+          <strong class="spec-value">📝 ${questionsCount} سؤال</strong>
+        </div>
+        <div class="spec-card">
+          <span class="spec-label">مدة الاختبار</span>
+          <strong class="spec-value">⏱️ ${duration} دقيقة</strong>
+        </div>
+        <div class="spec-card">
+          <span class="spec-label">وقت البداية</span>
+          <strong class="spec-value">🟢 ${escapeHtml(startDateText)}</strong>
+        </div>
+        <div class="spec-card">
+          <span class="spec-label">وقت النهاية</span>
+          <strong class="spec-value">🔴 ${escapeHtml(deadlineText)}</strong>
+        </div>
+        <div class="spec-card">
+          <span class="spec-label">المحاولات المسموحة</span>
+          <strong class="spec-value">🔒 محاولة واحدة رسمية</strong>
+        </div>
+        <div class="spec-card">
+          <span class="spec-label">حالة المحاولة</span>
+          <strong class="spec-value">${statusInfo.label}</strong>
+        </div>
+      </div>
+
+      ${
+        isCompleted && result
+          ? `
+        <div class="p-4 mb-4 text-center" style="background: var(--surface-secondary); border-radius: var(--radius-lg); border: 1px solid var(--border);">
+          <span class="text-xs text-muted d-block mb-1">النتيجة المسجلة:</span>
+          <strong class="text-accent font-black" style="font-size: 1.8rem;">
+            ${result.score ?? "—"} <span class="text-xs text-muted">/ ${result.totalQuestions || 100}</span>
+          </strong>
+        </div>
+      `
+          : ""
+      }
+
+      <!-- Action Button Area -->
+      <div class="mt-4 pt-2">
+        ${
+          isCompleted
+            ? renderButton({
+                text: "عرض التقرير والنتيجة التفصيلية 📊",
+                variant: "primary",
+                className: "btn-lg w-full",
+                extraAttrs: `data-action-view-result="${escapeHtml(exam.id)}"`
+              })
+            : isInProgress
+            ? renderButton({
+                text: "متابعة الامتحان الآن ⏳",
+                variant: "primary",
+                className: "btn-lg w-full",
+                extraAttrs: `data-action-start-exam="${escapeHtml(exam.id)}"`
+              })
+            : isAvailable
+            ? renderButton({
+                text: "بدء الامتحان 🚀",
+                variant: "primary",
+                className: "btn-lg w-full",
+                extraAttrs: `data-action-start-exam="${escapeHtml(exam.id)}"`
+              })
+            : `<button type="button" class="btn btn-secondary btn-lg w-full" disabled>هذا الاختبار غير متاح للبدء حالياً</button>`
+        }
+      </div>
+    </div>
+  `;
+}
+

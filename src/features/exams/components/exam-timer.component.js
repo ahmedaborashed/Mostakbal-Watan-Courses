@@ -3,16 +3,27 @@ import { formatTimer } from "../../../shared/utils/date.utils.js";
 
 /**
  * Returns HTML string for modern exam countdown timer.
+ * @param {object} options
+ * @param {number} options.seconds - Total remaining seconds
  */
 export function renderExamTimer({ seconds = 0 }) {
-  const isUrgent = seconds <= 120 && seconds > 0;
+  const isCritical = seconds > 0 && seconds <= 60;
+  const isWarning = seconds > 60 && seconds <= 300;
+
+  let timerStateClass = "timer-normal";
+  if (isCritical) {
+    timerStateClass = "timer-critical";
+  } else if (isWarning) {
+    timerStateClass = "timer-warning";
+  }
+
   return `
-    <div id="examTimerWrapper" class="d-flex items-center gap-3" style="background:var(--color-bg-secondary);padding:0.65rem 1.25rem;border-radius:var(--radius-md);border:1px solid ${isUrgent ? "var(--color-danger)" : "var(--color-border-primary)"};box-shadow:${isUrgent ? "0 0 16px var(--color-danger-bg)" : "var(--shadow-sm)"};">
-      <span style="font-size:1.4rem;" aria-hidden="true">${isUrgent ? "🚨" : "⏳"}</span>
-      <div>
-        <div class="text-xs text-muted font-bold">الوقت المتبقي</div>
-        <strong id="examCountdownDisplay" style="font-size:1.25rem;font-weight:900;color:${isUrgent ? "var(--color-danger)" : "var(--color-primary)"};letter-spacing:1px;direction:ltr;display:inline-block;">
-          ${formatTimer(seconds)}
+    <div id="examTimerWrapper" class="exam-timer-chip ${timerStateClass}" role="timer" aria-label="الوقت المتبقي">
+      <span class="timer-icon" aria-hidden="true">${isCritical ? "⚠️" : "⏱️"}</span>
+      <div class="timer-info">
+        <span class="timer-label">الوقت المتبقي</span>
+        <strong id="examCountdownDisplay" class="timer-digits">
+          ${formatTimer(Math.max(0, seconds))}
         </strong>
       </div>
     </div>
