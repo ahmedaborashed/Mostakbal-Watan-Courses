@@ -3,6 +3,7 @@ import { CallableRequest, HttpsError } from "firebase-functions/v2/https";
 import { db } from "../../config/firebase";
 import { getAuthenticatedUser, requireRole } from "../../middleware/auth";
 import { validateInput } from "../../middleware/validator";
+import { awardCompetitionPoints } from "../gamification/ledger";
 
 // 0. Get Available Exams for Student (Sanitized Metadata & Scoped Authorization)
 export async function getAvailableExamsForStudentHandler(request: CallableRequest) {
@@ -264,6 +265,22 @@ export async function submitExamHandler(request: CallableRequest) {
 
   // Mark attempt finalized
   await attemptRef.set({ status: "submitted", submittedAt: new Date() }, { merge: true });
+
+  // Award competition points for auto-graded MCQ exam
+  if (!hasEssay && mcqScore > 0) {
+    const examPoints = Math.max(5, Math.round((mcqScore / (totalMcqPossible || 1)) * 50));
+    await awardCompetitionPoints({
+      studentUid: user.uid,
+      sourceType: "exam",
+      sourceId: examId,
+      points: examPoints,
+      reason: `أداء امتحان ${examData.title || "المنصة"}`,
+      metadata: {
+        score: mcqScore,
+        total: totalMcqPossible
+      }
+    });
+  }
 
   return {
     success: true,
