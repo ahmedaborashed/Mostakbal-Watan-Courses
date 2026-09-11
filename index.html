@@ -774,6 +774,208 @@
       padding-left:58px;
     }
 
+    /* ============================================================
+       SUPERVISION LEADERSHIP
+       ============================================================ */
+
+    .supervision-section {
+      margin: 38px auto 10px;
+      width: min(100%, 1100px);
+      position: relative;
+      z-index: 3;
+    }
+
+    .supervision-title {
+      color: var(--gold2);
+      font-size: 14px;
+      font-weight: 900;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-shadow: 0 0 18px rgba(216,173,85,.35);
+    }
+
+    .supervision-cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      width: 100%;
+    }
+
+    /* البوكس الذهبي */
+    .supervisor-card {
+      position: relative;
+      min-width: 0;
+      padding: 18px 14px;
+      border-radius: 17px;
+
+      background:
+        linear-gradient(
+          145deg,
+          rgba(216,173,85,.16),
+          rgba(216,173,85,.055)
+        );
+
+      border: 1px solid rgba(216,173,85,.55);
+
+      box-shadow:
+        0 10px 30px rgba(0,0,0,.28),
+        inset 0 0 20px rgba(216,173,85,.035),
+        0 0 18px rgba(216,173,85,.06);
+
+      transition:
+        transform .28s ease,
+        border-color .28s ease,
+        box-shadow .28s ease;
+
+      overflow: hidden;
+      text-align: center;
+    }
+
+    /* لمعة ذهبية أعلى البوكس */
+    .supervisor-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 15%;
+      right: 15%;
+      height: 2px;
+
+      background: linear-gradient(
+        90deg,
+        transparent,
+        var(--gold2),
+        transparent
+      );
+
+      box-shadow: 0 0 12px rgba(242,210,123,.65);
+    }
+
+    /* تأثير Hover */
+    .supervisor-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--gold2);
+
+      box-shadow:
+        0 16px 38px rgba(0,0,0,.35),
+        0 0 25px rgba(216,173,85,.14),
+        inset 0 0 25px rgba(216,173,85,.06);
+    }
+
+    /* أسماء القيادات */
+    .supervisor-name {
+      position: relative;
+      z-index: 1;
+
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 900;
+      line-height: 1.6;
+
+      margin-bottom: 7px;
+
+      text-shadow:
+        0 1px 8px rgba(0,0,0,.45);
+    }
+
+    /* الوظيفة */
+    .supervisor-role {
+      position: relative;
+      z-index: 1;
+
+      color: var(--gold2);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.7;
+
+      text-shadow:
+        0 0 12px rgba(242,210,123,.18);
+    }
+
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+
+    /* Tablet */
+    @media (max-width: 1100px) {
+      .supervision-section {
+        width: min(100%, 900px);
+      }
+
+      .supervision-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .supervisor-card {
+        padding: 17px 14px;
+      }
+    }
+
+
+    /* Mobile */
+    @media (max-width: 600px) {
+      .supervision-section {
+        width: 100%;
+        margin: 30px auto 8px;
+        padding: 0 8px;
+      }
+
+      .supervision-title {
+        font-size: 12px;
+        margin-bottom: 14px;
+        gap: 7px;
+      }
+
+      .supervision-cards {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .supervisor-card {
+        padding: 14px 8px;
+        border-radius: 14px;
+      }
+
+      .supervisor-name {
+        font-size: 12px;
+        line-height: 1.55;
+        margin-bottom: 5px;
+      }
+
+      .supervisor-role {
+        font-size: 10px;
+        line-height: 1.6;
+      }
+    }
+
+
+    /* شاشات الموبايل الصغيرة جدًا */
+    @media (max-width: 380px) {
+      .supervision-section {
+        padding: 0 5px;
+      }
+
+      .supervision-cards {
+        gap: 8px;
+      }
+
+      .supervisor-card {
+        padding: 12px 6px;
+      }
+
+      .supervisor-name {
+        font-size: 11px;
+      }
+
+      .supervisor-role {
+        font-size: 9px;
+      }
+    }
+
     .toggle-pass{
       position:absolute;
       left:13px;
@@ -860,6 +1062,17 @@
       to{transform:rotate(360deg)}
     }
 
+    @media (max-width: 1024px) {
+      .supervision-cards {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .supervision-cards {
+        grid-template-columns: 1fr;
+      }
+    }
 
     /* ============================================================
        LOADING SCREEN
@@ -1479,6 +1692,40 @@
           من أساسيات البرمجة إلى بناء تطبيقات عملية،
           في تجربة تعليمية منظمة ومناسبة للمبتدئين.
         </p>
+
+                <!-- قيادات الإشراف -->
+        <div class="supervision-section">
+          <div class="supervision-title">
+            <span>⭐</span>
+            <span>تحت رعاية وإشراف</span>
+            <span>⭐</span>
+          </div>
+
+          <div class="supervision-cards">
+            <div class="supervisor-card">
+              <div class="supervisor-name">مهندس / أحمد الجرواني</div>
+              <div class="supervisor-role">أمين الحزب بمحافظة الغربية</div>
+            </div>
+
+            <div class="supervisor-card">
+              <div class="supervisor-name">محاسب / عبدالرحمن النموري</div>
+              <div class="supervisor-role">أمين أول المحلة الكبرى</div>
+            </div>
+
+            <div class="supervisor-card">
+              <div class="supervisor-name">أستاذ / محمد الشواف</div>
+              <div class="supervisor-role">أمين تنظيم أول المحلة الكبرى</div>
+            </div>
+
+            <div class="supervisor-card">
+              <div class="supervisor-name">محاسب / أيمن وليد</div>
+              <div class="supervisor-role">أمين شباب أول المحلة الكبرى</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
 
         <div class="hero-actions">
 
