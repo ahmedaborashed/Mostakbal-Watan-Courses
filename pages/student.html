@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="../src/styles/components.css">
   <link rel="stylesheet" href="../src/styles/layouts.css">
   <link rel="stylesheet" href="../src/styles/utilities.css">
+  <link rel="stylesheet" href="../src/styles/python-adventure.css">
 </head>
 <body>
 
@@ -58,6 +59,7 @@
     import { AttendanceController } from "../src/features/attendance/attendance.controller.js";
     import { ProfileController } from "../src/features/profile/profile.controller.js";
     import { AuthController } from "../src/features/auth/auth.controller.js";
+    import { PythonAdventureController } from "../src/features/python-adventure/python-adventure.controller.js";
     import { bootstrapApp } from "../src/app/bootstrap.js";
 
     bootstrapApp();
@@ -95,6 +97,8 @@
             AssignmentController.loadStudentAssignments("taskListContainer", student);
           } else if (tabId === "attendance") {
             AttendanceController.loadStudentAttendance("attendanceContainer", student);
+          } else if (tabId === "python-adventure") {
+            PythonAdventureController.init("pythonAdventureContainer", student);
           } else if (tabId === "profile") {
             ProfileController.loadProfileView("profileContainer", student);
           } else if (tabId === "settings") {
@@ -111,8 +115,14 @@
       // 4. Mount Video Player Modal into DOM
       document.body.insertAdjacentHTML("beforeend", renderVideoPlayerModal());
 
-      // 5. Initial Tab Activation
-      LecturesController.loadStudentLectures("videoListContainer", student);
+      // 5. Initial Tab Activation (Check query param or default to videos)
+      const urlParams = new URLSearchParams(window.location.search);
+      const targetTab = urlParams.get("tab");
+      if (targetTab === "python-adventure") {
+        layout.switchTab("python-adventure");
+      } else {
+        LecturesController.loadStudentLectures("videoListContainer", student);
+      }
 
     } catch (err) {
       console.error("Student page initialization error:", err);

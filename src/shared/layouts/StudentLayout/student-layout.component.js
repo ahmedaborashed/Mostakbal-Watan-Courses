@@ -77,6 +77,11 @@ export function mountStudentLayout(container, { onLogout, onTabChange }) {
             <span>الغياب والحضور</span>
           </button>
 
+          <button type="button" class="sidebar-item" data-section="python-adventure">
+            <span class="side-icon" aria-hidden="true">🐍</span>
+            <span>مغامرة بايثون</span>
+          </button>
+
           <div class="sidebar-menu-title">الحساب والتفضيلات</div>
 
           <button type="button" class="sidebar-item" data-section="profile">
@@ -159,6 +164,11 @@ export function mountStudentLayout(container, { onLogout, onTabChange }) {
             <div id="attendanceContainer"></div>
           </section>
 
+          <!-- Python Adventure Section -->
+          <section id="sec-python-adventure" class="tab-content" aria-labelledby="heading-python-adventure">
+            <div id="pythonAdventureContainer"></div>
+          </section>
+
           <!-- Profile Section -->
           <section id="sec-profile" class="tab-content" aria-labelledby="heading-profile">
             <div class="page-header">
@@ -197,6 +207,7 @@ export function mountStudentLayout(container, { onLogout, onTabChange }) {
     exams: "📝 الامتحانات",
     tasks: "📋 التاسكات والواجبات",
     attendance: "📊 الغياب والحضور",
+    "python-adventure": "🐍 مغامرة بايثون",
     profile: "👤 حسابي الشخصي",
     settings: "⚙️ الإعدادات والمظهر"
   };
