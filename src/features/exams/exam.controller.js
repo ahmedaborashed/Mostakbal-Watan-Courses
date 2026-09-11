@@ -1,9 +1,28 @@
 // src/features/exams/exam.controller.js
 import { ExamService } from "./exam.service.js";
 import { examState } from "./exam.state.js";
-import { renderStudentExamCard, renderTeacherExamCard } from "./components/exam-card.component.js";
+import { renderStudentExamCard, renderTeacherExamCard, renderAdminExamCard } from "./components/exam-card.component.js";
 import { renderExamTimer } from "./components/exam-timer.component.js";
 import { renderExamQuestion } from "./components/exam-question.component.js";
+import { renderAdminExamsView } from "./components/exam-list.component.js";
+import {
+  renderExamFormModal,
+  renderExamFormStepper,
+  renderExamInfoStep,
+  EXAM_FORM_MODAL_ID
+} from "./components/exam-form.component.js";
+import {
+  renderExamDetailsModal,
+  renderExamDetailsContent,
+  EXAM_DETAILS_MODAL_ID
+} from "./components/exam-details.component.js";
+import {
+  renderQuestionsContainer,
+  renderQuestionRow
+} from "./components/exam-question-editor.component.js";
+import { renderExamReview } from "./components/exam-review.component.js";
+import { getExamStatusInfo } from "./components/exam-status-badge.component.js";
+import { openModal, closeModal } from "../../shared/components/Modal/modal.component.js";
 import { renderLoader } from "../../shared/components/Loader/loader.component.js";
 import { renderEmptyState } from "../../shared/components/EmptyState/empty-state.component.js";
 import { renderErrorState } from "../../shared/components/ErrorState/error-state.component.js";
@@ -16,7 +35,20 @@ import { formatTimer } from "../../shared/utils/date.utils.js";
 import { setHtml, escapeHtml } from "../../shared/utils/dom.utils.js";
 import { STORAGE_KEYS } from "../../core/constants.js";
 
+// Internal debounce helper
+function debounce(fn, delay = 250) {
+  let timer = null;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
 let timerInterval = null;
+let adminViewMode = "cards"; // "cards" | "table"
+let activeAdminContainer = null;
+let currentExpandedQuestion = null;
+let draggedQuestionIdx = null;
 
 export const ExamController = {
   /**

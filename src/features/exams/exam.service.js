@@ -78,12 +78,42 @@ export const ExamService = {
   },
 
   /**
-   * Teacher / Student: Fetches all exams.
+   * Teacher / Admin / Student: Fetches all exams.
    */
   async getAllExams() {
     try {
       const snap = await getDocs(collection(db, COLLECTIONS.EXAMS));
       return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    } catch (err) {
+      throw normalizeError(err);
+    }
+  },
+
+  /**
+   * Fetches a single exam by ID.
+   */
+  async getExam(examId) {
+    try {
+      const snap = await getDoc(doc(db, COLLECTIONS.EXAMS, examId));
+      if (!snap.exists()) {
+        throw new Error("الامتحان المطلوب غير موجود.");
+      }
+      return { id: snap.id, ...snap.data() };
+    } catch (err) {
+      throw normalizeError(err);
+    }
+  },
+
+  /**
+   * Updates an existing exam.
+   */
+  async updateExam(examId, examData) {
+    try {
+      await updateDoc(doc(db, COLLECTIONS.EXAMS, examId), {
+        ...examData,
+        updatedAt: serverTimestamp()
+      });
+      return { id: examId };
     } catch (err) {
       throw normalizeError(err);
     }

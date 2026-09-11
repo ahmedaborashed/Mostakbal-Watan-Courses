@@ -11,5 +11,20 @@ export const examState = new Store({
   isSubmitting: false,
   lastResult: null,
   loading: false,
-  error: null
+  error: null,
+
+  // Admin Management State
+  adminExams: [],
+  adminResultsMap: {},
+  selectedExam: null,
+  editingExam: null,
+  editingQuestions: [],
+  currentStep: 1,
+  adminFilters: {
+    searchQuery: "",
+    group: "ALL",
+    status: "ALL",
+    sort: "newest"
+  },
+  saving: false
 });
