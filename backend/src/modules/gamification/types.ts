@@ -35,7 +35,8 @@ export type PointSourceType =
   | "boss_challenge"
   | "exam"
   | "assignment"
-  | "competition_award";
+  | "competition_award"
+  | "attendance";
 
 export interface PointLedgerEntry {
   id: string; // e.g. ledger_${studentUid}_${sourceType}_${sourceId}

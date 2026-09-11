@@ -56,6 +56,34 @@ export const RANKING_ACHIEVEMENTS: Record<string, RankingAchievement> = {
     description: "تجاوزت حاجز 1,500 نقطة تنافسية في رصيدك الأكاديمي.",
     icon: "👑",
     pointsReward: 75
+  },
+  first_attendance: {
+    id: "first_attendance",
+    title: "أول حضور 📅",
+    description: "تم تسجيل أول حضور رسمي لك في المحاضرات.",
+    icon: "📅",
+    pointsReward: 15
+  },
+  attendance_streak_3: {
+    id: "attendance_streak_3",
+    title: "التزام أكاديمي 🔥",
+    description: "حافظت على الحضور لـ 3 جلسات متتالية دون انقطاع.",
+    icon: "🔥",
+    pointsReward: 25
+  },
+  attendance_streak_7: {
+    id: "attendance_streak_7",
+    title: "بطل المواظبة 📚",
+    description: "حققت سلسلة حضور قوية لـ 7 جلسات متتالية.",
+    icon: "📚",
+    pointsReward: 50
+  },
+  perfect_attendance: {
+    id: "perfect_attendance",
+    title: "الحضور المثالي 🏆",
+    description: "حققت نسبة حضور كاملة 100% في 5 جلسات أو أكثر.",
+    icon: "🏆",
+    pointsReward: 75
   }
 };
 
@@ -64,7 +92,13 @@ export const RANKING_ACHIEVEMENTS: Record<string, RankingAchievement> = {
  */
 export function evaluateRankingAchievements(
   current: StudentGamificationProfile,
-  previous?: Partial<StudentGamificationProfile>
+  previous?: Partial<StudentGamificationProfile>,
+  attendanceData?: {
+    presentCount: number;
+    currentStreak: number;
+    attendanceRate: number;
+    totalSessions: number;
+  }
 ): RankingAchievement[] {
   const existingUnlocked = new Set(current.achievements || []);
   const newlyUnlocked: RankingAchievement[] = [];
@@ -118,6 +152,26 @@ export function evaluateRankingAchievements(
   if (!existingUnlocked.has("competition_champion") && current.competitionsWon >= 1) {
     existingUnlocked.add("competition_champion");
     newlyUnlocked.push(RANKING_ACHIEVEMENTS.competition_champion);
+  }
+
+  // 9. Attendance Achievements
+  if (attendanceData) {
+    if (!existingUnlocked.has("first_attendance") && attendanceData.presentCount >= 1) {
+      existingUnlocked.add("first_attendance");
+      newlyUnlocked.push(RANKING_ACHIEVEMENTS.first_attendance);
+    }
+    if (!existingUnlocked.has("attendance_streak_3") && attendanceData.currentStreak >= 3) {
+      existingUnlocked.add("attendance_streak_3");
+      newlyUnlocked.push(RANKING_ACHIEVEMENTS.attendance_streak_3);
+    }
+    if (!existingUnlocked.has("attendance_streak_7") && attendanceData.currentStreak >= 7) {
+      existingUnlocked.add("attendance_streak_7");
+      newlyUnlocked.push(RANKING_ACHIEVEMENTS.attendance_streak_7);
+    }
+    if (!existingUnlocked.has("perfect_attendance") && attendanceData.totalSessions >= 5 && attendanceData.attendanceRate === 100) {
+      existingUnlocked.add("perfect_attendance");
+      newlyUnlocked.push(RANKING_ACHIEVEMENTS.perfect_attendance);
+    }
   }
 
   return newlyUnlocked;

@@ -17,7 +17,8 @@ import {
 
 import {
   createAttendanceSessionHandler,
-  recordAttendanceBatchHandler
+  recordAttendanceBatchHandler,
+  getStudentAttendanceHandler
 } from "./modules/attendance";
 
 import {
