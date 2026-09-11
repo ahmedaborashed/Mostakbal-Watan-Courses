@@ -156,5 +156,51 @@ service cloud.firestore {
       allow create, update: if isOwner(studentUid) || isStaff();
       allow delete: if isAdmin();
     }
+
+    // ========================================================
+    // 10. POINTS LEDGER (Auditable Point Transactions & Anti-Cheat)
+    // ========================================================
+    match /points_ledger/{entryId} {
+      // Student can only read their own ledger entries; writes strictly reserved for backend/staff
+      allow read: if isStaff() || (isAuthenticated() && resource.data.studentUid == request.auth.uid);
+      allow write: if isStaff();
+    }
+
+    // ========================================================
+    // 11. COMPETITIONS (Seasonal & Monthly Events)
+    // ========================================================
+    match /competitions/{competitionId} {
+      // Competitions are publicly visible to authenticated students
+      allow read: if isAuthenticated();
+      allow write: if isStaff();
+
+      match /participants/{studentUid} {
+        allow read: if isAuthenticated();
+        allow create, update: if isOwner(studentUid) || isStaff();
+        allow delete: if isStaff();
+      }
+    }
+
+    // ========================================================
+    // 12. STUDENT GAMIFICATION (Rankings, Points, Profiles)
+    // ========================================================
+    match /student_gamification/{studentUid} {
+      // Authenticated students can read profiles for leaderboard rendering
+      allow read: if isAuthenticated();
+      // Write is authoritative via Cloud Functions Admin SDK (fallback for owner in dev)
+      allow create, update: if isOwner(studentUid) || isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // ========================================================
+    // 13. NOTIFICATIONS (In-App Alerts & Activity Triggers)
+    // ========================================================
+    match /notifications/{notificationId} {
+      // Student can read their own notifications
+      allow read: if isStaff() || (isAuthenticated() && resource.data.recipientUid == request.auth.uid);
+      // Student can update their own notification read status
+      allow update: if isStaff() || (isAuthenticated() && resource.data.recipientUid == request.auth.uid);
+      allow create, delete: if isStaff();
+    }
   }
 }

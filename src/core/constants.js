@@ -24,7 +24,11 @@ export const COLLECTIONS = Object.freeze({
   SUBMISSIONS: "submissions",
   ATTENDANCE_SESSIONS: "attendance_sessions",
   RECORDS: "records",
-  PYTHON_ADVENTURE_PROGRESS: "python_adventure_progress"
+  PYTHON_ADVENTURE_PROGRESS: "python_adventure_progress",
+  POINTS_LEDGER: "points_ledger",
+  COMPETITIONS: "competitions",
+  STUDENT_GAMIFICATION: "student_gamification",
+  NOTIFICATIONS: "notifications"
 });
 
 export const STORAGE_PATHS = Object.freeze({
