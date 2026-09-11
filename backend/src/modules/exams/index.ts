@@ -327,6 +327,24 @@ export async function gradeEssayHandler(request: CallableRequest) {
     gradedAt: new Date()
   });
 
+  // Award competition points when all essays are graded
+  if (allGraded && newTotal > 0) {
+    const studentUid = resultData.studentUid || resultData.studentId;
+    if (studentUid) {
+      const examPoints = Math.max(5, Math.min(50, Math.round(newTotal)));
+      await awardCompetitionPoints({
+        studentUid,
+        sourceType: "exam",
+        sourceId: resultData.examId || resultId,
+        points: examPoints,
+        reason: `تقييم امتحان رسمي`,
+        metadata: {
+          score: newTotal
+        }
+      });
+    }
+  }
+
   return {
     success: true,
     newTotalScore: newTotal,
