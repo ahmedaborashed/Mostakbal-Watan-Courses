@@ -907,3 +907,234 @@
   height: 100%;
   object-fit: cover;
 }
+
+/* ========================================================
+   14. EDUCATIONAL LESSONS & SESSIONS ("الداتا والدروس")
+   ======================================================== */
+.lesson-filters-grid {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1.2fr 1fr;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .lesson-filters-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .lesson-filters-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lesson-indicator-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: var(--font-size-xs);
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-pill);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  user-select: none;
+  line-height: 1.4;
+}
+
+.lesson-indicator-chip.active {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+
+.lesson-indicator-chip.muted {
+  opacity: 0.6;
+}
+
+.student-lesson-card, .teacher-lesson-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.lesson-file-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.lesson-file-card:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+
+.lesson-file-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.lesson-file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.lesson-file-name {
+  display: block;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.lesson-resource-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-3);
+}
+
+.lesson-resource-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: transform var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.lesson-resource-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  background: var(--surface-hover);
+  color: var(--primary);
+}
+
+.lesson-resource-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.lesson-resource-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.lesson-resource-title {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lesson-resource-type {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.lesson-resource-arrow {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  transition: transform var(--transition-fast);
+}
+
+.lesson-resource-card:hover .lesson-resource-arrow {
+  transform: translateX(-3px);
+  color: var(--primary);
+}
+
+.lesson-embed-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+  height: 0;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: #000;
+  border: 1px solid var(--border);
+}
+
+.lesson-description-box {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  line-height: var(--line-height-relaxed);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.lesson-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.lesson-empty-notice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-secondary);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+/* Dynamic Resource Builder Row in LessonForm */
+.dynamic-resource-row {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  transition: border-color var(--transition-fast);
+}
+
+.dynamic-resource-row:hover {
+  border-color: var(--border-strong);
+}
+
+.grid-resource-inputs {
+  display: grid;
+  grid-template-columns: 1.5fr 2fr 1.2fr auto;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+@media (max-width: 650px) {
+  .grid-resource-inputs {
+    grid-template-columns: 1fr;
+  }
+}
+
+.btn-icon-only {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
