@@ -37,6 +37,17 @@ import {
   getDailyChallengeHandler
 } from "./modules/python-adventure";
 
+import {
+  getStudentGamificationProfileHandler,
+  getLeaderboardHandler,
+  getCompetitionsHandler,
+  getCompetitionDetailsHandler,
+  joinCompetitionHandler,
+  getNotificationsHandler,
+  markNotificationAsReadHandler,
+  markAllNotificationsAsReadHandler
+} from "./modules/gamification";
+
 // Set global options: European region, timeout, memory
 setGlobalOptions({
   region: "europe-west1",
@@ -85,4 +96,16 @@ export const getPythonAdventureProgress = onCall(getPythonAdventureProgressHandl
 export const getPythonAdventureChallenge = onCall(getPythonAdventureChallengeHandler);
 export const submitPythonAdventureChallenge = onCall(submitPythonAdventureChallengeHandler);
 export const getDailyChallenge = onCall(getDailyChallengeHandler);
+
+// ==========================================
+// 7. GAMIFICATION, RANKINGS & COMPETITIONS
+// ==========================================
+export const getStudentGamificationProfile = onCall(getStudentGamificationProfileHandler);
+export const getLeaderboard = onCall(getLeaderboardHandler);
+export const getCompetitions = onCall(getCompetitionsHandler);
+export const getCompetitionDetails = onCall(getCompetitionDetailsHandler);
+export const joinCompetition = onCall(joinCompetitionHandler);
+export const getNotifications = onCall(getNotificationsHandler);
+export const markNotificationAsRead = onCall(markNotificationAsReadHandler);
+export const markAllNotificationsAsRead = onCall(markAllNotificationsAsReadHandler);
 
