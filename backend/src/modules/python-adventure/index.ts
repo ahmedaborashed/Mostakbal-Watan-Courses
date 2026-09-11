@@ -5,6 +5,7 @@ import { getAuthenticatedUser } from "../../middleware/auth";
 import { validateInput } from "../../middleware/validator";
 import { spawnSync } from "node:child_process";
 import { PYTHON_ADVENTURE_CHALLENGES, WORLDS_CONFIG, ACHIEVEMENTS_LIST } from "./curriculum";
+import { awardCompetitionPoints, syncStudentXpAndLevel } from "../gamification/ledger";
 
 const PROGRESS_COLLECTION = "python_adventure_progress";
 
@@ -306,6 +307,36 @@ export async function submitPythonAdventureChallengeHandler(request: CallableReq
 
   await docRef.set(updatedProgress);
 
+  // 6. Award Competition Points (Dual Currency: Separate from XP)
+  let baseCompPoints = 20; // default medium
+  if (challenge.type === "boss") {
+    baseCompPoints = 100;
+  } else if (challenge.difficulty === "easy") {
+    baseCompPoints = 10;
+  } else if (challenge.difficulty === "hard") {
+    baseCompPoints = 40;
+  } else if (challengeId.startsWith("daily-")) {
+    baseCompPoints = 20;
+  }
+
+  const pointAward = await awardCompetitionPoints({
+    studentUid: user.uid,
+    sourceType: challenge.type === "boss" ? "boss_challenge" : (challengeId.startsWith("daily-") ? "daily_challenge" : "python_adventure"),
+    sourceId: challengeId,
+    points: baseCompPoints,
+    reason: `إكمال مهمة ${challenge.title}`,
+    competitionId: "comp_python_autumn_2026",
+    metadata: {
+      worldId: challenge.worldId,
+      difficulty: challenge.difficulty,
+      stars: starsEarned,
+      hintsUsed: safeHintsUsed
+    }
+  });
+
+  // Sync XP and Level into gamification profile
+  await syncStudentXpAndLevel(user.uid, newTotalXp, levelInfo.level);
+
   return {
     success: true,
     passed: true,
@@ -314,9 +345,11 @@ export async function submitPythonAdventureChallengeHandler(request: CallableReq
     stars: starsEarned,
     newLevel: levelInfo.level,
     levelUp: levelInfo.level > (existing.level || 1),
+    competitionPointsAwarded: pointAward.pointsAwarded,
+    totalCompetitionPoints: pointAward.totalPoints,
     unlockedNextChallengeId: challenge.nextChallengeId || null,
     unlockedWorldId: challenge.unlocksWorldId || null,
-    newlyUnlockedAchievements,
+    newlyUnlockedAchievements: [...newlyUnlockedAchievements, ...pointAward.newlyUnlockedAchievements],
     feedback: challenge.type === "boss" ? "🏆 تم هزيمة الزعيم واجتياز التحدي الأسطوري بنجاح!" : "🎉 أحسنت صنعاً! تم اجتياز المهمة بنجاح واستيعاب المفهوم البرمجي.",
     skillsGained: challenge.skills || []
   };
