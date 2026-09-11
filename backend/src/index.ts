@@ -77,6 +77,7 @@ export const gradeEssay = onCall(gradeEssayHandler);
 // ==========================================
 export const createAttendanceSession = onCall(createAttendanceSessionHandler);
 export const recordAttendanceBatch = onCall(recordAttendanceBatchHandler);
+export const getStudentAttendance = onCall(getStudentAttendanceHandler);
 
 // ==========================================
 // 4. ASSIGNMENTS & SUBMISSIONS

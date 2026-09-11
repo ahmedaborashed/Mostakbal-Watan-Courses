@@ -146,6 +146,11 @@ service cloud.firestore {
       }
     }
 
+    // Collection group rule for records subcollections across all attendance sessions
+    match /{path=**}/records/{studentUid} {
+      allow read: if isOwner(studentUid) || isStaff();
+    }
+
     // ========================================================
     // 9. PYTHON ADVENTURE (Gamified Learning Progression)
     // ========================================================
