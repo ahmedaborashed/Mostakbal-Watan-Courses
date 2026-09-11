@@ -22,13 +22,16 @@ import {
   EXAM_DETAILS_MODAL_ID,
   renderStudentExamDetailsModal,
   renderStudentExamDetailsContent,
-  STUDENT_EXAM_DETAILS_MODAL_ID
+  STUDENT_EXAM_DETAILS_MODAL_ID,
+  renderPreExamConfirmationModal,
+  PRE_EXAM_CONFIRM_MODAL_ID
 } from "./components/exam-details.component.js";
 import {
   renderQuestionsContainer,
   renderQuestionRow
 } from "./components/exam-question-editor.component.js";
 import { renderExamReview } from "./components/exam-review.component.js";
+import { renderStudentExamReviewMode } from "./components/student-exam-review.component.js";
 import { getExamStatusInfo } from "./components/exam-status-badge.component.js";
 import { openModal, closeModal } from "../../shared/components/Modal/modal.component.js";
 import { renderLoader } from "../../shared/components/Loader/loader.component.js";
@@ -57,6 +60,17 @@ let adminViewMode = "cards"; // "cards" | "table"
 let activeAdminContainer = null;
 let currentExpandedQuestion = null;
 let draggedQuestionIdx = null;
+
+// Anti-Cheat Telemetry & Deterrent Listeners State
+let examTelemetryEvents = [];
+let antiCheatAttached = false;
+let handleVisibilityChange = null;
+let handleWindowBlur = null;
+let handleBeforeUnload = null;
+let handleOnline = null;
+let handleOffline = null;
+let handleFullscreenChange = null;
+let lastBlurWarning = 0;
 
 export const ExamController = {
   /**
