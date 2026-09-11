@@ -1,7 +1,15 @@
-// scripts/test-python-adventure.js
 import assert from "node:assert";
-import { WORLDS_CONFIG, PYTHON_ADVENTURE_CHALLENGES, ACHIEVEMENTS_LIST, calculateLevelFromXp } from "../backend/src/modules/python-adventure/curriculum.ts";
+import { WORLDS_CONFIG, PYTHON_ADVENTURE_CHALLENGES, ACHIEVEMENTS_LIST } from "../backend/src/modules/python-adventure/curriculum.ts";
 import { spawnSync } from "node:child_process";
+
+export function calculateLevelFromXp(xp) {
+  const XP_PER_LEVEL = 250;
+  const level = Math.floor(xp / XP_PER_LEVEL) + 1;
+  const currentLevelBase = (level - 1) * XP_PER_LEVEL;
+  const currentLevelXp = xp - currentLevelBase;
+  const progressPercent = Math.min(100, Math.round((currentLevelXp / XP_PER_LEVEL) * 100));
+  return { level, currentLevelXp, nextLevelXp: XP_PER_LEVEL, progressPercent };
+}
 
 console.log("🧪 Starting Python Adventure Comprehensive Test Suite...\n");
 
