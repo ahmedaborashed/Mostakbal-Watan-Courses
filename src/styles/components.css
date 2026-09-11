@@ -2422,6 +2422,140 @@ body.is-in-exam-mode .main-view {
   margin-inline: auto;
 }
 
+/* Question Navigator Collapsible on Mobile */
+@media (max-width: 768px) {
+  .exam-question-navigator.is-collapsed-mobile .navigator-grid {
+    display: none !important;
+  }
+  .exam-question-navigator.is-collapsed-mobile {
+    padding-bottom: var(--space-3);
+  }
+}
+
+/* ========================================================
+   STUDENT EXAM REVIEW MODE SCREEN
+   Calm, focused pre-submission review screen
+   ======================================================== */
+.student-exam-review-shell {
+  max-width: 860px;
+  margin-inline: auto;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.exam-review-header {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background: var(--surface-primary);
+}
+
+.exam-review-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.summary-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-lg);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+.summary-card.total {
+  border-color: var(--border);
+}
+
+.summary-card.answered {
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.summary-card.unanswered {
+  border-color: rgba(245, 158, 11, 0.3);
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.summary-card .summary-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--space-1);
+}
+
+.summary-card .summary-value {
+  font-size: 1.5rem;
+  font-weight: var(--font-weight-extrabold);
+  line-height: 1.2;
+}
+
+.review-question-item {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--surface-primary);
+  transition: all var(--transition-fast);
+}
+
+.review-question-item:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.review-question-item.is-answered {
+  border-right: 4px solid var(--success, #10b981);
+}
+
+.review-question-item.is-unanswered {
+  border-right: 4px solid var(--warning, #f59e0b);
+}
+
+.review-question-item .review-q-num {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.review-answer-snippet {
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-secondary);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-2);
+}
+
+.sticky-review-footer {
+  position: sticky;
+  bottom: var(--space-4);
+  z-index: 20;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background: var(--surface-primary);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+@media (max-width: 640px) {
+  .exam-review-summary-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: var(--space-2);
+  }
+
+  .summary-card {
+    padding: var(--space-2);
+  }
+
+  .summary-card .summary-value {
+    font-size: 1.25rem;
+  }
+
+  .sticky-review-footer {
+    position: static;
+    border-radius: var(--radius-lg);
+  }
+}
+
 /* ========================================================
    16. STUDENT ASSIGNMENTS & TASKS ("التاسكات والواجبات")
    Calm, Classic, Professional & Educational LMS Architecture
