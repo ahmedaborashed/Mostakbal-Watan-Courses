@@ -1,0 +1,280 @@
+  body {
+    margin: 0;
+    font-family: 'Cairo', sans-serif;
+    background: #f5f5f5;
+    direction: rtl;
+  }
+
+  nav {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 30px;
+    background: #0f172a;
+    color: white;
+  }
+
+  nav button {
+    margin-left: 10px;
+    padding: 8px 15px;
+    border: none;
+    cursor: pointer;
+    background: white;
+    color: #0a7f5a;
+    border-radius: 5px;
+  }
+
+  .hero {
+    text-align: center;
+    padding: 100px 20px;
+    background: linear-gradient(#3a3a3a, #2a2a2a);
+    color: white;
+  }
+
+  .hero button {
+    margin-top: 20px;
+    padding: 10px 25px;
+    border: none;
+    background: white;
+    color: #0a7f5a;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .features {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 40px;
+  }
+
+  .card {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+
+  /* خلفية المودال */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 20, 30, 0.6);
+  backdrop-filter: blur(6px);
+}
+
+.password-box {
+  position: relative;
+}
+
+.password-box input {
+  width: 100%;
+  padding: 12px;
+  padding-left: 40px;
+}
+
+.toggle-pass {
+  cursor: pointer;
+  user-select: none; /* يمنع التحديد */
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 18px;
+  color: #94a3b8;
+}
+
+.loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #0f172a;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.loading-content {
+  text-align: center;
+  color: white;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255,255,255,0.2);
+  border-top: 4px solid #38bdf8;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: auto;
+  margin-bottom: 20px;
+}
+
+#loadingText {
+  margin-bottom: 10px;
+  color: #38bdf8;
+}
+
+#loadingCount {
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.toggle-pass:hover {
+  color: #38bdf8;
+}
+
+
+  /* glowing border */
+  .form-box::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    background: linear-gradient(45deg, #38bdf8, #00c3ff, #38bdf8);
+    z-index: -1;
+    filter: blur(15px);
+    opacity: 0.5;
+  }
+
+  .form-box button:active {
+    transform: scale(0.95);
+  }
+
+.login-note {
+  margin-top: 20px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #38bdf8;
+}
+
+  /* الفورم */
+  .form-box {
+    position: relative;
+    overflow: hidden;
+
+    /* 🌙 Background هادي */
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+
+    /* ✨ Glass خفيف */
+    backdrop-filter: blur(12px);
+
+    padding: 35px;
+    width: 90%;
+    max-width: 360px;
+    margin: 80px auto;
+
+    border-radius: 18px;
+    text-align: center;
+
+    /* 🎨 لون النص */
+    color: #e2e8f0;
+
+    /* 🔲 Border ناعم */
+    border: 1px solid rgba(255,255,255,0.08);
+
+    /* 💎 Shadow احترافي */
+    box-shadow:
+      0 10px 30px rgba(0,0,0,0.5),
+      0 0 20px rgba(56,189,248,0.15);
+
+    animation: fadeIn 0.4s ease;
+  }
+
+  /* عنوان */
+  .form-box h2 {
+    margin-bottom: 20px;
+    color: #38bdf8;
+  }
+
+  .input-group {
+    position: relative;
+    margin: 15px 0;
+  }
+
+  .input-group input {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    outline: none;
+    background: rgba(255,255,255,0.12);
+    color: white;
+    font-size: 15px;
+  }
+
+  .input-group label {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #ccc;
+    pointer-events: none;
+    transition: 0.3s;
+  }
+
+  /* لما تكتب */
+  .input-group input:focus + label,
+  .input-group input:not(:placeholder-shown) + label {
+    top: -8px;
+    right: 10px;
+    font-size: 12px;
+    color: #38bdf8;
+    background: rgba(0,0,0,0.5);
+    padding: 0 5px;
+    border-radius: 5px;
+  }
+
+
+  /* الزرار */
+  .form-box button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(45deg, #38bdf8, #00c3ff);
+    color: #000;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+
+  .form-box button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px #38bdf8;
+  }
+
+  /* أنيميشن */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 26px;
+    padding: 5px;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+
+  .close-btn:hover {
+    color: #38bdf8;
+    transform: rotate(90deg) scale(1.2);
+  }
