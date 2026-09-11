@@ -31,12 +31,19 @@ export function renderExamResult({ exam, result }) {
   const mcqScore = result.mcqScore !== undefined ? Number(result.mcqScore) : null;
   const totalScore = result.total !== undefined ? Number(result.total) : Number(result.score || 0);
 
-  // If passDegree or totalPossible is available
-  const totalPossible = exam?.passDegree
-    ? Math.max(exam.passDegree * 2, totalScore)
-    : result.totalQuestions
-    ? Number(result.totalQuestions)
-    : null;
+  // If totalQuestions or totalPossible is available
+  const totalPossible =
+    result.totalPossible !== undefined
+      ? Number(result.totalPossible)
+      : result.totalQuestions !== undefined
+      ? Number(result.totalQuestions)
+      : exam?.totalScore !== undefined
+      ? Number(exam.totalScore)
+      : exam?.totalQuestions !== undefined
+      ? Number(exam.totalQuestions)
+      : exam?.passDegree
+      ? Math.max(exam.passDegree * 2, totalScore)
+      : null;
 
   const percentage =
     totalPossible && totalPossible > 0
