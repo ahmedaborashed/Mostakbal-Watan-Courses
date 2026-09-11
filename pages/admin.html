@@ -40,6 +40,7 @@
     import { mountAdminLayout } from "../src/shared/layouts/AdminLayout/admin-layout.component.js";
     import { StudentsController } from "../src/features/students/students.controller.js";
     import { AttendanceController } from "../src/features/attendance/attendance.controller.js";
+    import { ExamController } from "../src/features/exams/exam.controller.js";
     import { ProfileController } from "../src/features/profile/profile.controller.js";
     import { AuthController } from "../src/features/auth/auth.controller.js";
     import { bootstrapApp } from "../src/app/bootstrap.js";
@@ -59,6 +60,8 @@
             AttendanceController.loadTeacherAttendance("adminAttendanceContainer");
           } else if (tabId === "students") {
             StudentsController.loadStudentsList("adminStudentsContainer", { canDelete: true });
+          } else if (tabId === "exams") {
+            ExamController.loadAdminExams("adminExamsContainer");
           } else if (tabId === "settings") {
             ProfileController.loadSettingsView("adminSettingsContainer");
           }

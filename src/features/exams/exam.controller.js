@@ -438,5 +438,1042 @@ export const ExamController = {
     } catch (err) {
       setHtml(container, renderErrorState({ title: "خطأ في تحميل الامتحانات", message: err.message }));
     }
+  },
+
+  // ========================================================
+  // ADMIN EXAMS MANAGEMENT WORKFLOW
+  // ========================================================
+
+  /**
+   * Loads and renders exams for the Admin dashboard.
+   * @param {string|HTMLElement} containerId
+   */
+  async loadAdminExams(containerId) {
+    const container = typeof containerId === "string" ? document.getElementById(containerId) : containerId;
+    if (!container) return;
+
+    activeAdminContainer = container;
+    setHtml(container, renderLoader({ text: "جاري تحميل الامتحانات والبيانات... 📝" }));
+    this.ensureAdminModals();
+
+    try {
+      const exams = await ExamService.getAllExams();
+      examState.set("adminExams", exams);
+
+      // Fetch results count in parallel for real metrics
+      const resultsMap = {};
+      await Promise.all(
+        exams.map(async (e) => {
+          try {
+            const res = await ExamService.getExamResults(e.id);
+            resultsMap[e.id] = res;
+          } catch {
+            resultsMap[e.id] = [];
+          }
+        })
+      );
+      examState.set("adminResultsMap", resultsMap);
+
+      this.renderAdminView(container);
+    } catch (err) {
+      console.error("Admin load exams error:", err);
+      setHtml(
+        container,
+        renderErrorState({
+          title: "تعذر تحميل الامتحانات",
+          message: err.message || "حدث خطأ أثناء جلب قائمة الامتحانات من السيرفر.",
+          retryBtnId: "retryAdminExamsBtn"
+        })
+      );
+      document.getElementById("retryAdminExamsBtn")?.addEventListener("click", () => {
+        this.loadAdminExams(container);
+      });
+    }
+  },
+
+  /**
+   * Renders the admin view with filtered exams and binds interactive events.
+   * @param {HTMLElement} container
+   */
+  renderAdminView(container) {
+    const allExams = examState.get("adminExams") || [];
+    const resultsMap = examState.get("adminResultsMap") || {};
+    const filters = examState.get("adminFilters") || { searchQuery: "", group: "ALL", status: "ALL", sort: "newest" };
+
+    // Apply filters
+    let filtered = allExams.filter((exam) => {
+      // 1. Search Query
+      if (filters.searchQuery) {
+        const q = filters.searchQuery.trim().toLowerCase();
+        const matchTitle = (exam.title || "").toLowerCase().includes(q);
+        const matchDesc = (exam.description || "").toLowerCase().includes(q);
+        if (!matchTitle && !matchDesc) return false;
+      }
+
+      // 2. Group Filter
+      if (filters.group && filters.group !== "ALL") {
+        if (exam.group !== filters.group) return false;
+      }
+
+      // 3. Status Filter
+      if (filters.status && filters.status !== "ALL") {
+        const statusInfo = getExamStatusInfo(exam);
+        if (filters.status === "ACTIVE" && statusInfo.status !== "active") return false;
+        if (filters.status === "INACTIVE" && statusInfo.status !== "inactive" && statusInfo.status !== "draft") return false;
+        if (filters.status === "UPCOMING" && statusInfo.status !== "upcoming") return false;
+        if (filters.status === "EXPIRED" && statusInfo.status !== "expired") return false;
+      }
+
+      return true;
+    });
+
+    // Sort order
+    filtered.sort((a, b) => {
+      const dateA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.startDate ? new Date(a.startDate).getTime() : 0);
+      const dateB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.startDate ? new Date(b.startDate).getTime() : 0);
+      return filters.sort === "oldest" ? dateA - dateB : dateB - dateA;
+    });
+
+    const viewHtml = renderAdminExamsView({
+      allExams,
+      filteredExams: filtered,
+      resultsMap,
+      filters,
+      viewMode: adminViewMode
+    });
+
+    setHtml(container, viewHtml);
+    this.bindAdminViewEvents(container);
+  },
+
+  /**
+   * Binds all event listeners for the admin list view.
+   * @param {HTMLElement} container
+   */
+  bindAdminViewEvents(container) {
+    // 1. Open Create Modal
+    const handleOpenCreate = () => this.openCreateExamModal();
+    container.querySelector("#openCreateExamBtn")?.addEventListener("click", handleOpenCreate);
+    container.querySelector("#emptyStateCreateExamBtn")?.addEventListener("click", handleOpenCreate);
+
+    // 2. Debounced Search
+    const searchInput = container.querySelector("#adminExamSearchInput");
+    if (searchInput) {
+      searchInput.addEventListener(
+        "input",
+        debounce((e) => {
+          const filters = examState.get("adminFilters") || {};
+          filters.searchQuery = e.target.value;
+          examState.set("adminFilters", filters);
+          this.renderAdminView(container);
+        }, 250)
+      );
+    }
+
+    // 3. Group Filter
+    container.querySelector("#adminExamGroupFilter")?.addEventListener("change", (e) => {
+      const filters = examState.get("adminFilters") || {};
+      filters.group = e.target.value;
+      examState.set("adminFilters", filters);
+      this.renderAdminView(container);
+    });
+
+    // 4. Status Filter
+    container.querySelector("#adminExamStatusFilter")?.addEventListener("change", (e) => {
+      const filters = examState.get("adminFilters") || {};
+      filters.status = e.target.value;
+      examState.set("adminFilters", filters);
+      this.renderAdminView(container);
+    });
+
+    // 5. Sort Filter
+    container.querySelector("#adminExamSortFilter")?.addEventListener("change", (e) => {
+      const filters = examState.get("adminFilters") || {};
+      filters.sort = e.target.value;
+      examState.set("adminFilters", filters);
+      this.renderAdminView(container);
+    });
+
+    // 6. View Mode Switcher
+    container.querySelector("#adminExamViewCardsBtn")?.addEventListener("click", () => {
+      if (adminViewMode !== "cards") {
+        adminViewMode = "cards";
+        this.renderAdminView(container);
+      }
+    });
+
+    container.querySelector("#adminExamViewTableBtn")?.addEventListener("click", () => {
+      if (adminViewMode !== "table") {
+        adminViewMode = "table";
+        this.renderAdminView(container);
+      }
+    });
+
+    // 7. Reset Filters Button in empty state
+    container.querySelector("#resetAdminExamFiltersBtn")?.addEventListener("click", () => {
+      examState.set("adminFilters", { searchQuery: "", group: "ALL", status: "ALL", sort: "newest" });
+      this.renderAdminView(container);
+    });
+
+    // 8. View Exam Details Buttons
+    container.querySelectorAll("[data-admin-view-exam]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const examId = btn.getAttribute("data-admin-view-exam");
+        this.openExamDetailsModal(examId);
+      });
+    });
+
+    // 9. Edit Exam Buttons
+    container.querySelectorAll("[data-admin-edit-exam]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const examId = btn.getAttribute("data-admin-edit-exam");
+        this.openEditExamModal(examId);
+      });
+    });
+
+    // 10. Toggle Active Status Buttons
+    container.querySelectorAll("[data-admin-toggle-exam]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const examId = btn.getAttribute("data-admin-toggle-exam");
+        const currentActive = btn.getAttribute("data-current-active") === "true";
+        this.handleToggleExam(examId, currentActive);
+      });
+    });
+
+    // 11. Delete Exam Buttons
+    container.querySelectorAll("[data-admin-delete-exam]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const examId = btn.getAttribute("data-admin-delete-exam");
+        const title = btn.getAttribute("data-exam-title") || "الامتحان";
+        this.handleDeleteExam(examId, title);
+      });
+    });
+  },
+
+  /**
+   * Injects the required modals into the DOM once.
+   */
+  ensureAdminModals() {
+    if (!document.getElementById(EXAM_FORM_MODAL_ID)) {
+      document.body.insertAdjacentHTML("beforeend", renderExamFormModal());
+    }
+    if (!document.getElementById(EXAM_DETAILS_MODAL_ID)) {
+      document.body.insertAdjacentHTML("beforeend", renderExamDetailsModal());
+    }
+    this.bindAdminModalEvents();
+  },
+
+  /**
+   * Binds all event listeners for the exam form modal and interactive editor.
+   */
+  bindAdminModalEvents() {
+    const formModal = document.getElementById(EXAM_FORM_MODAL_ID);
+    if (!formModal || formModal.hasAttribute("data-admin-events-bound")) return;
+    formModal.setAttribute("data-admin-events-bound", "true");
+
+    // 1. Stepper direct tab click navigation
+    formModal.addEventListener("click", (e) => {
+      const stepItem = e.target.closest("[data-step-nav]");
+      if (stepItem) {
+        const targetStep = Number(stepItem.getAttribute("data-step-nav"));
+        const currentStep = examState.get("currentStep") || 1;
+        if (targetStep < currentStep) {
+          this.navigateWizardStep(targetStep);
+        } else if (targetStep > currentStep) {
+          if (currentStep === 1 && this.validateStep1()) {
+            this.navigateWizardStep(targetStep);
+          } else if (currentStep === 2 && this.validateStep2()) {
+            this.navigateWizardStep(targetStep);
+          }
+        }
+      }
+    });
+
+    // 2. Wizard footer buttons
+    document.getElementById("examFormNextStepBtn")?.addEventListener("click", () => {
+      const currentStep = examState.get("currentStep") || 1;
+      if (currentStep === 1) {
+        if (this.validateStep1()) {
+          this.navigateWizardStep(2);
+        }
+      } else if (currentStep === 2) {
+        if (this.validateStep2()) {
+          this.navigateWizardStep(3);
+        }
+      }
+    });
+
+    document.getElementById("examFormPrevStepBtn")?.addEventListener("click", () => {
+      const currentStep = examState.get("currentStep") || 1;
+      if (currentStep > 1) {
+        this.syncCurrentStepInputs();
+        this.navigateWizardStep(currentStep - 1);
+      }
+    });
+
+    document.getElementById("examFormDraftBtn")?.addEventListener("click", () => {
+      this.handleSaveExam({ publish: false });
+    });
+
+    document.getElementById("examFormPublishBtn")?.addEventListener("click", () => {
+      this.handleSaveExam({ publish: true });
+    });
+
+    // 3. Question Editor Delegated Events inside Step 2
+    const stepContainer = document.getElementById("examFormStepContainer");
+    if (stepContainer) {
+      // Add MCQ
+      stepContainer.addEventListener("click", (e) => {
+        if (e.target.closest(".btn-add-mcq-btn")) {
+          this.handleAddQuestion("mcq");
+        }
+      });
+
+      // Add Essay
+      stepContainer.addEventListener("click", (e) => {
+        if (e.target.closest(".btn-add-essay-btn")) {
+          this.handleAddQuestion("essay");
+        }
+      });
+
+      // Change question type
+      stepContainer.addEventListener("click", (e) => {
+        const btn = e.target.closest(".btn-change-type");
+        if (btn) {
+          const qIdx = Number(btn.getAttribute("data-q-idx"));
+          const newType = btn.getAttribute("data-new-type");
+          const questions = examState.get("editingQuestions") || [];
+          if (questions[qIdx]) {
+            questions[qIdx].type = newType;
+            if (newType === "mcq" && (!Array.isArray(questions[qIdx].options) || questions[qIdx].options.length < 2)) {
+              questions[qIdx].options = ["", "", "", ""];
+              questions[qIdx].correct = 0;
+            }
+            examState.set("editingQuestions", questions);
+            this.renderWizardStepContent(2);
+          }
+        }
+      });
+
+      // Toggle expand/collapse
+      stepContainer.addEventListener("click", (e) => {
+        const toggleEl = e.target.closest("[data-toggle-collapse]") || e.target.closest(".btn-toggle-expand");
+        if (toggleEl) {
+          const qIdx = Number(toggleEl.getAttribute("data-toggle-collapse") || toggleEl.getAttribute("data-q-idx"));
+          currentExpandedQuestion = currentExpandedQuestion === qIdx ? null : qIdx;
+          this.renderWizardStepContent(2);
+        }
+      });
+
+      // Collapse button in editor body
+      stepContainer.addEventListener("click", (e) => {
+        const btn = e.target.closest(".btn-collapse-question");
+        if (btn) {
+          currentExpandedQuestion = null;
+          this.renderWizardStepContent(2);
+        }
+      });
+
+      // Delete Question
+      stepContainer.addEventListener("click", (e) => {
+        const btn = e.target.closest(".btn-delete-question");
+        if (btn) {
+          const qIdx = Number(btn.getAttribute("data-q-idx"));
+          this.handleDeleteQuestion(qIdx);
+        }
+      });
+
+      // Move Up
+      stepContainer.addEventListener("click", (e) => {
+        const btn = e.target.closest(".btn-move-up");
+        if (btn && !btn.disabled) {
+          const qIdx = Number(btn.getAttribute("data-q-idx"));
+          this.handleMoveQuestion(qIdx, qIdx - 1);
+        }
+      });
+
+      // Move Down
+      stepContainer.addEventListener("click", (e) => {
+        const btn = e.target.closest(".btn-move-down");
+        if (btn && !btn.disabled) {
+          const qIdx = Number(btn.getAttribute("data-q-idx"));
+          this.handleMoveQuestion(qIdx, qIdx + 1);
+        }
+      });
+
+      // Add Option in MCQ
+      stepContainer.addEventListener("click", (e) => {
+        const btn = e.target.closest(".btn-add-option");
+        if (btn) {
+          const qIdx = Number(btn.getAttribute("data-q-idx"));
+          const questions = examState.get("editingQuestions") || [];
+          if (questions[qIdx] && Array.isArray(questions[qIdx].options) && questions[qIdx].options.length < 6) {
+            this.syncCurrentStepInputs();
+            questions[qIdx].options.push("");
+            examState.set("editingQuestions", questions);
+            this.renderWizardStepContent(2);
+          }
+        }
+      });
+
+      // Remove Option in MCQ
+      stepContainer.addEventListener("click", (e) => {
+        const btn = e.target.closest(".btn-remove-option");
+        if (btn) {
+          const qIdx = Number(btn.getAttribute("data-q-idx"));
+          const optIdx = Number(btn.getAttribute("data-opt-idx"));
+          const questions = examState.get("editingQuestions") || [];
+          if (questions[qIdx] && Array.isArray(questions[qIdx].options) && questions[qIdx].options.length > 2) {
+            this.syncCurrentStepInputs();
+            questions[qIdx].options.splice(optIdx, 1);
+            if (questions[qIdx].correct >= questions[qIdx].options.length) {
+              questions[qIdx].correct = 0;
+            }
+            examState.set("editingQuestions", questions);
+            this.renderWizardStepContent(2);
+          }
+        }
+      });
+
+      // Input changes sync
+      stepContainer.addEventListener("input", (e) => {
+        const input = e.target;
+        const questions = examState.get("editingQuestions") || [];
+
+        // Question text
+        if (input.classList.contains("q-text-input")) {
+          const qIdx = Number(input.getAttribute("data-q-idx"));
+          if (questions[qIdx]) questions[qIdx].question = input.value;
+        }
+
+        // Question degree
+        if (input.classList.contains("q-degree-input")) {
+          const qIdx = Number(input.getAttribute("data-q-idx"));
+          if (questions[qIdx]) questions[qIdx].degree = Math.max(1, Number(input.value) || 1);
+        }
+
+        // Option text
+        if (input.classList.contains("option-text-input")) {
+          const qIdx = Number(input.getAttribute("data-q-idx"));
+          const optIdx = Number(input.getAttribute("data-opt-idx"));
+          if (questions[qIdx] && Array.isArray(questions[qIdx].options)) {
+            questions[qIdx].options[optIdx] = input.value;
+          }
+        }
+      });
+
+      // Correct radio change
+      stepContainer.addEventListener("change", (e) => {
+        if (e.target.classList.contains("option-correct-radio")) {
+          const qIdx = Number(e.target.getAttribute("data-q-idx"));
+          const optIdx = Number(e.target.getAttribute("data-opt-idx"));
+          const questions = examState.get("editingQuestions") || [];
+          if (questions[qIdx]) {
+            questions[qIdx].correct = optIdx;
+            // Update visual radio styles within question editor
+            const editorBody = e.target.closest(".question-editor-body");
+            if (editorBody) {
+              editorBody.querySelectorAll(".option-row").forEach((row) => {
+                const rOptIdx = Number(row.getAttribute("data-option-row"));
+                const badge = row.querySelector(".badge");
+                if (badge) {
+                  badge.className = `badge ${rOptIdx === optIdx ? "badge-success" : "badge-neutral"}`;
+                }
+              });
+            }
+          }
+        }
+      });
+
+      // 4. Native Drag & Drop Handlers for Questions Reordering
+      stepContainer.addEventListener("dragstart", (e) => {
+        const handle = e.target.closest("[data-drag-handle]");
+        if (handle) {
+          draggedQuestionIdx = Number(handle.getAttribute("data-drag-handle"));
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", String(draggedQuestionIdx));
+          const card = handle.closest("[data-question-row]");
+          if (card) card.classList.add("is-dragging");
+        }
+      });
+
+      stepContainer.addEventListener("dragover", (e) => {
+        const row = e.target.closest("[data-question-row]");
+        if (row) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+          row.classList.add("is-drag-over");
+        }
+      });
+
+      stepContainer.addEventListener("dragleave", (e) => {
+        const row = e.target.closest("[data-question-row]");
+        if (row) {
+          row.classList.remove("is-drag-over");
+        }
+      });
+
+      stepContainer.addEventListener("drop", (e) => {
+        e.preventDefault();
+        const row = e.target.closest("[data-question-row]");
+        if (row) {
+          row.classList.remove("is-drag-over");
+          const targetIdx = Number(row.getAttribute("data-question-row"));
+          if (draggedQuestionIdx !== null && targetIdx !== null && draggedQuestionIdx !== targetIdx) {
+            this.handleMoveQuestion(draggedQuestionIdx, targetIdx);
+          }
+        }
+      });
+
+      stepContainer.addEventListener("dragend", () => {
+        draggedQuestionIdx = null;
+        stepContainer.querySelectorAll(".is-dragging, .is-drag-over").forEach((el) => {
+          el.classList.remove("is-dragging", "is-drag-over");
+        });
+      });
+    }
+  },
+
+  /**
+   * Opens modal to create a new exam from scratch.
+   */
+  openCreateExamModal() {
+    this.ensureAdminModals();
+    examState.set("editingExam", {
+      id: null,
+      title: "",
+      description: "",
+      group: "ALL",
+      duration: 30,
+      passDegree: 50,
+      active: true,
+      startDate: "",
+      deadline: "",
+      questions: []
+    });
+    examState.set("editingQuestions", []);
+    examState.set("currentStep", 1);
+    currentExpandedQuestion = null;
+
+    const titleEl = document.getElementById("examFormModalHeaderTitle");
+    if (titleEl) titleEl.textContent = "إنشاء امتحان جديد";
+
+    this.renderWizardStepContent(1);
+    openModal(EXAM_FORM_MODAL_ID);
+  },
+
+  /**
+   * Opens modal to edit an existing exam.
+   * @param {string} examId
+   */
+  async openEditExamModal(examId) {
+    this.ensureAdminModals();
+    try {
+      showToast("جاري تحميل بيانات الامتحان... ⏳", "info");
+      const exam = await ExamService.getExam(examId);
+
+      // Deep clone questions for safe editing
+      const clonedQuestions = Array.isArray(exam.questions)
+        ? JSON.parse(JSON.stringify(exam.questions))
+        : [];
+
+      examState.set("editingExam", { ...exam });
+      examState.set("editingQuestions", clonedQuestions);
+      examState.set("currentStep", 1);
+      currentExpandedQuestion = null;
+
+      const titleEl = document.getElementById("examFormModalHeaderTitle");
+      if (titleEl) titleEl.textContent = `تعديل الامتحان: ${exam.title || ""}`;
+
+      this.renderWizardStepContent(1);
+      openModal(EXAM_FORM_MODAL_ID);
+    } catch (err) {
+      console.error("Open edit exam error:", err);
+      showToast(err.message || "تعذر تحميل بيانات الامتحان للتعديل.", "error");
+    }
+  },
+
+  /**
+   * Opens the admin details modal with complete questions and live analytics.
+   * @param {string} examId
+   */
+  async openExamDetailsModal(examId) {
+    this.ensureAdminModals();
+    openModal(EXAM_DETAILS_MODAL_ID);
+
+    const bodySlot = document.getElementById("adminExamDetailsBodySlot");
+    if (bodySlot) {
+      setHtml(bodySlot, renderLoader({ text: "جاري تحميل تفاصيل الامتحان والنتائج... ⏳" }));
+    }
+
+    try {
+      const [exam, results] = await Promise.all([
+        ExamService.getExam(examId),
+        ExamService.getExamResults(examId)
+      ]);
+
+      if (bodySlot) {
+        setHtml(bodySlot, renderExamDetailsContent({ exam, results }));
+
+        // Bind inner edit button
+        bodySlot.querySelector("[data-details-edit-exam]")?.addEventListener("click", () => {
+          closeModal(EXAM_DETAILS_MODAL_ID);
+          this.openEditExamModal(examId);
+        });
+      }
+    } catch (err) {
+      console.error("Open exam details error:", err);
+      if (bodySlot) {
+        setHtml(bodySlot, renderErrorState({ title: "خطأ في عرض التفاصيل", message: err.message }));
+      }
+    }
+  },
+
+  /**
+   * Navigates between wizard steps and updates UI state.
+   * @param {number} targetStep (1, 2, or 3)
+   */
+  navigateWizardStep(targetStep) {
+    this.syncCurrentStepInputs();
+    examState.set("currentStep", targetStep);
+    this.renderWizardStepContent(targetStep);
+  },
+
+  /**
+   * Renders the active wizard step content and updates Stepper + Buttons.
+   * @param {number} step
+   */
+  renderWizardStepContent(step) {
+    const stepperSlot = document.getElementById("examFormStepperSlot");
+    if (stepperSlot) {
+      setHtml(stepperSlot, renderExamFormStepper(step));
+    }
+
+    const stepContainer = document.getElementById("examFormStepContainer");
+    if (!stepContainer) return;
+
+    const editingExam = examState.get("editingExam") || {};
+    const editingQuestions = examState.get("editingQuestions") || [];
+
+    if (step === 1) {
+      setHtml(stepContainer, renderExamInfoStep(editingExam));
+    } else if (step === 2) {
+      setHtml(
+        stepContainer,
+        renderQuestionsContainer({
+          questions: editingQuestions,
+          expandedIndex: currentExpandedQuestion
+        })
+      );
+    } else if (step === 3) {
+      setHtml(
+        stepContainer,
+        renderExamReview({
+          examData: editingExam,
+          questions: editingQuestions
+        })
+      );
+    }
+
+    // Update wizard footer action buttons
+    const prevBtn = document.getElementById("examFormPrevStepBtn");
+    const nextBtn = document.getElementById("examFormNextStepBtn");
+    const draftBtn = document.getElementById("examFormDraftBtn");
+    const publishBtn = document.getElementById("examFormPublishBtn");
+
+    if (prevBtn) prevBtn.classList.toggle("d-none", step === 1);
+
+    if (nextBtn) {
+      if (step === 1) {
+        nextBtn.classList.remove("d-none");
+        nextBtn.innerText = "التالي: الأسئلة →";
+      } else if (step === 2) {
+        nextBtn.classList.remove("d-none");
+        nextBtn.innerText = "التالي: المراجعة →";
+      } else {
+        nextBtn.classList.add("d-none");
+      }
+    }
+
+    if (draftBtn) draftBtn.classList.remove("d-none");
+    if (publishBtn) publishBtn.classList.toggle("d-none", step !== 3);
+  },
+
+  /**
+   * Synchronizes input values from the current DOM view back into working state.
+   */
+  syncCurrentStepInputs() {
+    const currentStep = examState.get("currentStep") || 1;
+    const editingExam = examState.get("editingExam") || {};
+    const editingQuestions = examState.get("editingQuestions") || [];
+
+    if (currentStep === 1) {
+      const titleInput = document.getElementById("examFormTitle");
+      const descInput = document.getElementById("examFormDesc");
+      const groupInput = document.getElementById("examFormGroup");
+      const durationInput = document.getElementById("examFormDuration");
+      const startInput = document.getElementById("examFormStartDate");
+      const deadlineInput = document.getElementById("examFormDeadline");
+      const passDegreeInput = document.getElementById("examFormPassDegree");
+      const activeToggle = document.getElementById("examFormActiveToggle");
+
+      if (titleInput) editingExam.title = titleInput.value.trim();
+      if (descInput) editingExam.description = descInput.value.trim();
+      if (groupInput) editingExam.group = groupInput.value;
+      if (durationInput) editingExam.duration = Math.max(5, Number(durationInput.value) || 30);
+      if (startInput) editingExam.startDate = startInput.value ? new Date(startInput.value) : null;
+      if (deadlineInput) editingExam.deadline = deadlineInput.value ? new Date(deadlineInput.value) : null;
+      if (passDegreeInput) editingExam.passDegree = Number(passDegreeInput.value) || 0;
+      if (activeToggle) editingExam.active = activeToggle.checked;
+
+      examState.set("editingExam", editingExam);
+    } else if (currentStep === 2) {
+      // Sync open question inputs
+      const stepContainer = document.getElementById("examFormStepContainer");
+      if (stepContainer) {
+        stepContainer.querySelectorAll("[data-question-row]").forEach((row) => {
+          const qIdx = Number(row.getAttribute("data-question-row"));
+          if (editingQuestions[qIdx]) {
+            const textEl = row.querySelector(".q-text-input");
+            const degreeEl = row.querySelector(".q-degree-input");
+            if (textEl) editingQuestions[qIdx].question = textEl.value.trim();
+            if (degreeEl) editingQuestions[qIdx].degree = Math.max(1, Number(degreeEl.value) || 1);
+
+            // Options sync
+            const optInputs = row.querySelectorAll(".option-text-input");
+            if (optInputs.length > 0) {
+              const opts = [];
+              optInputs.forEach((optInput) => opts.push(optInput.value.trim()));
+              editingQuestions[qIdx].options = opts;
+            }
+          }
+        });
+        examState.set("editingQuestions", editingQuestions);
+      }
+    }
+  },
+
+  /**
+   * Validates Step 1 inputs (Title, Duration, Dates).
+   * @returns {boolean}
+   */
+  validateStep1() {
+    this.syncCurrentStepInputs();
+    const editingExam = examState.get("editingExam") || {};
+
+    const titleError = document.getElementById("examFormTitleError");
+    const durationError = document.getElementById("examFormDurationError");
+    const deadlineError = document.getElementById("examFormDeadlineError");
+
+    let isValid = true;
+
+    // Title validation
+    if (!editingExam.title || editingExam.title.trim().length < 3) {
+      if (titleError) titleError.classList.remove("d-none");
+      document.getElementById("examFormTitle")?.focus();
+      isValid = false;
+    } else {
+      if (titleError) titleError.classList.add("d-none");
+    }
+
+    // Duration validation
+    if (!editingExam.duration || editingExam.duration < 5) {
+      if (durationError) durationError.classList.remove("d-none");
+      isValid = false;
+    } else {
+      if (durationError) durationError.classList.add("d-none");
+    }
+
+    // Dates validation (deadline after start)
+    if (editingExam.startDate && editingExam.deadline) {
+      const startMs = new Date(editingExam.startDate).getTime();
+      const deadMs = new Date(editingExam.deadline).getTime();
+      if (deadMs <= startMs) {
+        if (deadlineError) deadlineError.classList.remove("d-none");
+        isValid = false;
+      } else {
+        if (deadlineError) deadlineError.classList.add("d-none");
+      }
+    } else {
+      if (deadlineError) deadlineError.classList.add("d-none");
+    }
+
+    if (!isValid) {
+      showToast("يرجى مراجعة الحقول المطلوبة في بيانات الامتحان ⚠️", "warning");
+    }
+
+    return isValid;
+  },
+
+  /**
+   * Validates Step 2 questions.
+   * @returns {boolean}
+   */
+  validateStep2() {
+    this.syncCurrentStepInputs();
+    const questions = examState.get("editingQuestions") || [];
+
+    if (questions.length === 0) {
+      showToast("يجب إضافة سؤال واحد على الأقل قبل المتابعة ⚠️", "warning");
+      return false;
+    }
+
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      if (!q.question || q.question.trim().length === 0) {
+        showToast(`يرجى كتابة نص السؤال رقم ${i + 1} ⚠️`, "warning");
+        currentExpandedQuestion = i;
+        this.renderWizardStepContent(2);
+        return false;
+      }
+
+      if (q.type !== "essay") {
+        const opts = Array.isArray(q.options) ? q.options : [];
+        if (opts.length < 2) {
+          showToast(`السؤال رقم ${i + 1} يجب أن يحتوي على خيارين على الأقل ⚠️`, "warning");
+          currentExpandedQuestion = i;
+          this.renderWizardStepContent(2);
+          return false;
+        }
+
+        const hasEmptyOption = opts.some((opt) => !opt || opt.trim().length === 0);
+        if (hasEmptyOption) {
+          showToast(`يرجى تعبئة جميع خيارات السؤال رقم ${i + 1} ⚠️`, "warning");
+          currentExpandedQuestion = i;
+          this.renderWizardStepContent(2);
+          return false;
+        }
+
+        if (q.correct === undefined || q.correct === null || q.correct >= opts.length) {
+          showToast(`يرجى تحديد الإجابة النموذجية الصحيحة للسؤال رقم ${i + 1} ⚠️`, "warning");
+          currentExpandedQuestion = i;
+          this.renderWizardStepContent(2);
+          return false;
+        }
+      }
+    }
+
+    return true;
+  },
+
+  /**
+   * Appends a new question to the editing question list.
+   * @param {"mcq"|"essay"} type
+   */
+  handleAddQuestion(type = "mcq") {
+    this.syncCurrentStepInputs();
+    const questions = examState.get("editingQuestions") || [];
+    const newIdx = questions.length;
+
+    const newQuestion = {
+      id: `q_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      type,
+      question: "",
+      degree: type === "essay" ? 5 : 1
+    };
+
+    if (type === "mcq") {
+      newQuestion.options = ["", "", "", ""];
+      newQuestion.correct = 0;
+    }
+
+    questions.push(newQuestion);
+    examState.set("editingQuestions", questions);
+    currentExpandedQuestion = newIdx;
+    this.renderWizardStepContent(2);
+
+    // Scroll to new question
+    setTimeout(() => {
+      document.getElementById(`questionRow_${newIdx}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 50);
+  },
+
+  /**
+   * Deletes a question from the working list.
+   * @param {number} qIdx
+   */
+  async handleDeleteQuestion(qIdx) {
+    const questions = examState.get("editingQuestions") || [];
+    if (!questions[qIdx]) return;
+
+    const hasContent = questions[qIdx].question && questions[qIdx].question.trim().length > 0;
+    if (hasContent) {
+      const confirmed = await showConfirmDialog({
+        title: "حذف السؤال",
+        message: `هل أنت متأكد من حذف السؤال رقم ${qIdx + 1}؟`,
+        confirmText: "نعم، احذف",
+        variant: "danger"
+      });
+      if (!confirmed) return;
+    }
+
+    this.syncCurrentStepInputs();
+    questions.splice(qIdx, 1);
+    examState.set("editingQuestions", questions);
+    currentExpandedQuestion = null;
+    this.renderWizardStepContent(2);
+    showToast("تم حذف السؤال", "info");
+  },
+
+  /**
+   * Moves a question from fromIdx to toIdx for reordering.
+   * @param {number} fromIdx
+   * @param {number} toIdx
+   */
+  handleMoveQuestion(fromIdx, toIdx) {
+    this.syncCurrentStepInputs();
+    const questions = examState.get("editingQuestions") || [];
+    if (fromIdx < 0 || fromIdx >= questions.length || toIdx < 0 || toIdx >= questions.length) return;
+
+    const [moved] = questions.splice(fromIdx, 1);
+    questions.splice(toIdx, 0, moved);
+    examState.set("editingQuestions", questions);
+    currentExpandedQuestion = toIdx;
+    this.renderWizardStepContent(2);
+  },
+
+  /**
+   * Saves or publishes the exam into Firestore via ExamService.
+   * @param {object} options
+   * @param {boolean} [options.publish=false]
+   */
+  async handleSaveExam({ publish = false }) {
+    if (!this.validateStep1()) {
+      this.navigateWizardStep(1);
+      return;
+    }
+
+    if (!this.validateStep2()) {
+      this.navigateWizardStep(2);
+      return;
+    }
+
+    const editingExam = examState.get("editingExam") || {};
+    const questions = examState.get("editingQuestions") || [];
+    const isEdit = Boolean(editingExam.id);
+
+    const publishBtn = document.getElementById("examFormPublishBtn");
+    const draftBtn = document.getElementById("examFormDraftBtn");
+
+    if (publishBtn) {
+      publishBtn.disabled = true;
+      publishBtn.innerText = "جاري الحفظ... ⏳";
+    }
+    if (draftBtn) {
+      draftBtn.disabled = true;
+    }
+
+    try {
+      const formattedQuestions = questions.map((q, idx) => ({
+        id: q.id || `q_${idx}`,
+        type: q.type || "mcq",
+        question: (q.question || "").trim(),
+        degree: Number(q.degree) || 1,
+        ...(q.type !== "essay"
+          ? {
+              options: (q.options || []).map((o) => o.trim()),
+              correct: Number(q.correct) || 0
+            }
+          : {})
+      }));
+
+      const payload = {
+        title: editingExam.title.trim(),
+        description: (editingExam.description || "").trim(),
+        group: editingExam.group || "ALL",
+        duration: Number(editingExam.duration) || 30,
+        startDate: editingExam.startDate || null,
+        deadline: editingExam.deadline || null,
+        passDegree: Number(editingExam.passDegree) || 0,
+        active: publish ? true : false,
+        questions: formattedQuestions
+      };
+
+      if (isEdit) {
+        await ExamService.updateExam(editingExam.id, payload);
+        showToast(publish ? "تم تحديث ونشر الامتحان بنجاح 🚀" : "تم حفظ تعديلات الامتحان كمسودة 📝", "success");
+      } else {
+        await ExamService.createExam(payload);
+        showToast(publish ? "تم إنشاء الامتحان ونشره للطلاب بنجاح 🚀" : "تم إنشاء الامتحان وحفظه كمسودة 📝", "success");
+      }
+
+      closeModal(EXAM_FORM_MODAL_ID);
+
+      // Refresh admin exam list
+      if (activeAdminContainer) {
+        this.loadAdminExams(activeAdminContainer);
+      }
+    } catch (err) {
+      console.error("Save exam error:", err);
+      showToast(err.message || "تعذر حفظ الامتحان، يرجى المحاولة لاحقاً.", "error");
+    } finally {
+      if (publishBtn) {
+        publishBtn.disabled = false;
+        publishBtn.innerText = "حفظ ونشر الامتحان 🚀";
+      }
+      if (draftBtn) {
+        draftBtn.disabled = false;
+      }
+    }
+  },
+
+  /**
+   * Toggles active / inactive status of an exam with warning dialog if needed.
+   * @param {string} examId
+   * @param {boolean} currentActive
+   */
+  async handleToggleExam(examId, currentActive) {
+    if (currentActive) {
+      const confirmed = await showConfirmDialog({
+        title: "تعطيل الامتحان",
+        message: "هل أنت متأكد من رغبتك في تعطيل هذا الاختبار؟ لن يتمكن الطلاب من بدء محاولات جديدة حتى يُعاد تفعيله.",
+        confirmText: "نعم، عطل الاختبار",
+        cancelText: "إلغاء",
+        variant: "warning",
+        icon: "⏸️"
+      });
+      if (!confirmed) return;
+    }
+
+    try {
+      await ExamService.toggleExamStatus(examId, !currentActive);
+      showToast(!currentActive ? "تم تفعيل الامتحان للطلاب بنجاح ✅" : "تم تعطيل الامتحان", "success");
+      if (activeAdminContainer) {
+        this.loadAdminExams(activeAdminContainer);
+      }
+    } catch (err) {
+      console.error("Toggle exam status error:", err);
+      showToast(err.message || "تعذر تغيير حالة الامتحان.", "error");
+    }
+  },
+
+  /**
+   * Deletes an exam completely after user confirmation.
+   * @param {string} examId
+   * @param {string} title
+   */
+  async handleDeleteExam(examId, title) {
+    const confirmed = await showConfirmDialog({
+      title: "حذف الامتحان نهائياً",
+      message: `هل أنت متأكد تماماً من رغبتك في حذف "${title}"؟ ستفقد جميع الأسئلة المرتبطة به نهائياً ولا يمكن التراجع.`,
+      confirmText: "حذف نهائي 🗑️",
+      cancelText: "إلغاء",
+      variant: "danger",
+      icon: "⚠️"
+    });
+
+    if (confirmed) {
+      try {
+        await ExamService.deleteExam(examId);
+        showToast("تم حذف الامتحان بنجاح 🗑️", "info");
+        if (activeAdminContainer) {
+          this.loadAdminExams(activeAdminContainer);
+        }
+      } catch (err) {
+        console.error("Delete exam error:", err);
+        showToast(err.message || "تعذر حذف الامتحان.", "error");
+      }
+    }
   }
 };
+

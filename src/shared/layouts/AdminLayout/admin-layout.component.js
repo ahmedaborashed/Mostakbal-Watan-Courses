@@ -66,6 +66,11 @@ export function mountAdminLayout(container, { onLogout, onTabChange }) {
             <span>إدارة شؤون الطلاب</span>
           </button>
 
+          <button type="button" class="sidebar-item" data-section="exams">
+            <span class="side-icon" aria-hidden="true">📝</span>
+            <span>الامتحانات والاختبارات</span>
+          </button>
+
           <div class="sidebar-menu-title">النظام العام</div>
 
           <button type="button" class="sidebar-item" data-section="settings">
@@ -118,6 +123,10 @@ export function mountAdminLayout(container, { onLogout, onTabChange }) {
             <div id="adminStudentsContainer"></div>
           </section>
 
+          <section id="sec-exams" class="tab-content" aria-labelledby="heading-a-exams">
+            <div id="adminExamsContainer"></div>
+          </section>
+
           <section id="sec-settings" class="tab-content" aria-labelledby="heading-a-settings">
             <div class="page-header">
               <div>
@@ -141,6 +150,7 @@ export function mountAdminLayout(container, { onLogout, onTabChange }) {
   const tabLabels = {
     attendance: "📊 الغياب والحضور العام",
     students: "👥 إدارة شؤون الطلاب",
+    exams: "📝 الامتحانات والاختبارات",
     settings: "⚙️ إعدادات النظام والمظهر"
   };
 
