@@ -5,7 +5,8 @@ import { renderStudentLessonCard, renderTeacherLessonCard } from "./components/l
 import { renderLessonFormModal, renderResourceFormRow } from "./components/lesson-form-modal.component.js";
 import { renderLessonDetailsModal, renderLessonDetailsContent } from "./components/lesson-details-modal.component.js";
 import { renderVideoPlayerModal } from "./components/video-player-modal.component.js";
-import { renderLessonFilters } from "./components/lesson-filters.component.js";
+import { renderLessonFilters, renderStudentLessonFilters } from "./components/lesson-filters.component.js";
+import { renderStudentLessonSkeletonGrid } from "./components/lesson-skeleton.component.js";
 import { openModal, closeModal } from "../../shared/components/Modal/modal.component.js";
 import { renderSkeletonCards } from "../../shared/components/Skeleton/skeleton.component.js";
 import { renderEmptyState } from "../../shared/components/EmptyState/empty-state.component.js";
@@ -612,7 +613,7 @@ export const LecturesController = {
     this.currentStudent = currentStudent;
     this.currentStudentContainer = container;
 
-    setHtml(container, renderSkeletonCards(3));
+    setHtml(container, renderStudentLessonSkeletonGrid(3));
 
     try {
       const studentUid = currentStudent?.firestoreId || currentStudent?.id || "";
@@ -631,8 +632,8 @@ export const LecturesController = {
     } catch (err) {
       console.error("Failed to load student lectures:", err);
       setHtml(container, renderErrorState({
-        title: "تعذر تحميل الدروس والمحاضرات",
-        message: err.message,
+        title: "تعذر تحميل المحاضرات",
+        message: "حدث خطأ أثناء جلب البيانات التعليمية، يرجى المحاولة مرة أخرى.",
         retryBtnId: "retryStudentLecturesBtn"
       }));
       document.getElementById("retryStudentLecturesBtn")?.addEventListener("click", () => {
@@ -693,55 +694,25 @@ export const LecturesController = {
     });
 
     // Filters Bar
-    const filtersHtml = `
-      <div class="card mb-4 lesson-filters-card">
-        <div class="lesson-filters-grid" style="grid-template-columns: 2fr 1.5fr 1fr;">
-          <!-- Search Input -->
-          <div class="search-bar-wrapper">
-            <span class="search-bar-icon" aria-hidden="true">🔍</span>
-            <input
-              type="search"
-              id="studentLessonSearchInput"
-              class="form-input search-bar-input"
-              placeholder="ابحث عن درس أو موضوع معين..."
-              value="${escapeHtml(searchQuery)}"
-              aria-label="بحث في الدروس"
-            />
-          </div>
-
-          <!-- Status Filter -->
-          <div class="filter-select-wrapper">
-            <select id="studentLessonStatusFilter" class="form-select" aria-label="تصفية حالة المشاهدة">
-              <option value="ALL" ${statusFilter === "ALL" ? "selected" : ""}>كل الدروس</option>
-              <option value="NEW" ${statusFilter === "NEW" ? "selected" : ""}>دروس جديدة ✨</option>
-              <option value="WATCHED" ${statusFilter === "WATCHED" ? "selected" : ""}>تمت المشاهدة ✓</option>
-            </select>
-          </div>
-
-          <!-- Sort Order -->
-          <div class="filter-select-wrapper">
-            <select id="studentLessonSortOrder" class="form-select" aria-label="ترتيب المحاضرات">
-              <option value="newest" ${sortOrder === "newest" ? "selected" : ""}>الأحدث أولاً ⬇️</option>
-              <option value="oldest" ${sortOrder === "oldest" ? "selected" : ""}>الأقدم أولاً ⬆️</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    `;
+    const filtersHtml = renderStudentLessonFilters({
+      searchQuery,
+      statusFilter,
+      sortOrder
+    });
 
     // Lessons Grid or Empty State
     let listHtml = "";
     if (filtered.length === 0) {
       listHtml = renderEmptyState({
         icon: "📚",
-        title: relevantLectures.length === 0 ? "لا توجد دروس منشورة لمجموعتك حالياً" : "لا توجد دروس تطابق بحثك",
+        title: relevantLectures.length === 0 ? "لا توجد محاضرات متاحة حاليًا" : "لا توجد محاضرات مطابقة للتصفية",
         description: relevantLectures.length === 0
-          ? "سيقوم المعلم بنشر شروحات ومحاضرات تدريبية جديدة قريباً."
+          ? "سيتم عرض الدروس هنا عند توفرها."
           : "يرجى تغيير كلمة البحث أو فلاتر العرض لإظهار الدروس."
       });
     } else {
       listHtml = `
-        <div class="grid-3">
+        <div class="student-lessons-grid">
           ${filtered.map((lec) => {
             const isWatched = watchedIds.has(lec.id) || (lec.videoId && watchedIds.has(lec.videoId));
             return renderStudentLessonCard({ lesson: lec, isWatched });

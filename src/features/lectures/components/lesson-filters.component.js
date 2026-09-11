@@ -3,7 +3,60 @@ import { escapeHtml } from "../../../shared/utils/dom.utils.js";
 import { GROUPS } from "../../../core/constants.js";
 
 /**
- * Returns HTML string for the Lesson Filter & Search Toolbar.
+ * Returns HTML string for the Student Lesson Library compact search & filter toolbar.
+ * Calm, compact educational toolbar containing Search, Status filter, and Sort order.
+ * @param {object} options
+ * @param {string} [options.searchQuery=""]
+ * @param {string} [options.statusFilter="ALL"]
+ * @param {string} [options.sortOrder="newest"]
+ * @returns {string}
+ */
+export function renderStudentLessonFilters({
+  searchQuery = "",
+  statusFilter = "ALL",
+  sortOrder = "newest"
+} = {}) {
+  return `
+    <div class="card mb-4 student-lesson-filters-card">
+      <div class="student-filters-toolbar">
+        <!-- Search Input -->
+        <div class="search-bar-wrapper student-search-wrapper">
+          <span class="search-bar-icon" aria-hidden="true">🔍</span>
+          <input
+            type="search"
+            id="studentLessonSearchInput"
+            class="form-input search-bar-input"
+            placeholder="ابحث عن محاضرة أو موضوع..."
+            value="${escapeHtml(searchQuery)}"
+            aria-label="ابحث عن محاضرة"
+          />
+        </div>
+
+        <div class="student-filters-controls">
+          <!-- Status Filter -->
+          <div class="filter-select-wrapper">
+            <select id="studentLessonStatusFilter" class="form-select" aria-label="تصفية المحاضرات">
+              <option value="ALL" ${statusFilter === "ALL" ? "selected" : ""}>كل الدروس</option>
+              <option value="NEW" ${statusFilter === "NEW" ? "selected" : ""}>لم تتم المشاهدة</option>
+              <option value="WATCHED" ${statusFilter === "WATCHED" ? "selected" : ""}>تمت المشاهدة</option>
+            </select>
+          </div>
+
+          <!-- Sort Order -->
+          <div class="filter-select-wrapper">
+            <select id="studentLessonSortOrder" class="form-select" aria-label="ترتيب المحاضرات">
+              <option value="newest" ${sortOrder === "newest" ? "selected" : ""}>الأحدث أولاً</option>
+              <option value="oldest" ${sortOrder === "oldest" ? "selected" : ""}>الأقدم أولاً</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Returns HTML string for the Teacher / Staff Lesson Filter & Search Toolbar.
  * @param {object} options
  * @param {boolean} [options.isStaff=false]
  * @param {string} [options.searchQuery=""]

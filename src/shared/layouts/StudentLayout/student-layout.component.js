@@ -116,10 +116,10 @@ export function mountStudentLayout(container, { onLogout, onTabChange }) {
         <main class="main-view" role="main">
           <!-- Lectures Section -->
           <section id="sec-videos" class="tab-content active" aria-labelledby="heading-videos">
-            <div class="page-header">
+            <div class="page-header student-lessons-header">
               <div>
-                <h2 id="heading-videos" class="page-title">📚 الداتا والمحاضرات التعليمية</h2>
-                <p class="page-subtitle">شروحات منهج الـ Python والمحاضرات المسجلة والمواد التدريبية.</p>
+                <h2 id="heading-videos" class="page-title">الدروس والمحاضرات</h2>
+                <p class="page-subtitle">استكشف المحاضرات والمواد التعليمية الخاصة بمجموعتك.</p>
               </div>
             </div>
             <div id="videoListContainer"></div>

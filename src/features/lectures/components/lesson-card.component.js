@@ -6,99 +6,130 @@ import { renderButton } from "../../../shared/components/Button/button.component
 import { extractYouTubeId } from "../../../shared/validators/url.validator.js";
 
 /**
- * Returns HTML string for the Student Lesson Card.
+ * Returns HTML string for the Student Lesson Card (Student Lesson Library).
+ * Follows the calm, professional educational LMS UX specifications.
  * @param {object} params
  * @param {object} params.lesson
  * @param {boolean} params.isWatched
  * @returns {string}
  */
 export function renderStudentLessonCard({ lesson, isWatched = false }) {
-  const safeId = escapeHtml(lesson.id);
+  const safeId = escapeHtml(lesson.id || "");
   const safeTitle = escapeHtml(lesson.title || lesson.name || "محاضرة بدون عنوان");
-  const safeDesc = escapeHtml(lesson.description || "لا يوجد وصف للمحاضرة.");
+  const rawDesc = (lesson.description || "").trim();
+  const safeDesc = rawDesc ? escapeHtml(rawDesc) : "لا يوجد وصف مضاف لهذه المحاضرة.";
+  const hasDesc = Boolean(rawDesc);
   const safeDate = escapeHtml(lesson.sessionDate || "—");
-  const safeGroup = escapeHtml(lesson.group || "ALL");
+  const groupName = lesson.group === "ALL" ? "جميع المجموعات" : (lesson.group ? `المجموعة ${lesson.group}` : "عام");
+  const safeGroup = escapeHtml(groupName);
 
   const ytId = extractYouTubeId(lesson.videoUrl || lesson.videoId || "");
   const hasVideo = Boolean(lesson.videoUrl || lesson.videoId);
   const hasFile = Boolean(lesson.fileUrl);
   const resourceCount = Array.isArray(lesson.resources) ? lesson.resources.length : 0;
 
-  const watchedBadge = isWatched
-    ? renderBadge({ text: "تمت المشاهدة", variant: "success", icon: "✓" })
-    : renderBadge({ text: "درس جديد", variant: "primary", icon: "✨" });
-
-  const groupBadge = renderBadge({ text: safeGroup, variant: "gold", icon: "👥" });
-
-  // Thumbnail logic: YouTube thumbnail if available, or calm educational placeholder
-  let thumbnailHtml = "";
+  // 1. Media Preview / Thumbnail (Compact, no wasted empty 30-40% block)
+  let mediaHtml = "";
   if (ytId) {
     const thumbUrl = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
-    thumbnailHtml = `
-      <div class="lesson-card-thumb" style="position:relative;width:100%;height:150px;border-radius:var(--radius-sm);overflow:hidden;margin-bottom:var(--space-3);background:var(--bg-secondary);">
-        <img src="${escapeHtml(thumbUrl)}" alt="${safeTitle}" style="width:100%;height:100%;object-fit:cover;" loading="lazy" />
-        <div class="lesson-thumb-overlay" style="position:absolute;inset:0;background:rgba(0,0,0,0.3);display:grid;place-items:center;transition:background var(--transition-fast);">
-          <div style="width:42px;height:42px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;font-size:1.1rem;box-shadow:var(--shadow-sm);">▶</div>
+    mediaHtml = `
+      <div class="student-lesson-media-wrap">
+        <div class="student-lesson-thumb">
+          <img src="${escapeHtml(thumbUrl)}" alt="${safeTitle}" loading="lazy" />
+          <div class="student-lesson-thumb-overlay" aria-hidden="true">
+            <span class="student-lesson-play-pill">▶</span>
+          </div>
         </div>
       </div>
     `;
+  } else if (hasVideo) {
+    mediaHtml = `
+      <div class="student-lesson-media-strip">
+        <span class="media-strip-icon" aria-hidden="true">▶</span>
+        <span class="media-strip-text">فيديو تعليمي مرفق</span>
+      </div>
+    `;
   } else {
-    thumbnailHtml = `
-      <div class="lesson-card-thumb" style="position:relative;width:100%;height:110px;border-radius:var(--radius-sm);background:var(--surface-secondary);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;margin-bottom:var(--space-3);gap:0.25rem;">
-        <span style="font-size:2rem;" aria-hidden="true">${hasVideo ? "🎥" : "📚"}</span>
-        <span class="text-xs text-muted">${hasVideo ? "فيديو تعليمي مسجل" : "جلسة تدريبية"}</span>
+    // No video: compact notice, NOT wasting 30-40% card space
+    mediaHtml = `
+      <div class="student-lesson-no-video">
+        <span aria-hidden="true">🎥</span>
+        <span>لا يوجد فيديو لهذه المحاضرة</span>
       </div>
     `;
   }
 
-  // Indicators row
-  const indicators = [];
+  // 2. Top Content Type & Availability Row (Compact, not multiple giant badges)
+  const availChips = [];
   if (hasVideo) {
-    indicators.push(`<span class="lesson-indicator-chip" title="فيديو متوفر"><span aria-hidden="true">🎥</span> فيديو</span>`);
+    availChips.push(`<span class="lesson-avail-chip has-video" title="فيديو مسجل متاح"><span aria-hidden="true">🎥</span> فيديو</span>`);
   }
   if (hasFile) {
-    indicators.push(`<span class="lesson-indicator-chip" title="ملف تعليمي مرفق"><span aria-hidden="true">📄</span> ملف</span>`);
+    availChips.push(`<span class="lesson-avail-chip has-file" title="ملف تعليمي متاح"><span aria-hidden="true">📄</span> ملف متاح</span>`);
   }
   if (resourceCount > 0) {
-    indicators.push(`<span class="lesson-indicator-chip" title="${resourceCount} مصادر إضافية"><span aria-hidden="true">📦</span> ${resourceCount} مصادر</span>`);
+    availChips.push(`<span class="lesson-avail-chip has-resources" title="${resourceCount} مصادر إضافية"><span aria-hidden="true">📦</span> ${resourceCount} مصادر</span>`);
   }
 
-  const contentHtml = `
-    ${thumbnailHtml}
-    <div class="d-flex items-center justify-between mb-2 gap-2 flex-wrap">
-      <div class="d-flex items-center gap-1">
-        ${watchedBadge}
-        ${groupBadge}
+  // 3. Status Indicators (Muted, non-neon, informative)
+  const statusBadgeHtml = isWatched
+    ? `<span class="lesson-status-chip is-watched"><span aria-hidden="true">✓</span> تمت المشاهدة</span>`
+    : `<span class="lesson-status-chip is-unwatched"><span aria-hidden="true">●</span> لم تتم المشاهدة</span>`;
+
+  return `
+    <article class="card student-lesson-card" data-lesson-id="${safeId}">
+      ${mediaHtml}
+
+      <div class="student-lesson-body">
+        <!-- Availability Chips -->
+        <div class="student-lesson-avail-row" aria-label="المحتويات المتوفرة">
+          ${availChips.join("")}
+        </div>
+
+        <!-- Title -->
+        <h3 class="student-lesson-title" title="${safeTitle}">
+          ${safeTitle}
+        </h3>
+
+        <!-- Description (Clamped 2-3 lines with subtle fallback) -->
+        <p class="student-lesson-desc ${!hasDesc ? 'is-fallback' : ''}">
+          ${safeDesc}
+        </p>
+
+        <!-- Compact Metadata Row (Date & Group) -->
+        <div class="student-lesson-meta-row">
+          <span class="meta-item" title="تاريخ المحاضرة">
+            <span class="meta-icon" aria-hidden="true">📅</span>
+            <span>${safeDate}</span>
+          </span>
+          <span class="meta-separator" aria-hidden="true">·</span>
+          <span class="meta-item" title="المجموعة المستهدفة">
+            <span class="meta-icon" aria-hidden="true">👥</span>
+            <span>${safeGroup}</span>
+          </span>
+        </div>
+
+        <!-- Content Status (Watched & File availability) -->
+        <div class="student-lesson-status-row">
+          ${statusBadgeHtml}
+          ${hasFile ? `<span class="lesson-file-status"><span aria-hidden="true">📄</span> ملف متاح</span>` : ""}
+        </div>
       </div>
-      <span class="text-xs text-muted" style="display:inline-flex;align-items:center;gap:0.25rem;">
-        <span aria-hidden="true">📅</span> ${safeDate}
-      </span>
-    </div>
 
-    <h4 class="font-bold mb-2 text-primary" style="font-size:1.05rem;line-height:1.4;">${safeTitle}</h4>
-
-    <p class="text-xs text-secondary mb-3" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5;min-height:2.4em;">
-      ${safeDesc}
-    </p>
-
-    <div class="d-flex items-center gap-2 mb-1 flex-wrap">
-      ${indicators.join("")}
-    </div>
+      <!-- Primary Action -->
+      <div class="student-lesson-footer">
+        <button
+          type="button"
+          class="btn btn-primary w-full student-lesson-primary-btn"
+          data-open-student-lesson="${safeId}"
+          aria-label="فتح المحاضرة: ${safeTitle}"
+        >
+          <span>فتح المحاضرة</span>
+          <span class="btn-arrow" aria-hidden="true">←</span>
+        </button>
+      </div>
+    </article>
   `;
-
-  const footerHtml = renderButton({
-    text: "فتح المحاضرة ←",
-    variant: isWatched ? "outline" : "primary",
-    className: "w-full",
-    extraAttrs: `data-open-student-lesson="${safeId}" aria-label="فتح تفاصيل المحاضرة: ${safeTitle}"`
-  });
-
-  return renderCard({
-    content: contentHtml,
-    footer: footerHtml,
-    interactive: true,
-    className: "student-lesson-card"
-  });
 }
 
 /**
