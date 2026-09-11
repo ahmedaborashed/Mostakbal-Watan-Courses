@@ -1952,5 +1952,22 @@
   }
 }
 
+/* Distraction-Free Exam Mode */
+body.is-in-exam-mode .sidebar,
+body.is-in-exam-mode .topbar,
+body.is-in-exam-mode .mobile-header,
+body.is-in-exam-mode #studentExamsPageHeader {
+  display: none !important;
+}
 
+body.is-in-exam-mode .main-wrapper {
+  margin-inline-start: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
 
+body.is-in-exam-mode .main-view {
+  padding: var(--space-4) var(--space-4) var(--space-8) !important;
+  max-width: 860px;
+  margin-inline: auto;
+}

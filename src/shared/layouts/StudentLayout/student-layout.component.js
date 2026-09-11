@@ -127,10 +127,10 @@ export function mountStudentLayout(container, { onLogout, onTabChange }) {
 
           <!-- Exams Section -->
           <section id="sec-exams" class="tab-content" aria-labelledby="heading-exams">
-            <div class="page-header">
+            <div class="page-header" id="studentExamsPageHeader">
               <div>
-                <h2 id="heading-exams" class="page-title">📝 الاختبارات والتقييمات</h2>
-                <p class="page-subtitle">اختبر مستواك البرمجي، تابع نتائجك السابقة ودرجاتك بالتفصيل.</p>
+                <h2 id="heading-exams" class="page-title">📝 الامتحانات</h2>
+                <p class="page-subtitle">الامتحانات المتاحة لك</p>
               </div>
             </div>
             <div id="examListContainer"></div>

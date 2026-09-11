@@ -4,6 +4,11 @@ import { examState } from "./exam.state.js";
 import { renderStudentExamCard, renderTeacherExamCard, renderAdminExamCard } from "./components/exam-card.component.js";
 import { renderExamTimer } from "./components/exam-timer.component.js";
 import { renderExamQuestion } from "./components/exam-question.component.js";
+import { renderExamQuestionNavigator } from "./components/exam-question-navigator.component.js";
+import { renderExamProgress } from "./components/exam-progress.component.js";
+import { renderExamSubmitDialog, EXAM_SUBMIT_MODAL_ID } from "./components/exam-submit-dialog.component.js";
+import { renderExamResult } from "./components/exam-result.component.js";
+import { renderExamListSkeleton, renderExamQuestionSkeleton } from "./components/exam-skeleton.component.js";
 import { renderAdminExamsView } from "./components/exam-list.component.js";
 import {
   renderExamFormModal,
@@ -14,7 +19,10 @@ import {
 import {
   renderExamDetailsModal,
   renderExamDetailsContent,
-  EXAM_DETAILS_MODAL_ID
+  EXAM_DETAILS_MODAL_ID,
+  renderStudentExamDetailsModal,
+  renderStudentExamDetailsContent,
+  STUDENT_EXAM_DETAILS_MODAL_ID
 } from "./components/exam-details.component.js";
 import {
   renderQuestionsContainer,
@@ -52,54 +60,63 @@ let draggedQuestionIdx = null;
 
 export const ExamController = {
   /**
-   * Loads exams for student dashboard.
+   * Ensures student exam modals are injected into the DOM once.
+   */
+  ensureStudentModals() {
+    if (!document.getElementById(STUDENT_EXAM_DETAILS_MODAL_ID)) {
+      document.body.insertAdjacentHTML("beforeend", renderStudentExamDetailsModal());
+    }
+    if (!document.getElementById("examSubmitConfirmModalWrapper")) {
+      const wrapper = document.createElement("div");
+      wrapper.id = "examSubmitConfirmModalWrapper";
+      document.body.appendChild(wrapper);
+    }
+  },
+
+  /**
+   * Loads exams for student dashboard (authorized available exams only).
    */
   async loadStudentExams(containerId, currentStudent) {
     const container = typeof containerId === "string" ? document.getElementById(containerId) : containerId;
     if (!container) return;
 
-    setHtml(container, renderLoader({ text: "جاري تحميل الامتحانات... 📝" }));
+    // Reset any lingering exam mode body classes
+    document.body.classList.remove("is-in-exam-mode");
+    this.ensureStudentModals();
+
+    setHtml(container, renderExamListSkeleton(3));
 
     try {
       const studentUid = currentStudent?.firestoreId || currentStudent?.id || "";
       const studentGroup = currentStudent?.studentGroup || currentStudent?.group || "ALL";
 
-      const allExams = await ExamService.getAllExams();
-      examState.set("exams", allExams);
+      const availableExams = await ExamService.getAvailableExamsForStudent(studentGroup, studentUid);
+      examState.set("availableExams", availableExams);
 
-      // Filter exams for student group
-      const relevantExams = allExams.filter((e) => !e.group || e.group === "ALL" || e.group === studentGroup);
-
-      // Check results for each exam in parallel
-      const resultsMap = new Map();
-      await Promise.all(
-        relevantExams.map(async (exam) => {
-          const res = await ExamService.getResult(exam.id, studentUid);
-          if (res) resultsMap.set(exam.id, res);
-        })
-      );
-
-      if (relevantExams.length === 0) {
-        setHtml(container, renderEmptyState({
-          icon: "📝",
-          title: "لا توجد امتحانات متاحة حالياً",
-          description: "سيتم إشعارك فور قيام المعلم بفتح اختبار جديد لمجموعتك."
-        }));
+      if (availableExams.length === 0) {
+        setHtml(
+          container,
+          renderEmptyState({
+            icon: "📝",
+            title: "لا توجد امتحانات متاحة حاليًا.",
+            description: "سيتم عرض الامتحانات هنا عند توفرها."
+          })
+        );
         return;
       }
 
       const gridHtml = `
         <div class="grid-3">
-          ${relevantExams.map((exam) => renderStudentExamCard({ exam, result: resultsMap.get(exam.id) })).join("")}
+          ${availableExams.map((exam) => renderStudentExamCard({ exam, result: exam.result })).join("")}
         </div>
       `;
       setHtml(container, gridHtml);
 
-      // Bind start exam buttons
-      container.querySelectorAll("[data-start-exam]").forEach((btn) => {
+      // Bind open exam details
+      container.querySelectorAll("[data-open-exam-details]").forEach((btn) => {
         btn.addEventListener("click", () => {
-          const examId = btn.getAttribute("data-start-exam");
-          this.startExamSession(examId, currentStudent);
+          const examId = btn.getAttribute("data-open-exam-details");
+          this.openStudentExamDetails(examId, currentStudent);
         });
       });
 
@@ -107,10 +124,15 @@ export const ExamController = {
       container.querySelectorAll("[data-view-exam-result]").forEach((btn) => {
         btn.addEventListener("click", () => {
           const examId = btn.getAttribute("data-view-exam-result");
-          const result = resultsMap.get(examId);
-          if (result) {
-            showToast(`نتيجتك في الامتحان: ${result.score} من ${result.totalQuestions || 100}`, "info", 4500);
-          }
+          this.showExamResult(examId, currentStudent);
+        });
+      });
+
+      // Bind direct start buttons if any
+      container.querySelectorAll("[data-start-exam]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const examId = btn.getAttribute("data-start-exam");
+          this.confirmStartExam(examId, currentStudent);
         });
       });
 
@@ -118,11 +140,14 @@ export const ExamController = {
       this.resumeExamIfActive(currentStudent);
     } catch (err) {
       console.error("Failed to load student exams:", err);
-      setHtml(container, renderErrorState({
-        title: "تعذر تحميل الامتحانات",
-        message: err.message,
-        retryBtnId: "retryStudentExamsBtn"
-      }));
+      setHtml(
+        container,
+        renderErrorState({
+          title: "تعذر تحميل الامتحانات",
+          message: err.message || "تعذر تحميل الامتحانات المتاحة لك.",
+          retryBtnId: "retryStudentExamsBtn"
+        })
+      );
       document.getElementById("retryStudentExamsBtn")?.addEventListener("click", () => {
         this.loadStudentExams(containerId, currentStudent);
       });
@@ -130,7 +155,86 @@ export const ExamController = {
   },
 
   /**
-   * Initiates or resumes taking an exam in distraction-free mode.
+   * Opens student exam details modal.
+   */
+  async openStudentExamDetails(examId, currentStudent) {
+    this.ensureStudentModals();
+    openModal(STUDENT_EXAM_DETAILS_MODAL_ID);
+
+    const bodySlot = document.getElementById("studentExamDetailsBodySlot");
+    if (bodySlot) {
+      setHtml(bodySlot, renderLoader({ text: "جاري تجهيز تفاصيل الامتحان... ⏳" }));
+    }
+
+    try {
+      const studentUid = currentStudent?.firestoreId || currentStudent?.id || "";
+      const availableExams = examState.get("availableExams") || [];
+      let exam = availableExams.find((e) => e.id === examId);
+
+      if (!exam) {
+        exam = await ExamService.getExamById(examId);
+      }
+
+      let result = exam?.result;
+      if (!result && studentUid) {
+        result = await ExamService.getResult(examId, studentUid);
+      }
+
+      if (bodySlot) {
+        setHtml(bodySlot, renderStudentExamDetailsContent({ exam, result }));
+
+        // Bind start action inside details modal
+        bodySlot.querySelector("[data-action-start-exam]")?.addEventListener("click", () => {
+          closeModal(STUDENT_EXAM_DETAILS_MODAL_ID);
+          this.confirmStartExam(examId, currentStudent);
+        });
+
+        // Bind view result action inside details modal
+        bodySlot.querySelector("[data-action-view-result]")?.addEventListener("click", () => {
+          closeModal(STUDENT_EXAM_DETAILS_MODAL_ID);
+          this.showExamResult(examId, currentStudent);
+        });
+      }
+    } catch (err) {
+      console.error("Open exam details error:", err);
+      if (bodySlot) {
+        setHtml(
+          bodySlot,
+          renderErrorState({
+            title: "تعذر عرض تفاصيل الامتحان",
+            message: err.message
+          })
+        );
+      }
+    }
+  },
+
+  /**
+   * Shows confirmation dialog before starting official attempt.
+   */
+  async confirmStartExam(examId, currentStudent) {
+    const availableExams = examState.get("availableExams") || [];
+    const exam = availableExams.find((e) => e.id === examId) || {};
+    const durationMin = Number(exam.duration) || 30;
+    const qCount = exam.totalQuestions || "—";
+    const examTitle = exam.title || "الامتحان";
+
+    const confirmed = await showConfirmDialog({
+      title: "بدء الامتحان",
+      message: `أنت على وشك بدء "${examTitle}".\nالمدة: ${durationMin} دقيقة · عدد الأسئلة: ${qCount}\nبمجرد البدء سيبدأ احتساب الوقت الرسمي عبر السيرفر.`,
+      confirmText: "بدء الامتحان 🚀",
+      cancelText: "إلغاء",
+      variant: "primary",
+      icon: "⏱️"
+    });
+
+    if (confirmed) {
+      this.startExamSession(examId, currentStudent);
+    }
+  },
+
+  /**
+   * Initiates student exam taking session in distraction-free Exam Mode.
    */
   async startExamSession(examId, currentStudent) {
     const listContainer = document.getElementById("examListContainer");
@@ -139,195 +243,447 @@ export const ExamController = {
 
     if (listContainer) listContainer.classList.add("d-none");
     activeContainer.classList.remove("d-none");
-    setHtml(activeContainer, renderLoader({ text: "جاري فتح الامتحان وتجهيز الأسئلة... ⏳" }));
+    document.body.classList.add("is-in-exam-mode");
+
+    setHtml(activeContainer, renderExamQuestionSkeleton());
 
     try {
-      // 1. Tell server student is starting attempt
-      await ExamService.startAttempt(examId);
+      // 1. Tell server student is starting attempt (official timer is created on server)
+      const attemptData = await ExamService.startAttempt(examId);
 
-      // 2. Fetch sanitized questions
+      // 2. Fetch sanitized questions (answers stripped on server)
       const examData = await ExamService.getExamForStudent(examId);
-      const questions = examData.questions || [];
-      const durationMin = Number(examData.duration) || 15;
+      const questions = Array.isArray(examData.questions) ? examData.questions : [];
+      if (questions.length === 0) {
+        throw new Error("لا توجد أسئلة مسجلة في هذا الامتحان حالياً.");
+      }
 
-      // 3. Setup draft and session in LocalStorage
-      const draftKey = `${STORAGE_KEYS.EXAM_DRAFT_PREFIX}${currentStudent.id || currentStudent.firestoreId}_${examId}`;
+      const studentUid = currentStudent.id || currentStudent.firestoreId;
+      const draftKey = `${STORAGE_KEYS.EXAM_DRAFT_PREFIX}${studentUid}_${examId}`;
       const savedDraft = StorageUtils.get(draftKey, {});
       StorageUtils.set(STORAGE_KEYS.CURRENT_EXAM, examId);
 
       examState.set("activeExam", examData);
       examState.set("questions", questions);
       examState.set("answers", savedDraft);
+      examState.set("currentQuestionIndex", 0);
+      examState.set("activeAttempt", attemptData);
 
-      // Count answered questions
-      const answeredCount = Object.keys(savedDraft).filter((k) => savedDraft[k] !== "").length;
-      const progressPercent = questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
+      // 3. Render Exam Mode Shell
+      this.renderExamModeView(activeContainer, examId, currentStudent);
 
-      // Render Active Exam Screen
-      const headerHtml = `
-        <div class="card mb-6" style="background:var(--color-surface-elevated);border-color:var(--color-border-primary);position:sticky;top:70px;z-index:40;box-shadow:var(--shadow-md);">
-          <div class="d-flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <span class="badge badge-gold mb-1">جلسة امتحان نشطة</span>
-              <h2 style="font-size:1.4rem;font-weight:900;color:var(--color-text-primary);margin:0;">${escapeHtml(examData.title || "الامتحان")}</h2>
-            </div>
-            <div id="examTimerSlot">
-              ${renderExamTimer({ seconds: durationMin * 60 })}
-            </div>
-          </div>
-          <div class="mt-3" id="examProgressSlot">
-            ${renderProgressBar({
-              label: `تمت الإجابة على ${answeredCount} من أصل ${questions.length} سؤال`,
-              percentage: progressPercent
-            })}
-          </div>
-        </div>
-      `;
+      // 4. Start authoritative timer countdown based on server expiresAt
+      this.initExamTimer(examId, currentStudent, attemptData.expiresAt);
 
-      const questionsHtml = questions
-        .map((q, idx) => renderExamQuestion({
-          question: q,
-          index: idx,
-          currentAnswer: savedDraft[idx] ?? "",
-          totalQuestions: questions.length
-        }))
-        .join("");
-
-      const submitSectionHtml = `
-        <div class="card text-center p-6 mt-6" style="max-width:640px;margin-inline:auto;">
-          <h3 class="font-extrabold mb-2" style="font-size:1.25rem;">جاهز لتسليم الاختبار؟</h3>
-          <p class="text-muted text-sm mb-4">يرجى مراجعة إجاباتك جيداً. بعد الضغط على تأكيد الإرسال سيتم تقييم إجاباتك فوراً ولن تتمكن من التعديل.</p>
-          ${renderButton({
-            id: "submitExamFinalBtn",
-            text: "تسليم الامتحان وتأكيد الإرسال 🚀",
-            variant: "primary",
-            className: "btn-lg w-full",
-            extraAttrs: 'style="max-width:360px;"'
-          })}
-        </div>
-      `;
-
-      setHtml(activeContainer, headerHtml + questionsHtml + submitSectionHtml);
-
-      // Window scroll to top for exam start
       window.scrollTo({ top: 0, behavior: "smooth" });
-
-      // 4. Start timer countdown
-      let remaining = durationMin * 60;
-      clearInterval(timerInterval);
-      timerInterval = setInterval(() => {
-        remaining -= 1;
-        const display = document.getElementById("examCountdownDisplay");
-        if (display) {
-          display.textContent = formatTimer(remaining);
-          if (remaining <= 120) {
-            display.style.color = "var(--color-danger)";
-            const wrapper = document.getElementById("examTimerWrapper");
-            if (wrapper) wrapper.style.borderColor = "var(--color-danger)";
-          }
-        }
-
-        if (remaining <= 0) {
-          clearInterval(timerInterval);
-          showToast("انتهى وقت الامتحان! يتم تسليم إجاباتك تلقائياً ⏳", "warning", 5000);
-          this.submitExamSession(examId, currentStudent, true);
-        }
-      }, 1000);
-
-      // 5. Bind question input change events to auto-save drafts
-      activeContainer.addEventListener("input", (e) => {
-        const input = e.target;
-        const qIdx = input.getAttribute("data-question-index");
-        if (qIdx !== null) {
-          const currentAnswers = examState.get("answers") || {};
-          currentAnswers[qIdx] = input.value;
-          examState.set("answers", currentAnswers);
-          StorageUtils.set(draftKey, currentAnswers);
-
-          // Update progress bar
-          const updatedAnswered = Object.keys(currentAnswers).filter((k) => currentAnswers[k] !== "").length;
-          const updatedPercent = questions.length > 0 ? (updatedAnswered / questions.length) * 100 : 0;
-          const progressSlot = document.getElementById("examProgressSlot");
-          if (progressSlot) {
-            progressSlot.innerHTML = renderProgressBar({
-              label: `تمت الإجابة على ${updatedAnswered} من أصل ${questions.length} سؤال`,
-              percentage: updatedPercent
-            });
-          }
-        }
-      });
-
-      // 6. Bind submit button with confirm dialog
-      document.getElementById("submitExamFinalBtn")?.addEventListener("click", async () => {
-        const confirmed = await showConfirmDialog({
-          title: "تسليم الامتحان النهائي",
-          message: "هل أنت متأكد من رغبتك في إنهاء الامتحان وتسليم إجاباتك؟ لن يمكنك إعادة الاختبار بعد ذلك.",
-          confirmText: "نعم، تسليم الامتحان",
-          cancelText: "متابعة الإجابة",
-          variant: "primary",
-          icon: "📝"
-        });
-
-        if (confirmed) {
-          this.submitExamSession(examId, currentStudent, false);
-        }
-      });
     } catch (err) {
       console.error("Start exam error:", err);
-      showToast(err.message, "error");
+      showToast(err.message || "تعذر بدء الامتحان.", "error");
+      this.cleanupExamSession();
       activeContainer.classList.add("d-none");
-      if (listContainer) listContainer.classList.remove("d-none");
+      if (listContainer) {
+        listContainer.classList.remove("d-none");
+        this.loadStudentExams(listContainer, currentStudent);
+      }
     }
+  },
+
+  /**
+   * Renders single-question Exam Mode layout.
+   */
+  renderExamModeView(activeContainer, examId, currentStudent) {
+    const examData = examState.get("activeExam") || {};
+    const questions = examState.get("questions") || [];
+    const answers = examState.get("answers") || {};
+    const currentIndex = examState.get("currentQuestionIndex") || 0;
+    const currentQ = questions[currentIndex];
+
+    // Compute answered count
+    const answeredCount = questions.filter(
+      (_, idx) => answers[idx] !== undefined && answers[idx] !== null && String(answers[idx]).trim() !== ""
+    ).length;
+
+    const remainingSec = this.getRemainingSeconds();
+
+    const shellHtml = `
+      <div class="exam-mode-shell">
+        <!-- Header: Title, Official Timer, Progress -->
+        <header class="exam-mode-header mb-6">
+          <div class="d-flex items-center justify-between flex-wrap gap-3 mb-3">
+            <div class="exam-title-badge-group">
+              <span class="badge badge-gold font-bold mb-1">جلسة امتحان رسمية</span>
+              <h2 class="exam-mode-title m-0">${escapeHtml(examData.title || "الامتحان")}</h2>
+            </div>
+            <div id="examTimerSlot">
+              ${renderExamTimer({ seconds: remainingSec })}
+            </div>
+          </div>
+          <div id="examProgressSlot">
+            ${renderExamProgress({ answeredCount, totalQuestions: questions.length })}
+          </div>
+        </header>
+
+        <!-- Question Navigator Grid -->
+        <div id="examNavigatorSlot" class="mb-6">
+          ${renderExamQuestionNavigator({ totalQuestions: questions.length, currentIndex, answers })}
+        </div>
+
+        <!-- Single Question Viewport -->
+        <main id="examQuestionViewportSlot" class="mb-6" aria-live="polite">
+          ${renderExamQuestion({
+            question: currentQ,
+            index: currentIndex,
+            currentAnswer: answers[currentIndex] ?? "",
+            totalQuestions: questions.length
+          })}
+        </main>
+
+        <!-- Navigation Footer -->
+        <footer class="exam-mode-nav-bar card p-4">
+          <div class="d-flex items-center justify-between flex-wrap gap-3">
+            <div class="d-flex items-center gap-2">
+              ${renderButton({
+                id: "btnPrevQuestion",
+                text: "السابق ↵",
+                variant: "secondary",
+                className: "btn-md",
+                extraAttrs: currentIndex === 0 ? "disabled" : ""
+              })}
+              <span id="navQuestionIndicator" class="text-xs text-muted font-bold px-2">
+                السؤال ${currentIndex + 1} من ${questions.length}
+              </span>
+              ${renderButton({
+                id: "btnNextQuestion",
+                text: "التالي ↳",
+                variant: "secondary",
+                className: "btn-md",
+                extraAttrs: currentIndex === questions.length - 1 ? "disabled" : ""
+              })}
+            </div>
+
+            <div class="d-flex items-center gap-2">
+              ${renderButton({
+                id: "btnOpenSubmitExamModal",
+                text: "تسليم الامتحان 🚀",
+                variant: "primary",
+                className: "btn-md"
+              })}
+            </div>
+          </div>
+        </footer>
+      </div>
+    `;
+
+    setHtml(activeContainer, shellHtml);
+    this.bindExamModeEvents(activeContainer, examId, currentStudent);
+  },
+
+  /**
+   * Binds interaction events for active exam mode.
+   */
+  bindExamModeEvents(activeContainer, examId, currentStudent) {
+    const studentUid = currentStudent.id || currentStudent.firestoreId;
+    const draftKey = `${STORAGE_KEYS.EXAM_DRAFT_PREFIX}${studentUid}_${examId}`;
+
+    // 1. Listen for answer inputs (radio MCQ & textarea Essay)
+    activeContainer.addEventListener("input", (e) => {
+      const input = e.target;
+      const qIdx = input.getAttribute("data-question-index");
+      if (qIdx === null) return;
+
+      const idx = Number(qIdx);
+      const currentAnswers = examState.get("answers") || {};
+      const questions = examState.get("questions") || [];
+
+      if (input.type === "radio") {
+        currentAnswers[idx] = Number(input.value);
+        // Visual radio card highlight update
+        const optionCards = activeContainer.querySelectorAll(".exam-option-card");
+        optionCards.forEach((card) => card.classList.remove("is-selected"));
+        const parentLabel = input.closest(".exam-option-card");
+        if (parentLabel) parentLabel.classList.add("is-selected");
+      } else if (input.tagName.toLowerCase() === "textarea") {
+        currentAnswers[idx] = input.value;
+        const charCountEl = document.getElementById("essayCharCount");
+        if (charCountEl) {
+          charCountEl.textContent = `${input.value.length} حرف`;
+        }
+      }
+
+      examState.set("answers", currentAnswers);
+      StorageUtils.set(draftKey, currentAnswers);
+
+      // Update progress bar
+      const answeredCount = questions.filter(
+        (_, i) => currentAnswers[i] !== undefined && currentAnswers[i] !== null && String(currentAnswers[i]).trim() !== ""
+      ).length;
+      const progressSlot = document.getElementById("examProgressSlot");
+      if (progressSlot) {
+        setHtml(progressSlot, renderExamProgress({ answeredCount, totalQuestions: questions.length }));
+      }
+
+      // Update question navigator pill without re-rendering entire screen
+      const currentQIdx = examState.get("currentQuestionIndex") || 0;
+      const navSlot = document.getElementById("examNavigatorSlot");
+      if (navSlot) {
+        setHtml(
+          navSlot,
+          renderExamQuestionNavigator({
+            totalQuestions: questions.length,
+            currentIndex: currentQIdx,
+            answers: currentAnswers
+          })
+        );
+      }
+    });
+
+    // 2. Previous question
+    activeContainer.querySelector("#btnPrevQuestion")?.addEventListener("click", () => {
+      const currentIdx = examState.get("currentQuestionIndex") || 0;
+      if (currentIdx > 0) {
+        this.selectQuestion(currentIdx - 1, currentStudent);
+      }
+    });
+
+    // 3. Next question
+    activeContainer.querySelector("#btnNextQuestion")?.addEventListener("click", () => {
+      const questions = examState.get("questions") || [];
+      const currentIdx = examState.get("currentQuestionIndex") || 0;
+      if (currentIdx < questions.length - 1) {
+        this.selectQuestion(currentIdx + 1, currentStudent);
+      }
+    });
+
+    // 4. Question navigator click delegation
+    activeContainer.addEventListener("click", (e) => {
+      const pill = e.target.closest("[data-nav-question-index]");
+      if (pill) {
+        const targetIdx = Number(pill.getAttribute("data-nav-question-index"));
+        this.selectQuestion(targetIdx, currentStudent);
+      }
+    });
+
+    // 5. Open submit confirmation modal
+    activeContainer.querySelector("#btnOpenSubmitExamModal")?.addEventListener("click", () => {
+      this.openSubmitExamModal(examId, currentStudent);
+    });
+  },
+
+  /**
+   * Switches active single-question view.
+   */
+  selectQuestion(targetIndex, currentStudent) {
+    const questions = examState.get("questions") || [];
+    if (targetIndex < 0 || targetIndex >= questions.length) return;
+
+    examState.set("currentQuestionIndex", targetIndex);
+    const answers = examState.get("answers") || {};
+    const question = questions[targetIndex];
+
+    // 1. Re-render question viewport with subtle motion
+    const viewport = document.getElementById("examQuestionViewportSlot");
+    if (viewport) {
+      setHtml(
+        viewport,
+        renderExamQuestion({
+          question,
+          index: targetIndex,
+          currentAnswer: answers[targetIndex] ?? "",
+          totalQuestions: questions.length
+        })
+      );
+    }
+
+    // 2. Update navigator state
+    const navSlot = document.getElementById("examNavigatorSlot");
+    if (navSlot) {
+      setHtml(
+        navSlot,
+        renderExamQuestionNavigator({
+          totalQuestions: questions.length,
+          currentIndex: targetIndex,
+          answers
+        })
+      );
+    }
+
+    // 3. Update footer navigation buttons
+    const prevBtn = document.getElementById("btnPrevQuestion");
+    const nextBtn = document.getElementById("btnNextQuestion");
+    const indicator = document.getElementById("navQuestionIndicator");
+
+    if (prevBtn) prevBtn.disabled = targetIndex === 0;
+    if (nextBtn) nextBtn.disabled = targetIndex === questions.length - 1;
+    if (indicator) indicator.textContent = `السؤال ${targetIndex + 1} من ${questions.length}`;
+
+    // Focus on question title for a11y
+    viewport?.querySelector(".exam-question-title")?.focus?.();
+  },
+
+  /**
+   * Initializes authoritative timer countdown based on server expiresAt timestamp.
+   */
+  initExamTimer(examId, currentStudent, expiresAt) {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+
+    let expiresTimestamp = 0;
+    if (typeof expiresAt?.toDate === "function") {
+      expiresTimestamp = expiresAt.toDate().getTime();
+    } else if (expiresAt instanceof Date) {
+      expiresTimestamp = expiresAt.getTime();
+    } else if (typeof expiresAt === "string" || typeof expiresAt === "number") {
+      expiresTimestamp = new Date(expiresAt).getTime();
+    }
+
+    // If invalid timestamp fallback to 30 mins
+    if (!expiresTimestamp || isNaN(expiresTimestamp)) {
+      expiresTimestamp = Date.now() + 30 * 60 * 1000;
+    }
+
+    this._expiresTimestamp = expiresTimestamp;
+
+    const tick = () => {
+      const now = Date.now();
+      const remainingSec = Math.max(0, Math.floor((expiresTimestamp - now) / 1000));
+
+      const display = document.getElementById("examCountdownDisplay");
+      const wrapper = document.getElementById("examTimerWrapper");
+
+      if (display) {
+        display.textContent = formatTimer(remainingSec);
+      }
+
+      if (wrapper) {
+        wrapper.classList.remove("timer-normal", "timer-warning", "timer-critical");
+        if (remainingSec <= 60) {
+          wrapper.classList.add("timer-critical");
+        } else if (remainingSec <= 300) {
+          wrapper.classList.add("timer-warning");
+        } else {
+          wrapper.classList.add("timer-normal");
+        }
+      }
+
+      if (remainingSec <= 0) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        showToast("انتهى وقت الامتحان! يتم تسليم إجاباتك تلقائياً ⏳", "warning", 5000);
+        this.submitExamSession(examId, currentStudent, true);
+      }
+    };
+
+    tick();
+    timerInterval = setInterval(tick, 1000);
+  },
+
+  /**
+   * Returns remaining seconds based on server expiresAt.
+   */
+  getRemainingSeconds() {
+    if (!this._expiresTimestamp) return 0;
+    return Math.max(0, Math.floor((this._expiresTimestamp - Date.now()) / 1000));
+  },
+
+  /**
+   * Opens the confirmation dialog showing answered vs unanswered questions before final submission.
+   */
+  openSubmitExamModal(examId, currentStudent) {
+    const questions = examState.get("questions") || [];
+    const answers = examState.get("answers") || {};
+    const answeredCount = questions.filter(
+      (_, idx) =>
+        answers[idx] !== undefined &&
+        answers[idx] !== null &&
+        String(answers[idx]).trim() !== ""
+    ).length;
+    const totalQuestions = questions.length;
+
+    let wrapper = document.getElementById("examSubmitConfirmModalWrapper");
+    if (!wrapper) {
+      wrapper = document.createElement("div");
+      wrapper.id = "examSubmitConfirmModalWrapper";
+      document.body.appendChild(wrapper);
+    }
+
+    setHtml(wrapper, renderExamSubmitDialog({ answeredCount, totalQuestions }));
+
+    openModal(EXAM_SUBMIT_MODAL_ID);
+
+    document.getElementById("cancelSubmitExamBtn")?.addEventListener("click", () => {
+      closeModal(EXAM_SUBMIT_MODAL_ID);
+    });
+
+    document.getElementById("confirmFinalSubmitExamBtn")?.addEventListener("click", () => {
+      closeModal(EXAM_SUBMIT_MODAL_ID);
+      this.submitExamSession(examId, currentStudent, false);
+    });
   },
 
   /**
    * Submits student exam answers for server evaluation.
    */
   async submitExamSession(examId, currentStudent, isAuto = false) {
-    clearInterval(timerInterval);
-    const activeContainer = document.getElementById("activeExamContainer");
-    const submitBtn = document.getElementById("submitExamFinalBtn");
-
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.classList.add("is-loading");
-      submitBtn.innerText = "جاري التصحيح واعتماد النتيجة... ⏳";
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
     }
+
+    const activeContainer = document.getElementById("activeExamContainer");
+    if (!activeContainer) return;
+
+    // Lock UI completely
+    const allInputs = activeContainer.querySelectorAll("input, textarea, button");
+    allInputs.forEach((el) => {
+      el.disabled = true;
+    });
+
+    // Show loading state
+    const submitBtn = document.getElementById("btnOpenSubmitExamModal");
+    if (submitBtn) {
+      submitBtn.classList.add("is-loading");
+      submitBtn.innerText = "جاري تسليم الإجابات... ⏳";
+    }
+
+    setHtml(
+      activeContainer,
+      renderLoader({
+        text: isAuto
+          ? "انتهى الوقت المحدد! جاري تسليم إجاباتك واعتمادها بالسيرفر... ⏳"
+          : "جاري إرسال إجاباتك للتصحيح السحابي المعتمد... ⏳"
+      })
+    );
 
     try {
       const answers = examState.get("answers") || {};
-      const result = await ExamService.submitExam(examId, answers);
+      const questions = examState.get("questions") || [];
+
+      // Format answers as array matching questions count
+      const answersArray = Array.from({ length: questions.length }, (_, i) => {
+        const val = answers[i];
+        if (val === undefined || val === null || val === "") return null;
+        return isNaN(Number(val)) || (typeof val === "string" && val.trim().length > 2)
+          ? val
+          : Number(val);
+      });
+
+      const result = await ExamService.submitExam(examId, answersArray, questions.length);
 
       // Clear draft & active session
-      const draftKey = `${STORAGE_KEYS.EXAM_DRAFT_PREFIX}${currentStudent.id || currentStudent.firestoreId}_${examId}`;
+      const studentUid = currentStudent.id || currentStudent.firestoreId;
+      const draftKey = `${STORAGE_KEYS.EXAM_DRAFT_PREFIX}${studentUid}_${examId}`;
       StorageUtils.remove(draftKey);
       StorageUtils.remove(STORAGE_KEYS.CURRENT_EXAM);
 
-      // Render Result Card
-      const resultHtml = `
-        <div class="card text-center p-8 mt-6" style="max-width:560px;margin:2rem auto;box-shadow:var(--shadow-lg);border-color:var(--color-primary);">
-          <div style="font-size:4rem;margin-bottom:1rem;" aria-hidden="true">🎉</div>
-          <h2 class="font-black mb-2" style="font-size:1.8rem;color:var(--color-text-primary);">تم تسليم الامتحان بنجاح!</h2>
-          <p class="text-muted mb-4">تم تقييم إجاباتك عبر السيرفر بأمان واعتماد النتيجة.</p>
+      this.cleanupExamSession();
 
-          <div class="stat-card mb-6" style="flex-direction:column;gap:0.5rem;padding:var(--space-6);background:var(--color-bg-secondary);border-radius:var(--radius-lg);">
-            <div class="stat-label">درجتك المعتمدة</div>
-            <div class="stat-value" style="font-size:3.2rem;color:var(--color-primary);">
-              ${result.score ?? "—"} <span class="text-sm text-muted">/ ${result.totalQuestions || 100}</span>
-            </div>
-          </div>
+      // Render official result card
+      const exam = examState.get("activeExam") || { id: examId };
+      setHtml(activeContainer, renderExamResult({ exam, result }));
 
-          ${renderButton({
-            id: "backToExamsListBtn",
-            text: "العودة لقائمة الامتحانات ↵",
-            variant: "secondary",
-            className: "w-full btn-lg"
-          })}
-        </div>
-      `;
-
-      setHtml(activeContainer, resultHtml);
-
+      // Bind return button
       document.getElementById("backToExamsListBtn")?.addEventListener("click", () => {
         activeContainer.classList.add("d-none");
         const listContainer = document.getElementById("examListContainer");
@@ -338,12 +694,55 @@ export const ExamController = {
       });
     } catch (err) {
       console.error("Submit exam error:", err);
-      showToast(`فشل تسليم الامتحان: ${err.message}`, "error");
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.classList.remove("is-loading");
-        submitBtn.innerText = "إعادة محاولة التسليم 🚀";
+      showToast(err.message || "تعذر تسليم الامتحان. حاول مرة أخرى.", "error");
+
+      // Re-render exam view to allow retry without losing student answers
+      this.renderExamModeView(activeContainer, examId, currentStudent);
+    }
+  },
+
+  /**
+   * Displays the official exam result screen.
+   */
+  async showExamResult(examId, currentStudent) {
+    const listContainer = document.getElementById("examListContainer");
+    const activeContainer = document.getElementById("activeExamContainer");
+    if (!activeContainer) return;
+
+    if (listContainer) listContainer.classList.add("d-none");
+    activeContainer.classList.remove("d-none");
+    document.body.classList.remove("is-in-exam-mode");
+
+    setHtml(activeContainer, renderLoader({ text: "جاري جلب نتيجتك الرسمية من السيرفر... 📊" }));
+
+    try {
+      const studentUid = currentStudent?.firestoreId || currentStudent?.id || "";
+      const result = await ExamService.getResult(examId, studentUid);
+
+      const availableExams = examState.get("availableExams") || [];
+      let exam = availableExams.find((e) => e.id === examId);
+      if (!exam) {
+        exam = await ExamService.getExamById(examId);
       }
+
+      setHtml(activeContainer, renderExamResult({ exam, result }));
+
+      document.getElementById("backToExamsListBtn")?.addEventListener("click", () => {
+        activeContainer.classList.add("d-none");
+        if (listContainer) {
+          listContainer.classList.remove("d-none");
+          this.loadStudentExams(listContainer, currentStudent);
+        }
+      });
+    } catch (err) {
+      console.error("Show exam result error:", err);
+      setHtml(
+        activeContainer,
+        renderErrorState({
+          title: "حدث خطأ أثناء تحميل النتيجة",
+          message: err.message || "تعذر جلب النتيجة من السيرفر."
+        })
+      );
     }
   },
 
@@ -356,6 +755,18 @@ export const ExamController = {
       showToast("جاري استئناف جلستك الامتحانية... ⏳", "info");
       this.startExamSession(activeExamId, currentStudent);
     }
+  },
+
+  /**
+   * Cleans up timer intervals, event listeners, and body classes.
+   */
+  cleanupExamSession() {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+    this._expiresTimestamp = null;
+    document.body.classList.remove("is-in-exam-mode");
   },
 
   /**

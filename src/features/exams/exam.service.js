@@ -82,9 +82,18 @@ export const ExamService = {
   /**
    * Submits student answers for server-side evaluation.
    */
-  async submitExam(examId, answers) {
+  async submitExam(examId, answers, totalQuestions = null) {
     try {
-      return await callApi("submitExam", { examId, answers });
+      let answersArray = answers;
+      if (!Array.isArray(answers)) {
+        const len = totalQuestions || Math.max(...Object.keys(answers || {}).map(Number), -1) + 1;
+        answersArray = Array.from({ length: Math.max(0, len) }, (_, i) => {
+          const val = answers?.[i];
+          if (val === undefined || val === null || val === "") return null;
+          return isNaN(Number(val)) || (typeof val === "string" && val.trim().length > 2) ? val : Number(val);
+        });
+      }
+      return await callApi("submitExam", { examId, answers: answersArray });
     } catch (err) {
       throw normalizeError(err);
     }
