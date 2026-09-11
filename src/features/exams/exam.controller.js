@@ -224,27 +224,38 @@ export const ExamController = {
   },
 
   /**
-   * Shows confirmation dialog before starting official attempt.
+   * Shows dedicated pre-exam confirmation dialog before starting official attempt.
    */
   async confirmStartExam(examId, currentStudent) {
     const availableExams = examState.get("availableExams") || [];
-    const exam = availableExams.find((e) => e.id === examId) || {};
-    const durationMin = Number(exam.duration) || 30;
-    const qCount = exam.totalQuestions || "—";
-    const examTitle = exam.title || "الامتحان";
+    let exam = availableExams.find((e) => e.id === examId);
+    if (!exam) {
+      try {
+        exam = await ExamService.getExam(examId);
+      } catch (err) {
+        console.warn("Could not fetch full exam metadata for confirmation:", err);
+        exam = { id: examId, title: "الامتحان", duration: 30 };
+      }
+    }
 
-    const confirmed = await showConfirmDialog({
-      title: "بدء الامتحان",
-      message: `أنت على وشك بدء "${examTitle}".\nالمدة: ${durationMin} دقيقة · عدد الأسئلة: ${qCount}\nبمجرد البدء سيبدأ احتساب الوقت الرسمي عبر السيرفر.`,
-      confirmText: "بدء الامتحان 🚀",
-      cancelText: "إلغاء",
-      variant: "primary",
-      icon: "⏱️"
+    let wrapper = document.getElementById("preExamConfirmModalWrapper");
+    if (!wrapper) {
+      wrapper = document.createElement("div");
+      wrapper.id = "preExamConfirmModalWrapper";
+      document.body.appendChild(wrapper);
+    }
+
+    setHtml(wrapper, renderPreExamConfirmationModal(exam));
+    openModal(PRE_EXAM_CONFIRM_MODAL_ID);
+
+    document.getElementById("cancelPreExamBtn")?.addEventListener("click", () => {
+      closeModal(PRE_EXAM_CONFIRM_MODAL_ID);
     });
 
-    if (confirmed) {
+    document.getElementById("confirmStartExamOfficialBtn")?.addEventListener("click", () => {
+      closeModal(PRE_EXAM_CONFIRM_MODAL_ID);
       this.startExamSession(examId, currentStudent);
-    }
+    });
   },
 
   /**
@@ -262,7 +273,7 @@ export const ExamController = {
     setHtml(activeContainer, renderExamQuestionSkeleton());
 
     try {
-      // 1. Tell server student is starting attempt (official timer is created on server)
+      // 1. Official attempt creation on backend (server calculates official start and expiry)
       const attemptData = await ExamService.startAttempt(examId);
 
       // 2. Fetch sanitized questions (answers stripped on server)
@@ -281,12 +292,17 @@ export const ExamController = {
       examState.set("questions", questions);
       examState.set("answers", savedDraft);
       examState.set("currentQuestionIndex", 0);
+      examState.set("isInReviewMode", false);
+      examState.set("isNavigatorCollapsed", false);
       examState.set("activeAttempt", attemptData);
 
-      // 3. Render Exam Mode Shell
+      // 3. Attach Anti-Cheat & Network Telemetry Listeners
+      this.attachAntiCheatListeners(examId);
+
+      // 4. Render Exam Mode Shell
       this.renderExamModeView(activeContainer, examId, currentStudent);
 
-      // 4. Start authoritative timer countdown based on server expiresAt
+      // 5. Start authoritative timer countdown based on server expiresAt
       this.initExamTimer(examId, currentStudent, attemptData.expiresAt);
 
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -303,13 +319,82 @@ export const ExamController = {
   },
 
   /**
-   * Renders single-question Exam Mode layout.
+   * Attaches non-intrusive anti-cheat telemetry and network monitoring listeners.
+   */
+  attachAntiCheatListeners(examId) {
+    if (antiCheatAttached) return;
+    antiCheatAttached = true;
+    examTelemetryEvents = [];
+
+    handleVisibilityChange = () => {
+      if (document.hidden) {
+        examTelemetryEvents.push({ type: "tab_hidden", timestamp: Date.now() });
+        const now = Date.now();
+        if (now - lastBlurWarning > 6000) {
+          lastBlurWarning = now;
+          showToast("انتقلت خارج صفحة الامتحان. يُفضّل البقاء داخل صفحة الامتحان حتى الانتهاء.", "warning", 4000);
+        }
+      } else {
+        examTelemetryEvents.push({ type: "tab_visible", timestamp: Date.now() });
+      }
+    };
+
+    handleWindowBlur = () => {
+      examTelemetryEvents.push({ type: "window_blur", timestamp: Date.now() });
+      const now = Date.now();
+      if (now - lastBlurWarning > 6000) {
+        lastBlurWarning = now;
+        showToast("انتقلت خارج صفحة الامتحان. يُفضّل البقاء داخل صفحة الامتحان حتى الانتهاء.", "warning", 4000);
+      }
+    };
+
+    handleBeforeUnload = (e) => {
+      const msg = "أنت داخل امتحان حاليًا. التأكد من خروجك قد يؤدي إلى فقدان تقدمك.";
+      e.preventDefault();
+      e.returnValue = msg;
+      return msg;
+    };
+
+    handleOffline = () => {
+      examTelemetryEvents.push({ type: "network_offline", timestamp: Date.now() });
+      showToast("⚠️ اتصال الإنترنت غير مستقر. حاول إعادة الاتصال.", "warning", 6000);
+    };
+
+    handleOnline = () => {
+      examTelemetryEvents.push({ type: "network_online", timestamp: Date.now() });
+      showToast("✅ تمت استعادة الاتصال بالإنترنت.", "success", 3000);
+    };
+
+    handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        examTelemetryEvents.push({ type: "fullscreen_exit", timestamp: Date.now() });
+        const btn = document.getElementById("btnToggleFullscreen");
+        if (btn) btn.innerHTML = "<span>⛶ ملء الشاشة</span>";
+      } else {
+        examTelemetryEvents.push({ type: "fullscreen_enter", timestamp: Date.now() });
+        const btn = document.getElementById("btnToggleFullscreen");
+        if (btn) btn.innerHTML = "<span>🗗 تصغير الشاشة</span>";
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleWindowBlur);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+  },
+
+  /**
+   * Renders single-question or review layout in Exam Mode.
    */
   renderExamModeView(activeContainer, examId, currentStudent) {
     const examData = examState.get("activeExam") || {};
     const questions = examState.get("questions") || [];
     const answers = examState.get("answers") || {};
     const currentIndex = examState.get("currentQuestionIndex") || 0;
+    const isInReviewMode = examState.get("isInReviewMode") || false;
+    const isCollapsedOnMobile = examState.get("isNavigatorCollapsed") || false;
     const currentQ = questions[currentIndex];
 
     // Compute answered count
@@ -318,32 +403,77 @@ export const ExamController = {
     ).length;
 
     const remainingSec = this.getRemainingSeconds();
+    const timerHtml = renderExamTimer({ seconds: remainingSec });
+
+    // Review Mode View
+    if (isInReviewMode) {
+      const reviewHtml = renderStudentExamReviewMode({
+        examTitle: examData.title || "الامتحان",
+        questions,
+        answers,
+        currentIndex,
+        timerHtml
+      });
+      setHtml(activeContainer, reviewHtml);
+      this.bindReviewModeEvents(activeContainer, examId, currentStudent);
+      return;
+    }
+
+    // Single Question View
+    const isLastQuestion = currentIndex === questions.length - 1;
 
     const shellHtml = `
       <div class="exam-mode-shell">
-        <!-- Header: Title, Official Timer, Progress -->
-        <header class="exam-mode-header mb-6">
+        <!-- Header: Title, Fullscreen, Review, Official Timer, Progress -->
+        <header class="exam-mode-header mb-5">
           <div class="d-flex items-center justify-between flex-wrap gap-3 mb-3">
             <div class="exam-title-badge-group">
               <span class="badge badge-gold font-bold mb-1">جلسة امتحان رسمية</span>
               <h2 class="exam-mode-title m-0">${escapeHtml(examData.title || "الامتحان")}</h2>
             </div>
-            <div id="examTimerSlot">
-              ${renderExamTimer({ seconds: remainingSec })}
+
+            <div class="d-flex items-center gap-2">
+              <button
+                type="button"
+                id="btnToggleFullscreen"
+                class="btn btn-secondary btn-sm d-flex items-center gap-1 font-semibold"
+                aria-label="تبديل وضع ملء الشاشة"
+              >
+                <span>${document.fullscreenElement ? "🗗 تصغير الشاشة" : "⛶ ملء الشاشة"}</span>
+              </button>
+
+              <button
+                type="button"
+                id="btnOpenReviewMode"
+                class="btn btn-secondary btn-sm d-flex items-center gap-1 font-semibold"
+                aria-label="مراجعة جميع الإجابات"
+              >
+                <span>مراجعة الإجابات 📋</span>
+              </button>
+
+              <div id="examTimerSlot">
+                ${timerHtml}
+              </div>
             </div>
           </div>
+
           <div id="examProgressSlot">
             ${renderExamProgress({ answeredCount, totalQuestions: questions.length })}
           </div>
         </header>
 
-        <!-- Question Navigator Grid -->
-        <div id="examNavigatorSlot" class="mb-6">
-          ${renderExamQuestionNavigator({ totalQuestions: questions.length, currentIndex, answers })}
+        <!-- Question Navigator Grid (Collapsible on Mobile) -->
+        <div id="examNavigatorSlot" class="mb-5">
+          ${renderExamQuestionNavigator({
+            totalQuestions: questions.length,
+            currentIndex,
+            answers,
+            isCollapsedOnMobile
+          })}
         </div>
 
         <!-- Single Question Viewport -->
-        <main id="examQuestionViewportSlot" class="mb-6" aria-live="polite">
+        <main id="examQuestionViewportSlot" class="mb-5" aria-live="polite">
           ${renderExamQuestion({
             question: currentQ,
             index: currentIndex,
@@ -363,16 +493,26 @@ export const ExamController = {
                 className: "btn-md",
                 extraAttrs: currentIndex === 0 ? "disabled" : ""
               })}
+
               <span id="navQuestionIndicator" class="text-xs text-muted font-bold px-2">
                 السؤال ${currentIndex + 1} من ${questions.length}
               </span>
-              ${renderButton({
-                id: "btnNextQuestion",
-                text: "التالي ↳",
-                variant: "secondary",
-                className: "btn-md",
-                extraAttrs: currentIndex === questions.length - 1 ? "disabled" : ""
-              })}
+
+              ${
+                isLastQuestion
+                  ? renderButton({
+                      id: "btnNextQuestion",
+                      text: "مراجعة الإجابات 📋",
+                      variant: "secondary",
+                      className: "btn-md font-bold"
+                    })
+                  : renderButton({
+                      id: "btnNextQuestion",
+                      text: "التالي ↳",
+                      variant: "secondary",
+                      className: "btn-md"
+                    })
+              }
             </div>
 
             <div class="d-flex items-center gap-2">
@@ -399,7 +539,57 @@ export const ExamController = {
     const studentUid = currentStudent.id || currentStudent.firestoreId;
     const draftKey = `${STORAGE_KEYS.EXAM_DRAFT_PREFIX}${studentUid}_${examId}`;
 
-    // 1. Listen for answer inputs (radio MCQ & textarea Essay)
+    // 1. Anti-cheat deterrent: intercept contextmenu and copy on questions
+    activeContainer.addEventListener("contextmenu", (e) => {
+      if (e.target.tagName.toLowerCase() !== "textarea") {
+        e.preventDefault();
+        showToast("القائمة المختصرة غير مفعلة أثناء الامتحان.", "info", 2000);
+      }
+    });
+
+    activeContainer.addEventListener("copy", (e) => {
+      if (e.target.tagName.toLowerCase() !== "textarea") {
+        e.preventDefault();
+        showToast("النسخ غير متاح أثناء جلسة الامتحان.", "info", 2000);
+      }
+    });
+
+    // 2. Fullscreen Toggle Button
+    activeContainer.querySelector("#btnToggleFullscreen")?.addEventListener("click", () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.().catch((err) => {
+          console.warn("Fullscreen request error:", err);
+          showToast("تعذر تفعيل وضع ملء الشاشة على هذا الجهاز.", "info", 2500);
+        });
+      } else {
+        document.exitFullscreen?.().catch(() => {});
+      }
+    });
+
+    // 3. Open Review Mode Button
+    activeContainer.querySelector("#btnOpenReviewMode")?.addEventListener("click", () => {
+      examState.set("isInReviewMode", true);
+      this.renderExamModeView(activeContainer, examId, currentStudent);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    // 4. Mobile Navigator Collapse Toggle
+    activeContainer.querySelector("#btnToggleQuestionNav")?.addEventListener("click", () => {
+      const isCurrentlyCollapsed = examState.get("isNavigatorCollapsed") || false;
+      const nextCollapsed = !isCurrentlyCollapsed;
+      examState.set("isNavigatorCollapsed", nextCollapsed);
+      const navEl = activeContainer.querySelector(".exam-question-navigator");
+      if (navEl) {
+        navEl.classList.toggle("is-collapsed-mobile", nextCollapsed);
+      }
+      const toggleBtn = activeContainer.querySelector("#btnToggleQuestionNav");
+      if (toggleBtn) {
+        toggleBtn.setAttribute("aria-expanded", String(!nextCollapsed));
+        toggleBtn.innerHTML = `<span>${nextCollapsed ? "عرض الفهرس ▾" : "إخفاء الفهرس ▴"}</span>`;
+      }
+    });
+
+    // 5. Listen for answer inputs (radio MCQ & textarea Essay)
     activeContainer.addEventListener("input", (e) => {
       const input = e.target;
       const qIdx = input.getAttribute("data-question-index");
@@ -436,8 +626,9 @@ export const ExamController = {
         setHtml(progressSlot, renderExamProgress({ answeredCount, totalQuestions: questions.length }));
       }
 
-      // Update question navigator pill without re-rendering entire screen
+      // Update question navigator pill without full re-render
       const currentQIdx = examState.get("currentQuestionIndex") || 0;
+      const isCollapsed = examState.get("isNavigatorCollapsed") || false;
       const navSlot = document.getElementById("examNavigatorSlot");
       if (navSlot) {
         setHtml(
@@ -445,13 +636,14 @@ export const ExamController = {
           renderExamQuestionNavigator({
             totalQuestions: questions.length,
             currentIndex: currentQIdx,
-            answers: currentAnswers
+            answers: currentAnswers,
+            isCollapsedOnMobile: isCollapsed
           })
         );
       }
     });
 
-    // 2. Previous question
+    // 6. Previous question
     activeContainer.querySelector("#btnPrevQuestion")?.addEventListener("click", () => {
       const currentIdx = examState.get("currentQuestionIndex") || 0;
       if (currentIdx > 0) {
@@ -459,16 +651,21 @@ export const ExamController = {
       }
     });
 
-    // 3. Next question
+    // 7. Next question / Review button on last question
     activeContainer.querySelector("#btnNextQuestion")?.addEventListener("click", () => {
       const questions = examState.get("questions") || [];
       const currentIdx = examState.get("currentQuestionIndex") || 0;
       if (currentIdx < questions.length - 1) {
         this.selectQuestion(currentIdx + 1, currentStudent);
+      } else {
+        // Last question -> open review mode
+        examState.set("isInReviewMode", true);
+        this.renderExamModeView(activeContainer, examId, currentStudent);
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
     });
 
-    // 4. Question navigator click delegation
+    // 8. Question navigator click delegation
     activeContainer.addEventListener("click", (e) => {
       const pill = e.target.closest("[data-nav-question-index]");
       if (pill) {
@@ -477,8 +674,36 @@ export const ExamController = {
       }
     });
 
-    // 5. Open submit confirmation modal
+    // 9. Open submit confirmation modal
     activeContainer.querySelector("#btnOpenSubmitExamModal")?.addEventListener("click", () => {
+      this.openSubmitExamModal(examId, currentStudent);
+    });
+  },
+
+  /**
+   * Binds interaction events for student review mode.
+   */
+  bindReviewModeEvents(activeContainer, examId, currentStudent) {
+    // Jump to specific question
+    activeContainer.querySelectorAll("[data-jump-to-question]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const targetIdx = Number(btn.getAttribute("data-jump-to-question"));
+        examState.set("isInReviewMode", false);
+        examState.set("currentQuestionIndex", targetIdx);
+        this.renderExamModeView(activeContainer, examId, currentStudent);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    });
+
+    // Return to question mode
+    activeContainer.querySelector("#btnReturnToQuestionMode")?.addEventListener("click", () => {
+      examState.set("isInReviewMode", false);
+      this.renderExamModeView(activeContainer, examId, currentStudent);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    // Submit from review screen
+    activeContainer.querySelector("#btnReviewSubmitExam")?.addEventListener("click", () => {
       this.openSubmitExamModal(examId, currentStudent);
     });
   },
@@ -493,8 +718,9 @@ export const ExamController = {
     examState.set("currentQuestionIndex", targetIndex);
     const answers = examState.get("answers") || {};
     const question = questions[targetIndex];
+    const isCollapsed = examState.get("isNavigatorCollapsed") || false;
 
-    // 1. Re-render question viewport with subtle motion
+    // 1. Re-render question viewport
     const viewport = document.getElementById("examQuestionViewportSlot");
     if (viewport) {
       setHtml(
@@ -516,7 +742,8 @@ export const ExamController = {
         renderExamQuestionNavigator({
           totalQuestions: questions.length,
           currentIndex: targetIndex,
-          answers
+          answers,
+          isCollapsedOnMobile: isCollapsed
         })
       );
     }
@@ -527,7 +754,10 @@ export const ExamController = {
     const indicator = document.getElementById("navQuestionIndicator");
 
     if (prevBtn) prevBtn.disabled = targetIndex === 0;
-    if (nextBtn) nextBtn.disabled = targetIndex === questions.length - 1;
+    if (nextBtn) {
+      const isLast = targetIndex === questions.length - 1;
+      nextBtn.innerHTML = isLast ? "<span>مراجعة الإجابات 📋</span>" : "<span>التالي ↳</span>";
+    }
     if (indicator) indicator.textContent = `السؤال ${targetIndex + 1} من ${questions.length}`;
 
     // Focus on question title for a11y
@@ -781,6 +1011,17 @@ export const ExamController = {
     }
     this._expiresTimestamp = null;
     document.body.classList.remove("is-in-exam-mode");
+
+    if (antiCheatAttached) {
+      if (handleVisibilityChange) document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (handleWindowBlur) window.removeEventListener("blur", handleWindowBlur);
+      if (handleBeforeUnload) window.removeEventListener("beforeunload", handleBeforeUnload);
+      if (handleOffline) window.removeEventListener("offline", handleOffline);
+      if (handleOnline) window.removeEventListener("online", handleOnline);
+      if (handleFullscreenChange) document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      antiCheatAttached = false;
+      examTelemetryEvents = [];
+    }
   },
 
   /**
