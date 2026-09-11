@@ -4,7 +4,7 @@ import { renderCard } from "../../../shared/components/Card/card.component.js";
 import { renderBadge } from "../../../shared/components/Badge/badge.component.js";
 import { renderButton } from "../../../shared/components/Button/button.component.js";
 import { formatDate } from "../../../shared/utils/date.utils.js";
-import { renderExamStatusBadge } from "./exam-status-badge.component.js";
+import { renderExamStatusBadge, getExamStatusInfo } from "./exam-status-badge.component.js";
 
 /**
  * Returns HTML string for student exam card.
