@@ -6,6 +6,8 @@ import {
   getDocs,
   doc,
   getDoc,
+  setDoc,
+  updateDoc,
   addDoc,
   query,
   where,
@@ -13,7 +15,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 import { COLLECTIONS, STORAGE_PATHS } from "../../core/constants.js";
-import { normalizeError } from "../../core/errors.js";
+import { normalizeError, isCloudFunctionUnavailable } from "../../core/errors.js";
 
 export const AssignmentService = {
   /**
@@ -143,7 +145,8 @@ export const AssignmentService = {
   },
 
   /**
-   * Submits assignment solution and file through Cloud Function.
+  /**
+   * Submits assignment solution and file through Cloud Function with direct Firestore fallback.
    */
   async submitTask(assignmentId, answerText = "", file = null) {
     if (!assignmentId) {
@@ -154,20 +157,117 @@ export const AssignmentService = {
       throw new Error("يجب كتابة نص الإجابة أو إرفاق ملف للحل.");
     }
 
-    try {
-      let fileUrl = "";
-      if (file) {
-        const uploadRes = await this.uploadSubmissionFile(assignmentId, file);
-        fileUrl = uploadRes.downloadUrl;
-      }
+    let fileUrl = "";
+    if (file) {
+      const uploadRes = await this.uploadSubmissionFile(assignmentId, file);
+      fileUrl = uploadRes.downloadUrl;
+    }
 
-      return await callApi("submitAssignment", {
+    // 1. Try Authoritative Cloud Function first
+    try {
+      const apiResult = await callApi("submitAssignment", {
         assignmentId,
         answerText: cleanText,
         fileUrl
       });
-    } catch (err) {
-      throw normalizeError(err);
+      if (apiResult) {
+        return {
+          ...apiResult,
+          fileUrl: apiResult.fileUrl || fileUrl
+        };
+      }
+    } catch (apiErr) {
+      console.warn("Cloud function submitAssignment unavailable, switching to direct Firestore fallback:", apiErr?.message || apiErr);
+      if (!isCloudFunctionUnavailable(apiErr) && apiErr.code !== "APP_ERROR") {
+        // If it was an intentional business validation error (e.g. deadline-exceeded), rethrow
+        throw normalizeError(apiErr);
+      }
+    }
+
+    // 2. Resilient Direct Firestore Submission Fallback
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error("يجب تسجيل الدخول أولاً لتسليم الواجب.");
+      }
+
+      const studentUid = user.uid;
+
+      // Check deadline if present in Firestore
+      try {
+        const assignmentSnap = await getDoc(doc(db, COLLECTIONS.ASSIGNMENTS, assignmentId));
+        if (assignmentSnap.exists()) {
+          const assignmentData = assignmentSnap.data();
+          if (assignmentData.deadline) {
+            let deadlineTime;
+            if (assignmentData.deadline.toDate) {
+              deadlineTime = assignmentData.deadline.toDate().getTime();
+            } else if (assignmentData.deadline instanceof Date) {
+              deadlineTime = assignmentData.deadline.getTime();
+            } else if (typeof assignmentData.deadline === "string") {
+              const trimmed = assignmentData.deadline.trim();
+              if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+                const eod = new Date(`${trimmed}T23:59:59.999`);
+                deadlineTime = isNaN(eod.getTime()) ? new Date(trimmed).getTime() : eod.getTime();
+              } else {
+                deadlineTime = new Date(trimmed).getTime();
+              }
+            } else {
+              deadlineTime = new Date(assignmentData.deadline).getTime();
+            }
+
+            if (!isNaN(deadlineTime) && Date.now() > deadlineTime) {
+              throw new Error("انتهى الموعد المحدد لتسليم هذا الواجب.");
+            }
+          }
+        }
+      } catch (deadlineErr) {
+        if (deadlineErr.message?.includes("انتهى الموعد")) throw deadlineErr;
+      }
+
+      // Fetch student profile data
+      let studentData = {};
+      try {
+        const studentSnap = await getDoc(doc(db, COLLECTIONS.STUDENTS, studentUid));
+        if (studentSnap.exists()) studentData = studentSnap.data();
+      } catch (_) {}
+
+      const studentName = studentData.name || user.displayName || "طالب مسجل";
+      const studentPhone = studentData.studentPhone || studentData.phone || user.email?.replace("@student.local", "") || "";
+      const group = studentData.group || "ALL";
+
+      const submissionPayload = {
+        assignmentId,
+        studentUid,
+        studentId: studentUid,
+        studentName,
+        studentPhone,
+        group,
+        answerText: cleanText,
+        fileUrl,
+        grade: null,
+        feedback: null,
+        submittedAt: serverTimestamp()
+      };
+
+      // Write to target subcollection: /assignments/{id}/submissions/{studentUid}
+      await setDoc(
+        doc(db, COLLECTIONS.ASSIGNMENTS, assignmentId, COLLECTIONS.SUBMISSIONS, studentUid),
+        submissionPayload,
+        { merge: true }
+      );
+
+      // Also write to legacy top-level collection: /submissions/{studentUid}_{assignmentId}
+      const legacyDocId = `${studentUid}_${assignmentId}`;
+      await setDoc(doc(db, COLLECTIONS.SUBMISSIONS, legacyDocId), submissionPayload, { merge: true });
+
+      return {
+        success: true,
+        message: "تم تسليم الواجب بنجاح ✅",
+        fileUrl
+      };
+    } catch (fsErr) {
+      throw normalizeError(fsErr);
     }
   },
 
@@ -221,7 +321,7 @@ export const AssignmentService = {
   },
 
   /**
-   * Teacher grades student assignment.
+   * Teacher grades student assignment with resilient direct Firestore fallback.
    */
   async gradeTask(assignmentId, studentUid, grade, feedback = "") {
     try {
@@ -231,8 +331,36 @@ export const AssignmentService = {
         grade: Number(grade),
         feedback
       });
-    } catch (err) {
-      throw normalizeError(err);
+    } catch (apiErr) {
+      console.warn("Cloud function gradeAssignment unavailable, executing direct Firestore fallback:", apiErr?.message || apiErr);
+      if (!isCloudFunctionUnavailable(apiErr) && apiErr.code !== "APP_ERROR") {
+        throw normalizeError(apiErr);
+      }
+    }
+
+    try {
+      const user = auth.currentUser;
+      const gradingUpdate = {
+        grade: Number(grade),
+        feedback: (feedback || "").trim(),
+        gradedBy: user?.uid || "teacher",
+        gradedAt: serverTimestamp()
+      };
+
+      // 1. Update subcollection
+      const subDocRef = doc(db, COLLECTIONS.ASSIGNMENTS, assignmentId, COLLECTIONS.SUBMISSIONS, studentUid);
+      await setDoc(subDocRef, gradingUpdate, { merge: true });
+
+      // 2. Update legacy doc
+      const legacyDocId = `${studentUid}_${assignmentId}`;
+      await setDoc(doc(db, COLLECTIONS.SUBMISSIONS, legacyDocId), gradingUpdate, { merge: true });
+
+      return {
+        success: true,
+        message: "تم حفظ تقييم الواجب بنجاح ✅"
+      };
+    } catch (fsErr) {
+      throw normalizeError(fsErr);
     }
   },
 

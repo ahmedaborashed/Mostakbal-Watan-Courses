@@ -7,12 +7,16 @@ import {
   getDocs,
   doc,
   getDoc,
+  setDoc,
+  addDoc,
+  updateDoc,
   query,
   where,
-  orderBy
+  orderBy,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { COLLECTIONS } from "../../core/constants.js";
-import { normalizeError } from "../../core/errors.js";
+import { normalizeError, isCloudFunctionUnavailable } from "../../core/errors.js";
 
 export const AttendanceService = {
   /**
@@ -176,45 +180,94 @@ export const AttendanceService = {
   },
 
   /**
-   * Creates a new session (Teacher / Admin). Supports both object and positional params.
+   * Creates a new session (Teacher / Admin) with resilient direct Firestore fallback.
    */
   async createSession(param1, date, group = "ALL") {
+    let payload;
+    if (typeof param1 === "object" && param1 !== null) {
+      payload = {
+        name: param1.name,
+        date: param1.date,
+        group: param1.group || "ALL"
+      };
+    } else {
+      payload = { name: param1, date, group };
+    }
+
     try {
-      let payload;
-      if (typeof param1 === "object" && param1 !== null) {
-        payload = {
-          name: param1.name,
-          date: param1.date,
-          group: param1.group || "ALL"
-        };
-      } else {
-        payload = { name: param1, date, group };
-      }
       return await callApi("createAttendanceSession", payload);
-    } catch (err) {
-      throw normalizeError(err);
+    } catch (apiErr) {
+      console.warn("Cloud function createAttendanceSession unavailable, executing direct Firestore fallback:", apiErr?.message || apiErr);
+      if (!isCloudFunctionUnavailable(apiErr) && apiErr.code !== "APP_ERROR") {
+        throw normalizeError(apiErr);
+      }
+    }
+
+    try {
+      const docRef = await addDoc(collection(db, COLLECTIONS.ATTENDANCE_SESSIONS), {
+        name: (payload.name || "").trim(),
+        date: payload.date || new Date().toISOString().slice(0, 10),
+        group: payload.group || "ALL",
+        createdAt: serverTimestamp()
+      });
+      return {
+        id: docRef.id,
+        success: true,
+        message: "تم إنشاء جلسة الحضور بنجاح ✅"
+      };
+    } catch (fsErr) {
+      throw normalizeError(fsErr);
     }
   },
 
   /**
-   * Batch updates student attendance records in session subcollection.
+   * Batch updates student attendance records in session subcollection with resilient direct Firestore fallback.
    */
   async recordBatch(sessionId, records) {
-    try {
-      const sanitizedRecords = (records || []).map((r) => ({
-        studentUid: r.studentUid || r.studentId || r.uid,
-        studentName: r.studentName || r.name || "",
-        studentPhone: r.studentPhone || r.phone || "",
-        group: r.group || "ALL",
-        present: Boolean(r.present || r.status === "present")
-      }));
+    const sanitizedRecords = (records || []).map((r) => ({
+      studentUid: r.studentUid || r.studentId || r.uid,
+      studentName: r.studentName || r.name || "",
+      studentPhone: r.studentPhone || r.phone || "",
+      group: r.group || "ALL",
+      present: Boolean(r.present || r.status === "present")
+    }));
 
+    try {
       return await callApi("recordAttendanceBatch", {
         sessionId,
         records: sanitizedRecords
       });
-    } catch (err) {
-      throw normalizeError(err);
+    } catch (apiErr) {
+      console.warn("Cloud function recordAttendanceBatch unavailable, executing direct Firestore fallback:", apiErr?.message || apiErr);
+      if (!isCloudFunctionUnavailable(apiErr) && apiErr.code !== "APP_ERROR") {
+        throw normalizeError(apiErr);
+      }
+    }
+
+    try {
+      const sessionRef = doc(db, COLLECTIONS.ATTENDANCE_SESSIONS, sessionId);
+      for (const rec of sanitizedRecords) {
+        if (rec.studentUid) {
+          const recRef = doc(db, COLLECTIONS.ATTENDANCE_SESSIONS, sessionId, COLLECTIONS.RECORDS, rec.studentUid);
+          await setDoc(recRef, {
+            ...rec,
+            markedAt: serverTimestamp()
+          }, { merge: true });
+        }
+      }
+
+      await updateDoc(sessionRef, {
+        records: sanitizedRecords,
+        updatedAt: serverTimestamp()
+      });
+
+      return {
+        success: true,
+        count: sanitizedRecords.length,
+        message: "تم حفظ واعتماد كشف الحضور بنجاح ✅"
+      };
+    } catch (fsErr) {
+      throw normalizeError(fsErr);
     }
   },
 

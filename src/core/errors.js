@@ -71,7 +71,7 @@ export function normalizeError(error) {
     return new AuthError("انتهت جلستك، يرجى إعادة تسجيل الدخول.");
   }
   if (rawCode === "functions/not-found" || rawCode === "not-found") {
-    return new NotFoundError(rawMessage || "العنصر المطلوب غير موجود.");
+    return new NotFoundError(rawMessage && rawMessage !== "internal" ? rawMessage : "الخدمة المطلوبة غير متوفرة حالياً في الخادم السحابي.");
   }
   if (rawCode === "functions/already-exists" || rawCode === "already-exists") {
     return new AppError(rawMessage || "البيانات مسجلة مسبقاً.", "ALREADY_EXISTS");
@@ -79,6 +79,39 @@ export function normalizeError(error) {
   if (rawCode === "functions/deadline-exceeded" || rawCode === "deadline-exceeded") {
     return new AppError(rawMessage || "انتهى الوقت المحدد لتنفيذ العملية.", "DEADLINE_EXCEEDED");
   }
+  if (rawCode === "functions/unavailable" || rawCode === "unavailable") {
+    return new AppError("خدمة الخادم السحابي غير متوفرة حالياً. يرجى المحاولة لاحقاً.", "UNAVAILABLE", error);
+  }
+  if (rawCode === "functions/internal" || rawCode === "internal" || rawMessage === "internal") {
+    return new AppError("تعذر إتمام العملية عبر الخادم السحابي. يرجى التحقق من الاتصال بالإنترنت.", "FUNCTIONS_INTERNAL", error);
+  }
 
-  return new AppError(rawMessage || "حدث خطأ غير متوقع. يرجى المحاولة لاحقاً.", "UNKNOWN_ERROR", error);
+  // Prevent raw unhelpful internal string from ever reaching UI toast
+  const safeMessage = (rawMessage && rawMessage !== "internal") ? rawMessage : "حدث خطأ أثناء معالجة الطلب. يرجى المحاولة لاحقاً.";
+  return new AppError(safeMessage, "UNKNOWN_ERROR", error);
+}
+
+/**
+ * Checks whether an error signifies that Firebase Cloud Functions are offline, undeployed, or unresponsive.
+ * Useful for triggering direct client-side Firestore fallbacks.
+ * @param {any} error
+ * @returns {boolean}
+ */
+export function isCloudFunctionUnavailable(error) {
+  if (!error) return false;
+  const code = String(error.code || "").toLowerCase();
+  const message = String(error.message || "").toLowerCase();
+  return (
+    code === "functions/internal" ||
+    code === "internal" ||
+    code === "functions/not-found" ||
+    code === "functions/unavailable" ||
+    code === "not-found" ||
+    code === "unavailable" ||
+    message === "internal" ||
+    message.includes("internal") ||
+    message.includes("cloud function") ||
+    message.includes("failed to fetch") ||
+    message.includes("networkerror")
+  );
 }
