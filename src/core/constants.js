@@ -23,7 +23,8 @@ export const COLLECTIONS = Object.freeze({
   ASSIGNMENTS: "assignments",
   SUBMISSIONS: "submissions",
   ATTENDANCE_SESSIONS: "attendance_sessions",
-  RECORDS: "records"
+  RECORDS: "records",
+  PYTHON_ADVENTURE_PROGRESS: "python_adventure_progress"
 });
 
 export const STORAGE_PATHS = Object.freeze({
@@ -36,7 +37,8 @@ export const STORAGE_KEYS = Object.freeze({
   LANGUAGE: "future_watan_lang",
   FONT_SCALE: "future_watan_font_scale",
   CURRENT_EXAM: "future_watan_current_exam",
-  EXAM_DRAFT_PREFIX: "future_watan_exam_draft_"
+  EXAM_DRAFT_PREFIX: "future_watan_exam_draft_",
+  PYTHON_ADVENTURE_DRAFT: "future_watan_py_adventure_draft_"
 });
 
 export const THEMES = Object.freeze({

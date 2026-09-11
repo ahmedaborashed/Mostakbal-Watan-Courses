@@ -145,5 +145,16 @@ service cloud.firestore {
         allow write: if isStaff();
       }
     }
+
+    // ========================================================
+    // 9. PYTHON ADVENTURE (Gamified Learning Progression)
+    // ========================================================
+    match /python_adventure_progress/{studentUid} {
+      // Student can read their own game progress; staff can read all
+      allow read: if isOwner(studentUid) || isStaff();
+      // Server authoritative via Admin SDK; owner allowed write for local development fallback
+      allow create, update: if isOwner(studentUid) || isStaff();
+      allow delete: if isAdmin();
+    }
   }
 }

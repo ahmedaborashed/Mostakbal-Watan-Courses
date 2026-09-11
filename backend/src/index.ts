@@ -30,6 +30,13 @@ import {
   syncUserClaimsHandler
 } from "./modules/auth";
 
+import {
+  getPythonAdventureProgressHandler,
+  getPythonAdventureChallengeHandler,
+  submitPythonAdventureChallengeHandler,
+  getDailyChallengeHandler
+} from "./modules/python-adventure";
+
 // Set global options: European region, timeout, memory
 setGlobalOptions({
   region: "europe-west1",
@@ -70,3 +77,12 @@ export const gradeAssignment = onCall(gradeAssignmentHandler);
 // ==========================================
 export const setUserRole = onCall(setUserRoleHandler);
 export const syncUserClaims = onCall(syncUserClaimsHandler);
+
+// ==========================================
+// 6. PYTHON ADVENTURE (GAMIFIED LEARNING)
+// ==========================================
+export const getPythonAdventureProgress = onCall(getPythonAdventureProgressHandler);
+export const getPythonAdventureChallenge = onCall(getPythonAdventureChallengeHandler);
+export const submitPythonAdventureChallenge = onCall(submitPythonAdventureChallengeHandler);
+export const getDailyChallenge = onCall(getDailyChallengeHandler);
+
