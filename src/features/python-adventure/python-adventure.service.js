@@ -2,7 +2,7 @@
 import { callApi } from "../../repositories/api.client.js";
 import { db, auth } from "../../core/firebase.js";
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { COLLECTIONS, STORAGE_KEYS } from "../../core/constants.js";
+import { COLLECTIONS, STORAGE_KEYS, FEATURES } from "../../core/constants.js";
 import { normalizeError } from "../../core/errors.js";
 import { CHALLENGES_CLIENT_DATA, WORLDS_DATA, ACHIEVEMENTS_DATA } from "./python-adventure-data.js";
 
@@ -16,14 +16,16 @@ export const PythonAdventureService = {
    */
   async getStudentProgress(studentUid) {
     const uid = auth.currentUser?.uid || studentUid;
-    try {
-      const data = await callApi("getPythonAdventureProgress");
-      if (data && typeof data === "object") {
-        this._saveLocalCache(uid, data);
-        return data;
+    if (FEATURES.USE_CLOUD_FUNCTIONS) {
+      try {
+        const data = await callApi("getPythonAdventureProgress");
+        if (data && typeof data === "object") {
+          this._saveLocalCache(uid, data);
+          return data;
+        }
+      } catch (apiErr) {
+        console.warn("Cloud function getPythonAdventureProgress unavailable, using fallback:", apiErr);
       }
-    } catch (apiErr) {
-      console.warn("Cloud function getPythonAdventureProgress unavailable, using fallback:", apiErr);
     }
 
     // Fallback 1: Firestore Direct
@@ -75,11 +77,13 @@ export const PythonAdventureService = {
    * Fetches sanitized challenge metadata (without answer leaks).
    */
   async getChallenge(challengeId) {
-    try {
-      const remote = await callApi("getPythonAdventureChallenge", { challengeId });
-      if (remote && remote.id) return remote;
-    } catch (apiErr) {
-      console.warn("Cloud function getPythonAdventureChallenge unavailable, using client curriculum:", apiErr);
+    if (FEATURES.USE_CLOUD_FUNCTIONS) {
+      try {
+        const remote = await callApi("getPythonAdventureChallenge", { challengeId });
+        if (remote && remote.id) return remote;
+      } catch (apiErr) {
+        console.warn("Cloud function getPythonAdventureChallenge unavailable, using client curriculum:", apiErr);
+      }
     }
 
     const localChallenge = CHALLENGES_CLIENT_DATA[challengeId];
@@ -94,23 +98,25 @@ export const PythonAdventureService = {
    * Submits challenge for authoritative validation and reward calculation.
    */
   async submitChallenge({ challengeId, code, hintsUsed = 0, attempts = 1, currentProgress }) {
-    try {
-      const result = await callApi("submitPythonAdventureChallenge", {
-        challengeId,
-        code,
-        hintsUsed,
-        attempts
-      });
-      if (result && result.success) {
-        // Refresh local cache with updated values
-        const uid = auth.currentUser?.uid || currentProgress?.studentUid;
-        if (uid && result.passed) {
-          await this.getStudentProgress(uid);
+    if (FEATURES.USE_CLOUD_FUNCTIONS) {
+      try {
+        const result = await callApi("submitPythonAdventureChallenge", {
+          challengeId,
+          code,
+          hintsUsed,
+          attempts
+        });
+        if (result && result.success) {
+          // Refresh local cache with updated values
+          const uid = auth.currentUser?.uid || currentProgress?.studentUid;
+          if (uid && result.passed) {
+            await this.getStudentProgress(uid);
+          }
+          return result;
         }
-        return result;
+      } catch (apiErr) {
+        console.warn("Cloud function submitPythonAdventureChallenge unavailable, executing local authoritative validator:", apiErr);
       }
-    } catch (apiErr) {
-      console.warn("Cloud function submitPythonAdventureChallenge unavailable, executing local authoritative validator:", apiErr);
     }
 
     // Local Authoritative Validation Fallback
@@ -233,10 +239,12 @@ export const PythonAdventureService = {
    * Fetches daily challenge.
    */
   async getDailyChallenge() {
-    try {
-      const data = await callApi("getDailyChallenge");
-      if (data && data.id) return data;
-    } catch (_) {}
+    if (FEATURES.USE_CLOUD_FUNCTIONS) {
+      try {
+        const data = await callApi("getDailyChallenge");
+        if (data && data.id) return data;
+      } catch (_) {}
+    }
 
     return {
       id: "daily-loop-sum",

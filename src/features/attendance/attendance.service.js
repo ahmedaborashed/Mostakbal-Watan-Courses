@@ -15,7 +15,7 @@ import {
   orderBy,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { COLLECTIONS } from "../../core/constants.js";
+import { COLLECTIONS, FEATURES } from "../../core/constants.js";
 import { normalizeError, isCloudFunctionUnavailable } from "../../core/errors.js";
 
 export const AttendanceService = {
@@ -27,14 +27,16 @@ export const AttendanceService = {
    * @returns {Promise<object>} Normalized attendance view model
    */
   async getStudentAttendance(student) {
-    // 1. Try Authoritative Cloud Function first
-    try {
-      const response = await callApi("getStudentAttendance");
-      if (response && typeof response.attendanceRate === "number") {
-        return response;
+    // 1. Try Authoritative Cloud Function first (if enabled)
+    if (FEATURES.USE_CLOUD_FUNCTIONS) {
+      try {
+        const response = await callApi("getStudentAttendance");
+        if (response && typeof response.attendanceRate === "number") {
+          return response;
+        }
+      } catch (apiErr) {
+        console.warn("Backend getStudentAttendance API fallback triggered:", apiErr?.message || apiErr);
       }
-    } catch (apiErr) {
-      console.warn("Backend getStudentAttendance API fallback triggered:", apiErr?.message || apiErr);
     }
 
     // 2. Resilient Client-Side Firestore Fallback
@@ -194,12 +196,11 @@ export const AttendanceService = {
       payload = { name: param1, date, group };
     }
 
-    try {
-      return await callApi("createAttendanceSession", payload);
-    } catch (apiErr) {
-      console.warn("Cloud function createAttendanceSession unavailable, executing direct Firestore fallback:", apiErr?.message || apiErr);
-      if (!isCloudFunctionUnavailable(apiErr) && apiErr.code !== "APP_ERROR") {
-        throw normalizeError(apiErr);
+    if (FEATURES.USE_CLOUD_FUNCTIONS) {
+      try {
+        return await callApi("createAttendanceSession", payload);
+      } catch (apiErr) {
+        console.warn("Cloud function createAttendanceSession unavailable, executing direct Firestore fallback:", apiErr?.message || apiErr);
       }
     }
 
@@ -232,15 +233,14 @@ export const AttendanceService = {
       present: Boolean(r.present || r.status === "present")
     }));
 
-    try {
-      return await callApi("recordAttendanceBatch", {
-        sessionId,
-        records: sanitizedRecords
-      });
-    } catch (apiErr) {
-      console.warn("Cloud function recordAttendanceBatch unavailable, executing direct Firestore fallback:", apiErr?.message || apiErr);
-      if (!isCloudFunctionUnavailable(apiErr) && apiErr.code !== "APP_ERROR") {
-        throw normalizeError(apiErr);
+    if (FEATURES.USE_CLOUD_FUNCTIONS) {
+      try {
+        return await callApi("recordAttendanceBatch", {
+          sessionId,
+          records: sanitizedRecords
+        });
+      } catch (apiErr) {
+        console.warn("Cloud function recordAttendanceBatch unavailable, executing direct Firestore fallback:", apiErr?.message || apiErr);
       }
     }
 

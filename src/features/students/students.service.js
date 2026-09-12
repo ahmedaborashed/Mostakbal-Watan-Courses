@@ -16,7 +16,7 @@ import {
   limit,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { COLLECTIONS } from "../../core/constants.js";
+import { COLLECTIONS, FEATURES } from "../../core/constants.js";
 import { normalizeError, isCloudFunctionUnavailable } from "../../core/errors.js";
 
 function getSecondaryAuth() {
@@ -91,18 +91,17 @@ export const StudentsService = {
    * and provides a resilient direct secondary Auth + Firestore fallback.
    */
   async createStudent({ name, phone, nationalId, address, group }) {
-    try {
-      return await callApi("createStudent", {
-        name,
-        phone,
-        nationalId,
-        address,
-        group
-      });
-    } catch (err) {
-      console.warn("Cloud function createStudent unavailable, executing direct secondary Auth fallback:", err?.message || err);
-      if (!isCloudFunctionUnavailable(err) && err.code !== "APP_ERROR") {
-        throw normalizeError(err);
+    if (FEATURES.USE_CLOUD_FUNCTIONS) {
+      try {
+        return await callApi("createStudent", {
+          name,
+          phone,
+          nationalId,
+          address,
+          group
+        });
+      } catch (err) {
+        console.warn("Cloud function createStudent unavailable, executing direct secondary Auth fallback:", err?.message || err);
       }
     }
 
@@ -177,15 +176,14 @@ export const StudentsService = {
    * Resets student password securely via Cloud Function with direct Firestore fallback.
    */
   async resetPassword(studentUid, newPassword) {
-    try {
-      return await callApi("resetStudentPassword", {
-        studentUid,
-        newPassword
-      });
-    } catch (err) {
-      console.warn("Cloud function resetStudentPassword unavailable, executing direct Firestore fallback:", err?.message || err);
-      if (!isCloudFunctionUnavailable(err) && err.code !== "APP_ERROR") {
-        throw normalizeError(err);
+    if (FEATURES.USE_CLOUD_FUNCTIONS) {
+      try {
+        return await callApi("resetStudentPassword", {
+          studentUid,
+          newPassword
+        });
+      } catch (err) {
+        console.warn("Cloud function resetStudentPassword unavailable, executing direct Firestore fallback:", err?.message || err);
       }
     }
 
@@ -213,14 +211,13 @@ export const StudentsService = {
    * Deletes a student account via Cloud Function (Admin only) with direct Firestore fallback.
    */
   async deleteStudent(studentUid) {
-    try {
-      return await callApi("deleteStudent", {
-        studentUid
-      });
-    } catch (err) {
-      console.warn("Cloud function deleteStudent unavailable, executing direct Firestore fallback:", err?.message || err);
-      if (!isCloudFunctionUnavailable(err) && err.code !== "APP_ERROR") {
-        throw normalizeError(err);
+    if (FEATURES.USE_CLOUD_FUNCTIONS) {
+      try {
+        return await callApi("deleteStudent", {
+          studentUid
+        });
+      } catch (err) {
+        console.warn("Cloud function deleteStudent unavailable, executing direct Firestore fallback:", err?.message || err);
       }
     }
 

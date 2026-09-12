@@ -82,12 +82,20 @@ export function normalizeError(error) {
   if (rawCode === "functions/unavailable" || rawCode === "unavailable") {
     return new AppError("خدمة الخادم السحابي غير متوفرة حالياً. يرجى المحاولة لاحقاً.", "UNAVAILABLE", error);
   }
-  if (rawCode === "functions/internal" || rawCode === "internal" || rawMessage === "internal") {
-    return new AppError("تعذر إتمام العملية عبر الخادم السحابي. يرجى التحقق من الاتصال بالإنترنت.", "FUNCTIONS_INTERNAL", error);
+  if (
+    rawCode === "functions/internal" ||
+    rawCode === "internal" ||
+    rawCode === "functions_internal" ||
+    rawMessage === "internal" ||
+    String(rawMessage).toLowerCase().includes("internal")
+  ) {
+    return new AppError("تعذر إتمام العملية عبر الخادم السحابي. يرجى استخدام الاتصال المباشر.", "FUNCTIONS_INTERNAL", error);
   }
 
   // Prevent raw unhelpful internal string from ever reaching UI toast
-  const safeMessage = (rawMessage && rawMessage !== "internal") ? rawMessage : "حدث خطأ أثناء معالجة الطلب. يرجى المحاولة لاحقاً.";
+  const safeMessage = (rawMessage && !String(rawMessage).toLowerCase().includes("internal"))
+    ? rawMessage
+    : "حدث خطأ أثناء معالجة الطلب. يرجى المحاولة لاحقاً.";
   return new AppError(safeMessage, "UNKNOWN_ERROR", error);
 }
 
@@ -104,14 +112,22 @@ export function isCloudFunctionUnavailable(error) {
   return (
     code === "functions/internal" ||
     code === "internal" ||
+    code === "functions_internal" ||
     code === "functions/not-found" ||
-    code === "functions/unavailable" ||
+    code === "not_found" ||
     code === "not-found" ||
+    code === "functions/unavailable" ||
+    code === "functions_unavailable" ||
     code === "unavailable" ||
+    code === "app_error" ||
+    code === "unknown_error" ||
     message === "internal" ||
     message.includes("internal") ||
     message.includes("cloud function") ||
+    message.includes("الخادم السحابي") ||
+    message.includes("غير مفعلة") ||
     message.includes("failed to fetch") ||
-    message.includes("networkerror")
+    message.includes("networkerror") ||
+    message.includes("not found")
   );
 }

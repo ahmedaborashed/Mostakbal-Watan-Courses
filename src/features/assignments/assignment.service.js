@@ -14,7 +14,7 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
-import { COLLECTIONS, STORAGE_PATHS } from "../../core/constants.js";
+import { COLLECTIONS, STORAGE_PATHS, FEATURES } from "../../core/constants.js";
 import { normalizeError, isCloudFunctionUnavailable } from "../../core/errors.js";
 
 export const AssignmentService = {
@@ -163,24 +163,22 @@ export const AssignmentService = {
       fileUrl = uploadRes.downloadUrl;
     }
 
-    // 1. Try Authoritative Cloud Function first
-    try {
-      const apiResult = await callApi("submitAssignment", {
-        assignmentId,
-        answerText: cleanText,
-        fileUrl
-      });
-      if (apiResult) {
-        return {
-          ...apiResult,
-          fileUrl: apiResult.fileUrl || fileUrl
-        };
-      }
-    } catch (apiErr) {
-      console.warn("Cloud function submitAssignment unavailable, switching to direct Firestore fallback:", apiErr?.message || apiErr);
-      if (!isCloudFunctionUnavailable(apiErr) && apiErr.code !== "APP_ERROR") {
-        // If it was an intentional business validation error (e.g. deadline-exceeded), rethrow
-        throw normalizeError(apiErr);
+    // 1. Try Authoritative Cloud Function (only if enabled)
+    if (FEATURES.USE_CLOUD_FUNCTIONS) {
+      try {
+        const apiResult = await callApi("submitAssignment", {
+          assignmentId,
+          answerText: cleanText,
+          fileUrl
+        });
+        if (apiResult) {
+          return {
+            ...apiResult,
+            fileUrl: apiResult.fileUrl || fileUrl
+          };
+        }
+      } catch (apiErr) {
+        console.warn("Cloud function submitAssignment unavailable, switching to direct Firestore fallback:", apiErr?.message || apiErr);
       }
     }
 
@@ -324,17 +322,16 @@ export const AssignmentService = {
    * Teacher grades student assignment with resilient direct Firestore fallback.
    */
   async gradeTask(assignmentId, studentUid, grade, feedback = "") {
-    try {
-      return await callApi("gradeAssignment", {
-        assignmentId,
-        studentUid,
-        grade: Number(grade),
-        feedback
-      });
-    } catch (apiErr) {
-      console.warn("Cloud function gradeAssignment unavailable, executing direct Firestore fallback:", apiErr?.message || apiErr);
-      if (!isCloudFunctionUnavailable(apiErr) && apiErr.code !== "APP_ERROR") {
-        throw normalizeError(apiErr);
+    if (FEATURES.USE_CLOUD_FUNCTIONS) {
+      try {
+        return await callApi("gradeAssignment", {
+          assignmentId,
+          studentUid,
+          grade: Number(grade),
+          feedback
+        });
+      } catch (apiErr) {
+        console.warn("Cloud function gradeAssignment unavailable, executing direct Firestore fallback:", apiErr?.message || apiErr);
       }
     }
 

@@ -56,3 +56,9 @@ export const LANGUAGES = Object.freeze({
   AR: "ar",
   EN: "en"
 });
+
+export const FEATURES = Object.freeze({
+  // Cloud Functions are undeployed on Firebase Spark tier (tesla-5fdef).
+  // When false, features use direct resilient Firestore/Auth/Storage operations without 404 network failures.
+  USE_CLOUD_FUNCTIONS: false
+});
