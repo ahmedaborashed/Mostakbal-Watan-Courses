@@ -20,25 +20,25 @@
     print-color-adjust: exact !important;
   }
 
-  /* 2. Hide everything by default when report area is active */
-  body.printing-report * {
-    visibility: hidden !important;
+  /* 2. Hide everything in body except #printableReportArea when printing */
+  body.printing-report > *:not(#printableReportArea) {
+    display: none !important;
   }
 
-  /* 3. Reveal only the printable report container and its children */
-  body.printing-report #printableReportArea,
-  body.printing-report #printableReportArea * {
-    visibility: visible !important;
-  }
-
+  /* 3. Reveal and position the printable report container naturally */
   body.printing-report #printableReportArea {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
+    display: block !important;
+    position: static !important;
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;
+    color: #111827 !important;
+    visibility: visible !important;
+  }
+
+  body.printing-report #printableReportArea * {
+    visibility: visible !important;
   }
 
   /* 4. Hide interactive controls, buttons, sidebars, modals */
@@ -48,7 +48,10 @@
   .modal-backdrop,
   .sidebar,
   .top-navbar,
-  .toast-container {
+  .toast-container,
+  input,
+  select,
+  textarea {
     display: none !important;
   }
 
@@ -125,6 +128,34 @@
     font-size: 13pt !important;
     font-weight: 800 !important;
     color: #0f172a !important;
+  }
+
+  /* Status Tags for Print */
+  .print-badge {
+    display: inline-block !important;
+    padding: 2px 6px !important;
+    border-radius: 3px !important;
+    font-size: 8.5pt !important;
+    font-weight: bold !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+
+  .print-badge-success {
+    background-color: #f0fdf4 !important;
+    color: #166534 !important;
+    border-color: #86efac !important;
+  }
+
+  .print-badge-danger {
+    background-color: #fef2f2 !important;
+    color: #991b1b !important;
+    border-color: #fca5a5 !important;
+  }
+
+  .print-badge-warning {
+    background-color: #fffbeb !important;
+    color: #92400e !important;
+    border-color: #fde68a !important;
   }
 
   /* Page Break avoidance */

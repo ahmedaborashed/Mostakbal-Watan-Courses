@@ -17,6 +17,43 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 import { COLLECTIONS, STORAGE_PATHS, FEATURES } from "../../core/constants.js";
 import { normalizeError, isCloudFunctionUnavailable } from "../../core/errors.js";
+import { StudentsService } from "../students/students.service.js";
+
+/**
+ * Normalizes any raw assignment grade to a 10-point scale.
+ * Handles both 100-point scale legacy grades and already-normalized 10-point grades.
+ * e.g., 80 -> 8, 95 -> 9.5, 72 -> 7.2, 8 -> 8, 9.5 -> 9.5, 0 -> 0.
+ * @param {number|string|null|undefined} rawGrade
+ * @param {number} [maxScore=100]
+ * @returns {number|null}
+ */
+export function normalizeAssignmentGrade(rawGrade, maxScore = 100) {
+  if (rawGrade === undefined || rawGrade === null || rawGrade === "") {
+    return null;
+  }
+  const num = Number(rawGrade);
+  if (isNaN(num)) return null;
+
+  let scaledScore = num;
+  if (num > 10) {
+    const baseMax = maxScore > 10 ? maxScore : 100;
+    scaledScore = (num / baseMax) * 10;
+  }
+  // Round to at most 1 decimal place
+  return Math.round(scaledScore * 10) / 10;
+}
+
+/**
+ * Returns formatted string representing the grade out of 10.
+ * @param {number|string|null|undefined} rawGrade
+ * @param {number} [maxScore=100]
+ * @returns {string} e.g. "8 / 10" or "—"
+ */
+export function formatAssignmentGradeDisplay(rawGrade, maxScore = 100) {
+  const norm = normalizeAssignmentGrade(rawGrade, maxScore);
+  if (norm === null) return "—";
+  return `${norm} / 10`;
+}
 
 export const AssignmentService = {
   /**
@@ -388,6 +425,201 @@ export const AssignmentService = {
     try {
       await deleteDoc(doc(db, COLLECTIONS.ASSIGNMENTS, assignmentId));
       return true;
+    } catch (err) {
+      throw normalizeError(err);
+    }
+  },
+
+  /**
+   * Fetches the assignment, its target audience students, and joins with submissions.
+   * Clearly separates students who submitted and students who did not.
+   * @param {string} assignmentId
+   * @returns {Promise<{
+   *   assignment: object,
+   *   totalEligible: number,
+   *   submittedCount: number,
+   *   notSubmittedCount: number,
+   *   gradedCount: number,
+   *   pendingCount: number,
+   *   roster: Array<object>
+   * }>}
+   */
+  async getAssignmentSubmissionsWithRoster(assignmentId) {
+    if (!assignmentId) throw new Error("معرف الواجب مطلوب.");
+
+    try {
+      // 1. Fetch assignment
+      let assignment = null;
+      const snap = await getDoc(doc(db, COLLECTIONS.ASSIGNMENTS, assignmentId));
+      if (snap.exists()) {
+        assignment = { id: snap.id, ...snap.data() };
+      } else {
+        throw new Error("الواجب المطلوب غير موجود.");
+      }
+
+      // 2. Fetch all registered students & submissions in parallel
+      const [allStudents, submissions] = await Promise.all([
+        StudentsService.getAllStudents(),
+        this.getTaskSubmissions(assignmentId)
+      ]);
+
+      // 3. Map submissions by student identifiers for O(1) lookup
+      const subMap = new Map();
+      submissions.forEach((sub) => {
+        const uid = sub.studentUid || sub.studentId || sub.id;
+        if (uid) subMap.set(String(uid), sub);
+        if (sub.studentPhone) subMap.set(String(sub.studentPhone).trim(), sub);
+        if (sub.phone) subMap.set(String(sub.phone).trim(), sub);
+      });
+
+      // 4. Determine eligible students based on assignment audience
+      const targetGroup = assignment.group || "ALL";
+      const targetStudentIds = Array.isArray(assignment.targetStudentIds)
+        ? assignment.targetStudentIds
+        : (Array.isArray(assignment.selectedStudents) ? assignment.selectedStudents : null);
+
+      let eligibleStudents = allStudents;
+      if (targetStudentIds && targetStudentIds.length > 0) {
+        const idSet = new Set(targetStudentIds.map(String));
+        eligibleStudents = allStudents.filter(
+          (s) => idSet.has(String(s.id)) || idSet.has(String(s.firestoreId)) || idSet.has(String(s.studentPhone))
+        );
+      } else if (targetGroup && targetGroup !== "ALL") {
+        eligibleStudents = allStudents.filter((s) => {
+          const sGrp = (s.group || s.studentGroup || "").trim();
+          return sGrp === targetGroup.trim();
+        });
+      }
+
+      // 5. LEFT JOIN: match each eligible student to their submission
+      const roster = eligibleStudents.map((student) => {
+        const sId = String(student.id || student.firestoreId || "");
+        const sPhone = String(student.studentPhone || student.phone || "").trim();
+        const submission = subMap.get(sId) || (sPhone ? subMap.get(sPhone) : null) || null;
+
+        const studentName = (student.name || student.studentName || "طالب مسجل").trim();
+        const studentGroup = (student.group || student.studentGroup || targetGroup || "عام").trim();
+
+        if (submission) {
+          const isGraded = submission.grade !== undefined && submission.grade !== null;
+          const normalizedGrade = normalizeAssignmentGrade(submission.grade);
+          const answer = (
+            submission.answerText ||
+            submission.answer ||
+            submission.code ||
+            submission.solution ||
+            submission.content ||
+            submission.text ||
+            ""
+          ).trim();
+
+          return {
+            studentUid: sId,
+            studentName,
+            studentPhone: sPhone,
+            group: studentGroup,
+            hasSubmitted: true,
+            status: isGraded ? "graded" : "submitted",
+            statusLabel: isGraded ? "تم التصحيح" : "تم التسليم (قيد التصحيح)",
+            rawGrade: submission.grade,
+            grade: normalizedGrade,
+            gradeDisplay: isGraded ? `${normalizedGrade} / 10` : "قيد التصحيح",
+            feedback: submission.feedback || "",
+            answerText: answer,
+            fileUrl: submission.fileUrl || "",
+            submittedAt: submission.submittedAt || submission.createdAt || null,
+            submissionId: submission.id,
+            submission
+          };
+        } else {
+          return {
+            studentUid: sId,
+            studentName,
+            studentPhone: sPhone,
+            group: studentGroup,
+            hasSubmitted: false,
+            status: "not_submitted",
+            statusLabel: "لم يتم التسليم",
+            rawGrade: null,
+            grade: null,
+            gradeDisplay: "—",
+            feedback: "",
+            answerText: "",
+            fileUrl: "",
+            submittedAt: null,
+            submissionId: null,
+            submission: null
+          };
+        }
+      });
+
+      // Also include any submissions whose student wasn't in eligibleStudents (edge case safety)
+      submissions.forEach((sub) => {
+        const uid = sub.studentUid || sub.studentId || sub.id;
+        const existsInRoster = roster.some(
+          (r) => r.studentUid === uid || (r.studentPhone && r.studentPhone === sub.studentPhone)
+        );
+        if (!existsInRoster) {
+          const isGraded = sub.grade !== undefined && sub.grade !== null;
+          const normalizedGrade = normalizeAssignmentGrade(sub.grade);
+          const answer = (
+            sub.answerText ||
+            sub.answer ||
+            sub.code ||
+            sub.solution ||
+            sub.content ||
+            sub.text ||
+            ""
+          ).trim();
+
+          roster.push({
+            studentUid: uid,
+            studentName: sub.studentName || sub.name || "طالب مسجل",
+            studentPhone: sub.studentPhone || "",
+            group: sub.group || "خارج المجموعة",
+            hasSubmitted: true,
+            status: isGraded ? "graded" : "submitted",
+            statusLabel: isGraded ? "تم التصحيح" : "تم التسليم (قيد التصحيح)",
+            rawGrade: sub.grade,
+            grade: normalizedGrade,
+            gradeDisplay: isGraded ? `${normalizedGrade} / 10` : "قيد التصحيح",
+            feedback: sub.feedback || "",
+            answerText: answer,
+            fileUrl: sub.fileUrl || "",
+            submittedAt: sub.submittedAt || sub.createdAt || null,
+            submissionId: sub.id,
+            submission: sub
+          });
+        }
+      });
+
+      // Sort: submitted first (most recent), then unsubmitted alphabetically
+      roster.sort((a, b) => {
+        if (a.hasSubmitted && !b.hasSubmitted) return -1;
+        if (!a.hasSubmitted && b.hasSubmitted) return 1;
+        if (a.hasSubmitted && b.hasSubmitted) {
+          const tA = a.submittedAt?.toDate?.() || new Date(a.submittedAt || 0);
+          const tB = b.submittedAt?.toDate?.() || new Date(b.submittedAt || 0);
+          return tB - tA;
+        }
+        return a.studentName.localeCompare(b.studentName, "ar");
+      });
+
+      const totalEligible = roster.length;
+      const submittedCount = roster.filter((r) => r.hasSubmitted).length;
+      const notSubmittedCount = totalEligible - submittedCount;
+      const gradedCount = roster.filter((r) => r.status === "graded").length;
+      const pendingCount = roster.filter((r) => r.status === "submitted").length;
+
+      return {
+        assignment,
+        totalEligible,
+        submittedCount,
+        notSubmittedCount,
+        gradedCount,
+        pendingCount,
+        roster
+      };
     } catch (err) {
       throw normalizeError(err);
     }

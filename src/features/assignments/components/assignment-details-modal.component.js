@@ -5,6 +5,7 @@ import { renderFileUploadZone } from "../../../shared/components/FileUpload/file
 import { renderBadge } from "../../../shared/components/Badge/badge.component.js";
 import { formatDate, formatDateTime, getDeadlineInfo, isDeadlinePassed } from "../../../shared/utils/date.utils.js";
 import { formatAssignmentContent } from "./assignment-card.component.js";
+import { normalizeAssignmentGrade } from "../assignment.service.js";
 
 export const ASSIGNMENT_DETAILS_MODAL_ID = "assignmentDetailsModal";
 
@@ -28,10 +29,11 @@ export function renderAssignmentDetailsContent({ assignment, submission, isSubmi
   // 1. Status Badge Resolution
   let statusBadgeHtml = "";
   if (isSubmitted) {
-    const isGraded = submission.grade !== undefined && submission.grade !== null;
+    const normalizedGrade = normalizeAssignmentGrade(submission.grade);
+    const isGraded = normalizedGrade !== null;
     if (isGraded) {
       statusBadgeHtml = renderBadge({
-        text: `تم التصحيح: ${submission.grade} / 100`,
+        text: `تم التصحيح: ${normalizedGrade} / 10`,
         variant: "success",
         icon: "✓"
       });
@@ -101,8 +103,19 @@ export function renderAssignmentDetailsContent({ assignment, submission, isSubmi
   // 3. Submission Area Content
   let submissionAreaHtml = "";
   if (isSubmitted) {
-    const isGraded = submission.grade !== undefined && submission.grade !== null;
+    const normalizedGrade = normalizeAssignmentGrade(submission.grade);
+    const isGraded = normalizedGrade !== null;
     const submittedTime = formatDateTime(submission.submittedAt || submission.createdAt);
+
+    const rawAnswer = (
+      submission.answerText ||
+      submission.answer ||
+      submission.code ||
+      submission.solution ||
+      submission.content ||
+      submission.text ||
+      ""
+    ).trim();
 
     submissionAreaHtml = `
       <div class="assignment-submission-panel is-submitted">
@@ -129,7 +142,7 @@ export function renderAssignmentDetailsContent({ assignment, submission, isSubmi
               ? `
                 <div class="grade-score-row mb-2">
                   <span class="text-xs text-muted">الدرجة:</span>
-                  <strong class="grade-score-val text-accent">${escapeHtml(String(submission.grade))} / 100</strong>
+                  <strong class="grade-score-val text-accent" style="font-size:1.15rem;">${escapeHtml(String(normalizedGrade))} / 10</strong>
                 </div>
                 ${
                   submission.feedback
@@ -154,28 +167,39 @@ export function renderAssignmentDetailsContent({ assignment, submission, isSubmi
 
         <!-- Student Submitted Content Review -->
         <div class="submitted-content-summary">
-          <h5 class="text-xs font-bold text-muted mb-2">نسخة إجابتك المرسلة:</h5>
+          <h5 class="text-xs font-bold text-muted mb-2">نسخة إجابتك والكود البرمجي المرسل:</h5>
           ${
-            submission.answerText
+            rawAnswer
               ? `
-                <div class="submitted-text-box mb-3">
-                  <pre class="m-0">${escapeHtml(submission.answerText)}</pre>
+                <div class="submitted-code-box mb-3" style="background:#0f172a;border:1px solid #334155;border-radius:6px;overflow:hidden;">
+                  <div style="background:#1e293b;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #334155;">
+                    <span style="font-size:0.75rem;font-family:monospace;color:#94a3b8;">إجابة الطالب / الكود البرمجي 💻</span>
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-xs text-muted"
+                      onclick="navigator.clipboard?.writeText(this.closest('.submitted-code-box').querySelector('code').innerText);this.innerText='تم النسخ ✓';setTimeout(()=>this.innerText='نسخ الكود 📋',2000);"
+                      style="padding:2px 8px;font-size:0.75rem;"
+                    >
+                      نسخ الكود 📋
+                    </button>
+                  </div>
+                  <pre class="m-0 p-3" dir="ltr" style="margin:0;padding:12px;font-family:'Fira Code','Courier New',monospace;font-size:0.9rem;line-height:1.5;color:#f8fafc;overflow-x:auto;white-space:pre;text-align:left;"><code>${escapeHtml(rawAnswer)}</code></pre>
                 </div>
               `
-              : `<p class="text-xs text-muted mb-2">لم يتم إرفاق إجابة نصية (تم تسليم ملف فقط).</p>`
+              : `<p class="text-xs text-muted mb-2">لم يتم إرفاق إجابة نصية أو كود (تم تسليم ملف فقط).</p>`
           }
           ${
             submission.fileUrl
               ? `
-                <div class="submitted-file-row">
+                <div class="submitted-file-row mt-2">
                   <span class="text-xs font-bold">الملف المرفق للحل:</span>
                   <a
                     href="${escapeHtml(submission.fileUrl)}"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="btn btn-outline btn-sm"
+                    class="btn btn-outline btn-sm font-bold"
                   >
-                    <span>معاينة وتحميل الحل</span>
+                    <span>فتح ومعاينة الملف ↗</span>
                     <span aria-hidden="true">📥</span>
                   </a>
                 </div>

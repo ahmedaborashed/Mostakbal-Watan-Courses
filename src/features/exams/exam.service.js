@@ -17,6 +17,23 @@ import {
 import { COLLECTIONS, FEATURES } from "../../core/constants.js";
 import { normalizeError, isCloudFunctionUnavailable } from "../../core/errors.js";
 
+function _normalizeExamData(id, data = {}) {
+  const resolvedTitle = (
+    data.title ||
+    data.name ||
+    data.examTitle ||
+    data.examName ||
+    "امتحان بدون عنوان"
+  ).trim();
+
+  return {
+    id,
+    ...data,
+    title: resolvedTitle,
+    name: resolvedTitle
+  };
+}
+
 export const ExamService = {
   /**
    * Fetches full academic exams history for student (available, upcoming, completed, and expired).
@@ -28,7 +45,7 @@ export const ExamService = {
     try {
       // 1. Fetch all exams
       const snap = await getDocs(collection(db, COLLECTIONS.EXAMS));
-      const allExams = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const allExams = snap.docs.map((d) => _normalizeExamData(d.id, d.data()));
 
       // 2. Fetch all student results in batch (queries + O(1) lookups)
       const resultsMap = new Map();
@@ -145,7 +162,7 @@ export const ExamService = {
 
     try {
       const snap = await getDocs(collection(db, COLLECTIONS.EXAMS));
-      const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const all = snap.docs.map((d) => _normalizeExamData(d.id, d.data()));
       const filtered = all.filter(
         (e) => e.active !== false && (!e.group || e.group === "ALL" || e.group === studentGroup)
       );
@@ -154,7 +171,8 @@ export const ExamService = {
           const res = studentUid ? await this.getResult(exam.id, studentUid) : null;
           return {
             id: exam.id,
-            title: exam.title || "",
+            title: exam.title || exam.name || "امتحان بدون عنوان",
+            name: exam.title || exam.name || "امتحان بدون عنوان",
             description: exam.description || "",
             duration: Number(exam.duration || 30),
             group: exam.group || "ALL",
@@ -189,7 +207,7 @@ export const ExamService = {
       if (!snap.exists()) {
         throw new Error("الامتحان المطلوب غير موجود.");
       }
-      const examData = snap.data();
+      const examData = _normalizeExamData(snap.id, snap.data());
       if (examData.active === false) {
         throw new Error("هذا الامتحان غير متاح حالياً.");
       }
@@ -513,7 +531,7 @@ export const ExamService = {
   async getAllExams() {
     try {
       const snap = await getDocs(collection(db, COLLECTIONS.EXAMS));
-      return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      return snap.docs.map((d) => _normalizeExamData(d.id, d.data()));
     } catch (err) {
       throw normalizeError(err);
     }
@@ -528,7 +546,7 @@ export const ExamService = {
       if (!snap.exists()) {
         throw new Error("الامتحان المطلوب غير موجود.");
       }
-      return { id: snap.id, ...snap.data() };
+      return _normalizeExamData(snap.id, snap.data());
     } catch (err) {
       throw normalizeError(err);
     }

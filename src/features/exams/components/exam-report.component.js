@@ -5,9 +5,16 @@ import { formatDate } from "../../../shared/utils/date.utils.js";
 /**
  * Triggers clean A4 printing of the given report HTML.
  * Injects into #printableReportArea, applies .printing-report to body, and opens print dialog.
+ * Validates DOM content before opening print dialog and prevents premature cleanup.
  * @param {string} reportHtml
  */
 export function triggerPrintReport(reportHtml) {
+  if (!reportHtml || typeof reportHtml !== "string" || !reportHtml.trim()) {
+    console.error("Cannot print empty report HTML");
+    alert("تعذر إنشاء التقرير. حاول مرة أخرى.");
+    return;
+  }
+
   let printContainer = document.getElementById("printableReportArea");
   if (!printContainer) {
     printContainer = document.createElement("div");
@@ -16,6 +23,16 @@ export function triggerPrintReport(reportHtml) {
   }
 
   printContainer.innerHTML = reportHtml;
+
+  // Programmatic verification: verify container actually has rendered text content
+  const renderedText = (printContainer.innerText || printContainer.textContent || "").trim();
+  if (renderedText.length === 0) {
+    console.error("Print container has no text content before printing");
+    alert("تعذر إنشاء التقرير. حاول مرة أخرى.");
+    printContainer.innerHTML = "";
+    return;
+  }
+
   document.body.classList.add("printing-report");
 
   const cleanup = () => {
@@ -23,17 +40,17 @@ export function triggerPrintReport(reportHtml) {
     if (printContainer) {
       printContainer.innerHTML = "";
     }
-    window.removeEventListener("afterprint", cleanup);
   };
 
-  window.addEventListener("afterprint", cleanup);
+  // Only cleanup when the print preview is closed or completed
+  window.addEventListener("afterprint", cleanup, { once: true });
 
-  // Allow browser time to render styles before printing
-  setTimeout(() => {
-    window.print();
-    // Fallback cleanup if afterprint doesn't fire
-    setTimeout(cleanup, 2000);
-  }, 150);
+  // Use double requestAnimationFrame to ensure browser renders styles and layout before printing
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      window.print();
+    });
+  });
 }
 
 /**
@@ -44,7 +61,7 @@ export function triggerPrintReport(reportHtml) {
  * @returns {string}
  */
 export function renderSingleExamPrintableReport({ exam, results = [] }) {
-  const safeExamTitle = escapeHtml(exam?.title || "امتحان بدون عنوان");
+  const safeExamTitle = escapeHtml(exam?.title || exam?.name || exam?.examTitle || exam?.examName || "امتحان بدون عنوان");
   const safeGroup = escapeHtml(exam?.group || "جميع المجموعات");
   const duration = Number(exam?.duration) || 30;
   const questions = Array.isArray(exam?.questions) ? exam.questions : [];
@@ -188,7 +205,7 @@ export function renderAllExamsSummaryPrintableReport({ exams = [], matrix = [] }
             <th style="width:35px;">#</th>
             <th>اسم الطالب</th>
             <th>المجموعة</th>
-            ${exams.map((e) => `<th style="text-align:center;font-size:8.5pt;">${escapeHtml(e.title || "امتحان")}</th>`).join("")}
+            ${exams.map((e) => `<th style="text-align:center;font-size:8.5pt;">${escapeHtml(e.title || e.name || e.examTitle || "امتحان")}</th>`).join("")}
             <th style="text-align:center;background:#e2e8f0;">متوسط النسبة</th>
             <th style="text-align:center;background:#e2e8f0;">الامتحانات المكتملة</th>
           </tr>

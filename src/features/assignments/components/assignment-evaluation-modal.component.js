@@ -2,6 +2,7 @@
 import { escapeHtml } from "../../../shared/utils/dom.utils.js";
 import { renderModal } from "../../../shared/components/Modal/modal.component.js";
 import { formatDateTime } from "../../../shared/utils/date.utils.js";
+import { normalizeAssignmentGrade } from "../assignment.service.js";
 
 export const ASSIGNMENT_EVALUATION_MODAL_ID = "assignmentEvaluationModal";
 
@@ -38,9 +39,20 @@ export function renderAssignmentEvaluationContent({ taskTitle, submission }) {
   const studentName = escapeHtml(submission.studentName || submission.name || "طالب");
   const studentPhone = escapeHtml(submission.studentPhone || submission.studentUid || "—");
   const submittedAtFormatted = formatDateTime(submission.submittedAt || submission.createdAt);
-  const answerText = submission.answerText ? escapeHtml(submission.answerText) : "";
+
+  const rawAnswer = (
+    submission.answerText ||
+    submission.answer ||
+    submission.code ||
+    submission.solution ||
+    submission.content ||
+    submission.text ||
+    ""
+  ).trim();
+
   const fileUrl = submission.fileUrl ? escapeHtml(submission.fileUrl) : "";
-  const currentGrade = submission.grade != null ? submission.grade : "";
+  const normGrade = normalizeAssignmentGrade(submission.grade);
+  const currentGrade = normGrade !== null ? normGrade : "";
   const currentFeedback = submission.feedback ? escapeHtml(submission.feedback) : "";
 
   return `
@@ -63,16 +75,26 @@ export function renderAssignmentEvaluationContent({ taskTitle, submission }) {
 
       <!-- Submitted Content Preview -->
       <div class="mb-3">
-        <label class="form-label font-bold text-xs text-muted mb-1 d-block">محتوى إجابة الطالب:</label>
+        <label class="form-label font-bold text-xs text-muted mb-1 d-block">محتوى إجابة وكود الطالب:</label>
         ${
-          answerText
+          rawAnswer
             ? `
-          <div
-            class="p-3 mb-2"
-            style="background:var(--color-surface-elevated);border:1px solid var(--color-border-primary);border-radius:var(--radius-sm);min-height:70px;white-space:pre-wrap;line-height:1.6;font-size:0.95rem;color:var(--color-text-primary);border-inline-start:4px solid var(--color-accent);"
-          >${answerText}</div>
+          <div class="submitted-code-box mb-2" style="background:#0f172a;border:1px solid #334155;border-radius:6px;overflow:hidden;">
+            <div style="background:#1e293b;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #334155;">
+              <span style="font-size:0.75rem;font-family:monospace;color:#94a3b8;">إجابة الطالب / الكود البرمجي 💻</span>
+              <button
+                type="button"
+                class="btn btn-ghost btn-xs text-muted"
+                onclick="navigator.clipboard?.writeText(this.closest('.submitted-code-box').querySelector('code').innerText);this.innerText='تم النسخ ✓';setTimeout(()=>this.innerText='نسخ الكود 📋',2000);"
+                style="padding:2px 8px;font-size:0.75rem;"
+              >
+                نسخ الكود 📋
+              </button>
+            </div>
+            <pre class="m-0 p-3" dir="ltr" style="margin:0;padding:12px;font-family:'Fira Code','Courier New',monospace;font-size:0.9rem;line-height:1.5;color:#f8fafc;overflow-x:auto;white-space:pre;text-align:left;"><code>${escapeHtml(rawAnswer)}</code></pre>
+          </div>
         `
-            : `<div class="p-2 mb-2 text-xs text-muted" style="background:var(--color-bg-secondary);border-radius:var(--radius-sm);">لا توجد إجابة نصية مدونة.</div>`
+            : `<div class="p-3 mb-2 text-xs text-muted" style="background:var(--color-bg-secondary);border-radius:var(--radius-sm);">لا توجد إجابة نصية أو كود مدون (تم تسليم ملف فقط).</div>`
         }
 
         ${
@@ -104,7 +126,7 @@ export function renderAssignmentEvaluationContent({ taskTitle, submission }) {
       <div class="card p-3" style="background:var(--color-surface-elevated);border:1px solid var(--color-border-primary);border-radius:var(--radius-sm);">
         <div class="form-group mb-3">
           <label for="evalGradeInput" class="form-label font-extrabold text-sm mb-1" style="color:var(--color-text-primary);">
-            الدرجة المستحقة (من 100): <span class="text-danger">*</span>
+            الدرجة المستحقة (من 10): <span class="text-danger">*</span>
           </label>
           <div class="d-flex items-center gap-3">
             <input
@@ -113,14 +135,14 @@ export function renderAssignmentEvaluationContent({ taskTitle, submission }) {
               class="form-control font-black text-center"
               style="max-width:140px;font-size:1.25rem;"
               min="0"
-              max="100"
-              step="1"
+              max="10"
+              step="0.5"
               value="${currentGrade}"
-              placeholder="0-100"
+              placeholder="0-10"
               required
             />
             <span class="text-xs text-muted">
-              أدخل درجة بين 0 و 100. ستظهر فوراً للطالب في ملفه الدراسي وتُحدّث إحصاءات الواجب.
+              أدخل درجة بين 0 و 10 (مثال: 8 أو 9.5). ستظهر فوراً للطالب في ملفه الدراسي وتُحدّث إحصاءات الواجب.
             </span>
           </div>
         </div>

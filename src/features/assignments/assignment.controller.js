@@ -30,6 +30,18 @@ import { setHtml, escapeHtml } from "../../shared/utils/dom.utils.js";
 import { formatDate, formatDateTime, isDeadlinePassed } from "../../shared/utils/date.utils.js";
 import { auth } from "../../core/firebase.js";
 import { GROUPS } from "../../core/constants.js";
+import { triggerPrintReport } from "../exams/components/exam-report.component.js";
+import { renderAssignmentPrintableReport } from "./components/assignment-report.component.js";
+import { normalizeAssignmentGrade, formatAssignmentGradeDisplay } from "./assignment.service.js";
+
+// Internal debounce helper
+function debounce(fn, delay = 250) {
+  let timeoutId;
+  return function (...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
 
 export const AssignmentController = {
   /**
@@ -858,7 +870,7 @@ export const AssignmentController = {
   },
 
   /**
-   * Displays modal with submissions list for an assignment with grading capability.
+   * Displays modal with full audience roster (who submitted vs who did not) with grading capability.
    */
   async showTeacherSubmissionsModal(taskId, taskTitle) {
     let modalEl = document.getElementById("teacherSubmissionsModal");
@@ -867,7 +879,7 @@ export const AssignmentController = {
         id: "teacherSubmissionsModal",
         title: `<span id="teacherSubmissionsModalTitle">استعراض تسليمات الطلاب</span>`,
         bodyHtml: `<div id="teacherSubmissionsBody"></div>`,
-        maxWidth: "800px"
+        maxWidth: "920px"
       });
       document.body.insertAdjacentHTML("beforeend", modalHtml);
     }
@@ -875,91 +887,254 @@ export const AssignmentController = {
     const titleEl = document.getElementById("teacherSubmissionsModalTitle");
     const bodyEl = document.getElementById("teacherSubmissionsBody");
     if (titleEl) titleEl.textContent = `📋 تسليمات: ${taskTitle}`;
-    if (bodyEl) setHtml(bodyEl, renderLoader({ text: "جاري جلب تسليمات الطلاب... ⏳" }));
+    if (bodyEl) setHtml(bodyEl, renderLoader({ text: "جاري استخراج بيانات الواجب والطلاب المسلمين وغير المسلمين... ⏳" }));
 
     openModal("teacherSubmissionsModal");
 
     try {
-      const submissions = await AssignmentService.getTaskSubmissions(taskId);
-      if (!submissions || submissions.length === 0) {
-        if (bodyEl) {
-          setHtml(
-            bodyEl,
-            renderEmptyState({
-              icon: "📭",
-              title: "لا توجد تسليمات حتى الآن",
-              description: "لم يقم أي طالب برفع حل لهذا الواجب بعد."
-            })
-          );
-        }
-        return;
+      const data = await AssignmentService.getAssignmentSubmissionsWithRoster(taskId);
+      const { assignment, totalEligible, submittedCount, notSubmittedCount, gradedCount, pendingCount, roster } = data;
+
+      if (titleEl) {
+        const grpLabel = assignment.group === "ALL" ? "جميع المجموعات" : (assignment.group || "عام");
+        titleEl.innerHTML = `<span>📋 تسليمات ونتائج: ${escapeHtml(taskTitle || assignment.title)}</span> <span class="badge badge-neutral text-xs ms-2">${escapeHtml(grpLabel)}</span>`;
       }
 
-      const headers = ["الطالب", "تاريخ التسليم", "الحل / الملف", "الدرجة", "الإجراء"];
-      const rows = submissions.map((sub) => {
-        const studentName = sub.studentName || sub.name || "طالب";
-        const studentUid = sub.studentUid || sub.studentId || sub.id;
-        const fileLink = sub.fileUrl
-          ? `<a href="${escapeHtml(sub.fileUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-xs">ملف 📥</a>`
-          : "";
-        const textSummary = sub.answerText
-          ? `<span class="text-xs text-muted" title="${escapeHtml(sub.answerText)}">نص الإجابة 📝</span>`
-          : "";
-        const solutionCol = `${fileLink} ${textSummary}`.trim() || `<span class="text-xs text-muted">—</span>`;
+      let activeFilter = "all";
+      let searchQuery = "";
 
-        const isGraded = sub.grade !== undefined && sub.grade !== null;
-        const gradeText = isGraded ? `${sub.grade} / 100` : "قيد التقييم";
-        const gradeCol = isGraded
-          ? `<strong class="text-accent">${escapeHtml(gradeText)}</strong>`
-          : `<span class="badge badge-warning">جديد</span>`;
+      const renderRosterView = () => {
+        if (!bodyEl) return;
 
-        const actionBtn = `
-          <button
-            type="button"
-            class="btn btn-primary btn-xs"
-            data-grade-submission="${escapeHtml(studentUid)}"
-            data-student-name="${escapeHtml(studentName)}"
-            data-current-grade="${isGraded ? escapeHtml(String(sub.grade)) : ''}"
-            data-current-feedback="${escapeHtml(sub.feedback || '')}"
-          >
-            <span>${isGraded ? 'تعديل الدرجة' : 'تقييم الآن'}</span>
-          </button>
+        // Apply filters & search
+        const filtered = roster.filter((item) => {
+          if (activeFilter === "submitted" && !item.hasSubmitted) return false;
+          if (activeFilter === "not_submitted" && item.hasSubmitted) return false;
+          if (activeFilter === "pending" && item.status !== "submitted") return false;
+          if (activeFilter === "graded" && item.status !== "graded") return false;
+
+          if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            const nameMatch = item.studentName.toLowerCase().includes(q);
+            const phoneMatch = item.studentPhone.includes(q);
+            if (!nameMatch && !phoneMatch) return false;
+          }
+
+          return true;
+        });
+
+        const headers = ["#", "اسم الطالب", "المجموعة", "الحل / الملف", "حالة التسليم", "الدرجة (من 10)", "الإجراء"];
+        const rows = filtered.map((item, idx) => {
+          const studentNameCol = `
+            <div>
+              <strong style="color:var(--color-text-primary);">${escapeHtml(item.studentName)}</strong>
+              ${item.studentPhone ? `<span class="text-xs text-muted d-block font-mono" style="direction:ltr;text-align:right;">${escapeHtml(item.studentPhone)}</span>` : ""}
+            </div>
+          `;
+
+          const groupCol = `<span class="badge badge-neutral text-xs">${escapeHtml(item.group)}</span>`;
+
+          let solutionCol = `<span class="text-xs text-muted">—</span>`;
+          if (item.hasSubmitted) {
+            const fileBtn = item.fileUrl
+              ? `<a href="${escapeHtml(item.fileUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-xs font-bold">ملف 📥</a>`
+              : "";
+            const textBadge = item.answerText
+              ? `<span class="badge badge-primary text-xs" style="cursor:help;" title="${escapeHtml(item.answerText.slice(0, 200))}">كود / إجابة 💻</span>`
+              : "";
+            solutionCol = `<div class="d-flex items-center gap-1 flex-wrap">${fileBtn} ${textBadge}</div>`;
+          }
+
+          let statusCol = "";
+          if (item.hasSubmitted) {
+            if (item.status === "graded") {
+              statusCol = `<span class="badge badge-success text-xs font-bold">تم التصحيح ✓</span>`;
+            } else {
+              statusCol = `<span class="badge badge-warning text-xs font-bold">تم التسليم (قيد التصحيح)</span>`;
+            }
+          } else {
+            statusCol = `<span class="badge badge-danger text-xs font-bold">لم يتم التسليم ❌</span>`;
+          }
+
+          let gradeCol = `<span class="text-xs text-muted">—</span>`;
+          if (item.hasSubmitted) {
+            if (item.status === "graded") {
+              gradeCol = `<strong class="text-accent font-black" style="font-size:1.05rem;">${item.grade} / 10</strong>`;
+            } else {
+              gradeCol = `<span class="text-xs text-muted">قيد التقييم</span>`;
+            }
+          }
+
+          let actionCol = `<span class="text-xs text-muted">—</span>`;
+          if (item.hasSubmitted && item.submission) {
+            actionCol = `
+              <button
+                type="button"
+                class="btn btn-primary btn-xs font-bold"
+                data-grade-student-sub="${escapeHtml(item.studentUid)}"
+              >
+                <span>${item.status === 'graded' ? 'تعديل الدرجة' : 'تقييم الآن ✍️'}</span>
+              </button>
+            `;
+          }
+
+          return [
+            String(idx + 1),
+            studentNameCol,
+            groupCol,
+            solutionCol,
+            statusCol,
+            gradeCol,
+            actionCol
+          ];
+        });
+
+        const tableContentHtml = filtered.length === 0
+          ? `<div class="p-4 text-center text-muted">لا توجد نتائج مطابقة للفلاتر أو كلمة البحث الحالية.</div>`
+          : renderTable({ headers, rows });
+
+        const viewHtml = `
+          <!-- KPI Metrics Row -->
+          <div class="grid-4 gap-2 mb-3" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;">
+            <div class="card p-2 text-center" style="background:var(--color-bg-secondary);border:1px solid var(--color-border-subtle);border-radius:6px;">
+              <span class="text-xs text-muted d-block">إجمالي الطلاب المستهدفين</span>
+              <strong class="font-extrabold text-primary" style="font-size:1.25rem;">${totalEligible}</strong>
+            </div>
+            <div class="card p-2 text-center" style="background:var(--color-bg-secondary);border:1px solid var(--color-border-subtle);border-radius:6px;">
+              <span class="text-xs text-muted d-block">تم التسليم ✅</span>
+              <strong class="font-extrabold text-success" style="font-size:1.25rem;">${submittedCount}</strong>
+            </div>
+            <div class="card p-2 text-center" style="background:var(--color-bg-secondary);border:1px solid var(--color-border-subtle);border-radius:6px;">
+              <span class="text-xs text-muted d-block">لم يتم التسليم ❌</span>
+              <strong class="font-extrabold text-danger" style="font-size:1.25rem;">${notSubmittedCount}</strong>
+            </div>
+            <div class="card p-2 text-center" style="background:var(--color-bg-secondary);border:1px solid var(--color-border-subtle);border-radius:6px;">
+              <span class="text-xs text-muted d-block">تم التصحيح والتقييم</span>
+              <strong class="font-extrabold text-accent" style="font-size:1.25rem;">${gradedCount} / ${submittedCount}</strong>
+            </div>
+          </div>
+
+          <!-- Controls Bar: Filter Tabs + Search + Print Report Button -->
+          <div class="d-flex items-center justify-between flex-wrap gap-2 mb-3" style="background:var(--color-surface-elevated);padding:8px 12px;border-radius:6px;border:1px solid var(--color-border-subtle);">
+            <div class="d-flex items-center gap-1 flex-wrap" id="rosterFilterTabs">
+              <button type="button" class="btn btn-xs ${activeFilter === 'all' ? 'btn-primary font-bold' : 'btn-ghost'}" data-filter-btn="all">
+                الكل (${totalEligible})
+              </button>
+              <button type="button" class="btn btn-xs ${activeFilter === 'submitted' ? 'btn-primary font-bold' : 'btn-ghost'}" data-filter-btn="submitted">
+                تم التسليم (${submittedCount})
+              </button>
+              <button type="button" class="btn btn-xs ${activeFilter === 'not_submitted' ? 'btn-primary font-bold' : 'btn-ghost'}" data-filter-btn="not_submitted">
+                لم يتم التسليم (${notSubmittedCount})
+              </button>
+              <button type="button" class="btn btn-xs ${activeFilter === 'pending' ? 'btn-primary font-bold' : 'btn-ghost'}" data-filter-btn="pending">
+                قيد التصحيح (${pendingCount})
+              </button>
+              <button type="button" class="btn btn-xs ${activeFilter === 'graded' ? 'btn-primary font-bold' : 'btn-ghost'}" data-filter-btn="graded">
+                تم التصحيح (${gradedCount})
+              </button>
+            </div>
+
+            <div class="d-flex items-center gap-2">
+              <input
+                type="text"
+                id="rosterSearchInput"
+                class="form-control form-control-sm"
+                placeholder="ابحث باسم الطالب..."
+                value="${escapeHtml(searchQuery)}"
+                style="max-width:180px;font-size:0.85rem;"
+              />
+              <button
+                type="button"
+                id="printAssignmentReportBtn"
+                class="btn btn-outline btn-sm font-bold"
+                title="طباعة تقرير تسليمات هذا الواجب كاملاً بصيغة A4"
+              >
+                <span>طباعة التقرير</span>
+                <span aria-hidden="true">🖨️</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Roster Table Container -->
+          <div id="rosterTableContainer" style="overflow-x:auto;">
+            ${tableContentHtml}
+          </div>
         `;
 
-        return [
-          `<strong>${escapeHtml(studentName)}</strong>`,
-          formatDateTime(sub.submittedAt || sub.createdAt),
-          solutionCol,
-          gradeCol,
-          actionBtn
-        ];
-      });
+        setHtml(bodyEl, viewHtml);
 
-      if (bodyEl) {
-        setHtml(bodyEl, renderTable({ headers, rows }));
-
-        // Bind grading action buttons to open dedicated evaluation modal
-        bodyEl.querySelectorAll("[data-grade-submission]").forEach((btn) => {
+        // Bind filter tabs
+        bodyEl.querySelectorAll("[data-filter-btn]").forEach((btn) => {
           btn.addEventListener("click", () => {
-            const sUid = btn.getAttribute("data-grade-submission");
-            const targetSub = submissions.find(
-              (s) => (s.studentUid || s.studentId || s.id) === sUid
-            );
-            if (!targetSub) {
-              showToast("تعذر العثور على بيانات تسليم الطالب.", "error");
-              return;
-            }
-            this.openEvaluationModal({ taskId, taskTitle, submission: targetSub });
+            activeFilter = btn.getAttribute("data-filter-btn");
+            renderRosterView();
           });
         });
-      }
+
+        // Bind debounced search
+        const sInput = bodyEl.querySelector("#rosterSearchInput");
+        if (sInput) {
+          sInput.addEventListener(
+            "input",
+            debounce((e) => {
+              searchQuery = e.target.value.trim();
+              renderRosterView();
+              const refreshedInput = bodyEl.querySelector("#rosterSearchInput");
+              if (refreshedInput) {
+                refreshedInput.focus();
+                refreshedInput.setSelectionRange(searchQuery.length, searchQuery.length);
+              }
+            }, 250)
+          );
+        }
+
+        // Bind print button
+        bodyEl.querySelector("#printAssignmentReportBtn")?.addEventListener("click", () => {
+          try {
+            showToast("جاري إعداد تقرير الواجب للطباعة... ⏳", "info");
+            const reportHtml = renderAssignmentPrintableReport({
+              assignment,
+              roster,
+              totalEligible,
+              submittedCount,
+              notSubmittedCount,
+              gradedCount
+            });
+            triggerPrintReport(reportHtml);
+          } catch (printErr) {
+            console.error("Print assignment report error:", printErr);
+            showToast("تعذر إنشاء تقرير الواجب للطباعة.", "error");
+          }
+        });
+
+        // Bind grading action buttons
+        bodyEl.querySelectorAll("[data-grade-student-sub]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const sUid = btn.getAttribute("data-grade-student-sub");
+            const targetItem = roster.find((r) => r.studentUid === sUid && r.submission);
+            if (!targetItem || !targetItem.submission) {
+              showToast("تعذر العثور على بيانات تسليم الطالب للتقييم.", "error");
+              return;
+            }
+            this.openEvaluationModal({
+              taskId,
+              taskTitle: taskTitle || assignment.title,
+              submission: targetItem.submission
+            });
+          });
+        });
+      };
+
+      renderRosterView();
     } catch (e) {
-      if (bodyEl) setHtml(bodyEl, renderErrorState({ message: e.message }));
+      console.error("Failed to load assignment submissions roster:", e);
+      if (bodyEl) setHtml(bodyEl, renderErrorState({ message: e.message || "حدث خطأ أثناء جلب بيانات التسليمات." }));
     }
   },
 
   /**
    * Opens the dedicated Assignment Evaluation Modal for a student submission.
+   * Enforces 0 to 10 grading scale.
    * @param {object} params
    * @param {string} params.taskId
    * @param {string} params.taskTitle
@@ -993,8 +1168,8 @@ export const AssignmentController = {
         const feedbackInput = document.getElementById("evalFeedbackInput");
 
         const rawGrade = gradeInput ? parseFloat(gradeInput.value) : NaN;
-        if (isNaN(rawGrade) || rawGrade < 0 || rawGrade > 100) {
-          showToast("الدرجة يجب أن تكون رقماً بين 0 و 100", "warning");
+        if (isNaN(rawGrade) || rawGrade < 0 || rawGrade > 10) {
+          showToast("الدرجة يجب أن تكون رقماً بين 0 و 10", "warning");
           gradeInput?.focus();
           return;
         }
@@ -1007,9 +1182,9 @@ export const AssignmentController = {
 
         try {
           await AssignmentService.gradeTask(taskId, sUid, rawGrade, feedback);
-          showToast(`تم حفظ تقييم الطالب بنجاح ✅`, "success");
+          showToast(`تم حفظ تقييم الطالب بنجاح (${rawGrade} / 10) ✅`, "success");
           closeModal(ASSIGNMENT_EVALUATION_MODAL_ID);
-          // Refresh submissions list immediately
+          // Refresh submissions roster immediately
           this.showTeacherSubmissionsModal(taskId, taskTitle);
         } catch (err) {
           showToast(err.message || "تعذر حفظ تقييم الواجب.", "error");

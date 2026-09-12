@@ -5,6 +5,7 @@ import { renderBadge } from "../../../shared/components/Badge/badge.component.js
 import { renderButton } from "../../../shared/components/Button/button.component.js";
 import { escapeHtml } from "../../../shared/utils/dom.utils.js";
 import { formatDate } from "../../../shared/utils/date.utils.js";
+import { normalizeAssignmentGrade } from "../../assignments/assignment.service.js";
 
 /**
  * Returns the HTML for the Student 360 Detail modal shell.
@@ -218,9 +219,12 @@ export function renderStudent360Content(data360, { canDelete = false } = {}) {
                         const fileBtn = task.fileUrl
                           ? `<a href="${escapeHtml(task.fileUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-xs">ملف 📥</a>`
                           : "";
-                        const textBadge = task.answerText
-                          ? `<span class="badge badge-neutral text-xs" title="${escapeHtml(task.answerText)}">نص 📝</span>`
+                        const rawAnswer = (task.answerText || task.answer || task.code || task.solution || task.content || task.text || "").trim();
+                        const textBadge = rawAnswer
+                          ? `<span class="badge badge-neutral text-xs" title="${escapeHtml(rawAnswer.slice(0, 200))}">نص / كود 📝</span>`
                           : "";
+
+                        const normGrade = normalizeAssignmentGrade(task.grade);
 
                         return `
                           <tr>
@@ -230,8 +234,8 @@ export function renderStudent360Content(data360, { canDelete = false } = {}) {
                             <td style="text-align:center;">${fileBtn} ${textBadge}</td>
                             <td style="text-align:center;">
                               ${
-                                task.grade != null
-                                  ? `<strong class="text-accent font-black" style="font-size:0.95rem;">${task.grade} / 100</strong>`
+                                normGrade !== null
+                                  ? `<strong class="text-accent font-black" style="font-size:0.95rem;">${normGrade} / 10</strong>`
                                   : `<span class="badge badge-warning text-xs font-bold">قيد التقييم</span>`
                               }
                             </td>

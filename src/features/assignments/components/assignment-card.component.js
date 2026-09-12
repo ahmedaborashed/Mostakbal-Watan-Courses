@@ -1,6 +1,7 @@
 // src/features/assignments/components/assignment-card.component.js
 import { escapeHtml } from "../../../shared/utils/dom.utils.js";
 import { formatDate, getDeadlineInfo, isDeadlinePassed } from "../../../shared/utils/date.utils.js";
+import { normalizeAssignmentGrade } from "../assignment.service.js";
 
 /**
  * Intelligent content formatter for assignment titles and descriptions.
@@ -90,9 +91,10 @@ export function renderStudentAssignmentCard({ assignment, submission }) {
   let deadlineTagHtml;
 
   if (isSubmitted) {
-    const isGraded = submission.grade !== undefined && submission.grade !== null;
+    const normalizedGrade = normalizeAssignmentGrade(submission.grade);
+    const isGraded = normalizedGrade !== null;
     if (isGraded) {
-      statusBadgeHtml = `<span class="assignment-badge is-graded"><span class="badge-dot">●</span> تم التصحيح (${submission.grade}/100)</span>`;
+      statusBadgeHtml = `<span class="assignment-badge is-graded"><span class="badge-dot">●</span> تم التصحيح (${normalizedGrade}/10)</span>`;
       deadlineTagHtml = `<span class="deadline-strip-tag is-normal">تم تسليمه</span>`;
     } else {
       statusBadgeHtml = `<span class="assignment-badge is-submitted"><span class="badge-dot">●</span> تم التسليم بنجاح</span>`;
