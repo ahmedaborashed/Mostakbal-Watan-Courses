@@ -108,6 +108,10 @@ export function renderNotificationsList(notifications = []) {
         return { icon: "🏅", label: "إنجاز جديد", badgeClass: "badge-gold" };
       case NOTIFICATION_TYPES.GAME_LEVEL_UP:
         return { icon: "🐍", label: "ترقية المستوى", badgeClass: "badge-accent" };
+      case NOTIFICATION_TYPES.PYTHON_CHALLENGE:
+        return { icon: "🐍", label: "تحدي بايثون", badgeClass: "badge-success" };
+      case NOTIFICATION_TYPES.LECTURE_REMINDER:
+        return { icon: "📅", label: "موعد محاضرة", badgeClass: "badge-gold" };
       default:
         return { icon: "🔔", label: "تنبيه عام", badgeClass: "badge-neutral" };
     }

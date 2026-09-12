@@ -184,18 +184,26 @@ export const LecturesController = {
       return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
     });
 
-    // Top Header & Stats Card
+    // Top Header & Stats Toolbar (Clean toolbar without duplicate title)
     const headerHtml = `
-      <div class="card mb-4">
+      <div class="teacher-lectures-toolbar card mb-4">
         <div class="d-flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <h3 class="card-title" style="font-size:1.15rem;">
-              <span>📚</span>
-              <span>إدارة المحاضرات والجلسات التدريبية</span>
-            </h3>
-            <p class="card-subtitle text-xs text-muted mt-1">
-              إجمالي المحاضرات: <strong>${totalCount}</strong> | النشطة: <strong class="text-success">${activeCount}</strong> | ملفات مرفقة: <strong>${withFilesCount}</strong>
-            </p>
+          <div class="teacher-stats-pills d-flex items-center gap-2 flex-wrap">
+            <div class="stat-pill">
+              <span class="stat-icon" aria-hidden="true">📚</span>
+              <span class="stat-label">إجمالي المحاضرات:</span>
+              <strong class="stat-val">${totalCount}</strong>
+            </div>
+            <div class="stat-pill active-stat">
+              <span class="stat-icon text-success" aria-hidden="true">●</span>
+              <span class="stat-label">المحاضرات النشطة:</span>
+              <strong class="stat-val text-success">${activeCount}</strong>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-icon" aria-hidden="true">📎</span>
+              <span class="stat-label">ملفات مرفقة:</span>
+              <strong class="stat-val">${withFilesCount}</strong>
+            </div>
           </div>
           <div>
             <button type="button" id="openCreateLessonBtn" class="btn btn-primary">
@@ -233,7 +241,7 @@ export const LecturesController = {
       });
     } else {
       listHtml = `
-        <div class="grid-3">
+        <div class="teacher-lessons-grid">
           ${filtered.map((lec) => renderTeacherLessonCard({ lesson: lec })).join("")}
         </div>
       `;

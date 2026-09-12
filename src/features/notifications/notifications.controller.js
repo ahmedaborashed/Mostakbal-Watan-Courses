@@ -6,6 +6,7 @@ import {
   renderNotificationBellButton,
   NOTIFICATIONS_MODAL_ID
 } from "./components/notifications-modal.component.js";
+import { mountStudentInteractiveBanner } from "./components/student-interactive-banner.component.js";
 import { openModal, closeModal } from "../../shared/components/Modal/modal.component.js";
 import { showToast } from "../../shared/components/Toast/toast.component.js";
 import { setHtml } from "../../shared/utils/dom.utils.js";
@@ -170,6 +171,20 @@ export const NotificationsController = {
       } catch (err) {
         showToast("تعذر تحديث حالة الإشعارات", "error");
       }
+    });
+  },
+
+  /**
+   * Mounts the interactive notification banner for students (Python Valley Challenge, Lectures, Tasks).
+   * @param {string|HTMLElement} containerId
+   * @param {object} options
+   * @param {object} options.student
+   * @param {function} options.onNavigate
+   */
+  mountStudentInteractiveBanner(containerId, { student = {}, onNavigate = null } = {}) {
+    return mountStudentInteractiveBanner(containerId, {
+      student,
+      onNavigate: onNavigate || this._onNavigateCallback
     });
   }
 };

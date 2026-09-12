@@ -1377,12 +1377,390 @@
   border-radius: var(--radius-sm);
 }
 
-/* Teacher Card & Legacy Filters (Preserved for Staff) */
+/* ========================================================
+   TEACHER LECTURES TOOLBAR & STATS PILLS
+   ======================================================== */
+.teacher-lectures-toolbar {
+  padding: 0.85rem 1.25rem;
+  background: var(--surface-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.teacher-stats-pills {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  line-height: 1.3;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.stat-pill:hover {
+  border-color: var(--border-strong);
+}
+
+.stat-pill.active-stat {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.stat-pill .stat-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.stat-pill .stat-label {
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.stat-pill .stat-val {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+/* ========================================================
+   TEACHER LESSONS GRID & SPACIOUS CARD DESIGN
+   ======================================================== */
+.teacher-lessons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: var(--space-5);
+  margin-top: var(--space-4);
+}
+
+@media (max-width: 768px) {
+  .teacher-lessons-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+}
+
 .teacher-lesson-card {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   height: 100%;
+  background: var(--surface-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  padding: 0 !important;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.teacher-lesson-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.teacher-lesson-card.is-disabled {
+  opacity: 0.72;
+  border-style: dashed;
+}
+
+/* 1. Media Preview Banner / Strip */
+.teacher-card-media-banner {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #0d1117;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+}
+
+.teacher-card-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform var(--transition-normal);
+}
+
+.teacher-lesson-card:hover .teacher-card-thumb {
+  transform: scale(1.03);
+}
+
+.teacher-card-thumb-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition-fast);
+}
+
+.teacher-lesson-card:hover .teacher-card-thumb-overlay {
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.teacher-card-play-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(220, 38, 38, 0.92);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  padding-inline-start: 3px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  transition: transform var(--transition-fast);
+}
+
+.teacher-lesson-card:hover .teacher-card-play-icon {
+  transform: scale(1.08);
+}
+
+.teacher-card-media-badge {
+  position: absolute;
+  top: 0.65rem;
+  inset-inline-start: 0.65rem;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(4px);
+  color: #f3f4f6;
+  font-size: var(--font-size-xs);
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.teacher-card-media-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.65rem 1rem;
+  background: var(--surface-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--font-size-xs);
+}
+
+.teacher-card-media-strip.has-video {
+  color: var(--primary);
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.teacher-card-media-strip.no-video {
+  color: var(--text-muted);
+}
+
+.teacher-card-link-action {
+  margin-inline-start: auto;
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: var(--font-weight-semibold);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: var(--font-size-xs);
+}
+
+.teacher-card-link-action:hover {
+  text-decoration: underline;
+}
+
+/* 2. Inner Body */
+.teacher-card-inner-body {
+  padding: 1.15rem 1.25rem 0.75rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.teacher-card-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.teacher-card-pills-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.teacher-group-pill {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.75rem !important;
+  padding: 0.2rem 0.6rem !important;
+}
+
+.teacher-status-pill {
+  font-size: 0.75rem !important;
+  padding: 0.2rem 0.55rem !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.teacher-status-pill .pill-dot {
+  font-size: 0.7rem;
+}
+
+.teacher-card-date-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.teacher-card-title {
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  line-height: 1.45;
+  margin-bottom: var(--space-2);
+  word-break: break-word;
+}
+
+.teacher-card-desc {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: var(--space-3);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.8em;
+}
+
+.teacher-card-desc.is-fallback {
+  color: var(--text-muted);
+}
+
+/* 3. Specs / Details Box */
+.teacher-card-specs-box {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.85rem;
+  margin-top: auto;
+  margin-bottom: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.specs-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: var(--font-size-xs);
+  padding: 0.15rem 0;
+}
+
+.specs-lead {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.specs-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.specs-label {
+  color: var(--text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+.specs-val {
+  color: var(--text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.specs-item.is-empty .specs-val {
+  color: var(--text-muted);
+  font-weight: normal;
+}
+
+.specs-link-btn {
+  color: var(--primary);
+  font-weight: var(--font-weight-semibold);
+  font-size: 0.75rem;
+  padding: 0.15rem 0.55rem;
+  background: var(--surface-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.specs-link-btn:hover {
+  border-color: var(--primary);
+  background: var(--surface-hover);
+  color: var(--primary-glow);
+}
+
+/* 4. Actions Wrap */
+.teacher-card-actions-wrap {
+  padding: 0.75rem 1.25rem 1.15rem;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.teacher-view-details-btn {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  padding: 0.55rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.teacher-card-management-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.45rem;
+}
+
+.teacher-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.25rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
 }
 
 .lesson-filters-grid {
@@ -3323,4 +3701,283 @@ body.is-in-exam-mode .main-view {
     font-size: 0.8rem;
   }
 }
+
+/* ========================================================
+   STUDENT INTERACTIVE SMART NOTIFICATION BANNER
+   (Python Valley Challenge, Lectures, Tasks)
+   ======================================================== */
+.student-interactive-banner {
+  background: linear-gradient(135deg, var(--surface-primary) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--space-4);
+  transition: all var(--transition-normal);
+}
+
+.student-interactive-banner::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary) 0%, #3b82f6 50%, #f59e0b 100%);
+  z-index: 1;
+}
+
+/* Collapsed state */
+.student-interactive-banner.is-collapsed {
+  background: var(--surface-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.banner-collapsed-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0.65rem 1.25rem;
+  flex-wrap: wrap;
+}
+
+.collapsed-lead {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--font-size-xs);
+}
+
+.collapsed-pulse-icon {
+  font-size: 1.1rem;
+  animation: pulse-ring 2s infinite ease-in-out;
+}
+
+.collapsed-title {
+  color: var(--text-primary);
+}
+
+.collapsed-summary {
+  color: var(--text-muted);
+}
+
+.expand-banner-btn {
+  gap: 0.25rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+}
+
+/* Top bar with tabs */
+.banner-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 0.75rem 1.25rem 0.6rem;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(0, 0, 0, 0.12);
+  flex-wrap: wrap;
+}
+
+.banner-topic-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.banner-tab-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.banner-tab-pill:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.banner-tab-pill.is-active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
+}
+
+.banner-tab-pill .pulse-indicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: pulse-ring 1.5s infinite ease-in-out;
+}
+
+.banner-tab-pill.is-active .pulse-indicator {
+  background: #ffffff;
+  box-shadow: 0 0 8px #ffffff;
+}
+
+@keyframes pulse-ring {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.7; }
+}
+
+.banner-dismiss-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-xs);
+  transition: color var(--transition-fast);
+}
+
+.banner-dismiss-btn:hover {
+  color: var(--danger);
+}
+
+/* Banner Body */
+.banner-body-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 1.25rem 1.5rem;
+  flex-wrap: wrap;
+}
+
+.banner-content-lead {
+  flex: 1;
+  min-width: 280px;
+}
+
+.banner-badge-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.banner-theme-badge {
+  font-size: 0.75rem !important;
+  padding: 0.2rem 0.6rem !important;
+  font-weight: 700;
+}
+
+.banner-interactive-hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.banner-headline {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.4;
+  margin-bottom: 0.4rem;
+}
+
+.banner-description {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 0.85rem;
+  max-width: 780px;
+}
+
+.banner-stats-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.banner-stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.banner-stat-chip .stat-icon {
+  font-size: 0.95rem;
+}
+
+.banner-stat-chip .stat-label {
+  color: var(--text-muted);
+}
+
+.banner-stat-chip .stat-value {
+  color: var(--text-primary);
+}
+
+/* Actions */
+.banner-action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 220px;
+}
+
+.banner-primary-action-btn {
+  font-weight: 800;
+  font-size: var(--font-size-sm);
+  padding: 0.65rem 1.25rem;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  text-align: center;
+}
+
+.banner-secondary-action-btn {
+  font-size: var(--font-size-xs);
+  padding: 0.45rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .banner-body-card {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem 1.15rem;
+  }
+  .banner-action-buttons {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+  .banner-primary-action-btn,
+  .banner-secondary-action-btn {
+    width: 100%;
+  }
+  .banner-top-bar {
+    padding: 0.6rem 0.9rem;
+  }
+}
+
 

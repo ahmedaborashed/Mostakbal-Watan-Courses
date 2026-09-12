@@ -42,6 +42,8 @@ export const NOTIFICATION_TYPES = Object.freeze({
   ACHIEVEMENT_UNLOCKED: "achievement_unlocked",
   GAME_LEVEL_UP: "game_level_up",
   COMPETITION_START: "competition_start",
+  PYTHON_CHALLENGE: "python_challenge",
+  LECTURE_REMINDER: "lecture_reminder",
   GENERAL: "general"
 });
 

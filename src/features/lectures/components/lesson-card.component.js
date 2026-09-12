@@ -2,8 +2,7 @@
 import { escapeHtml } from "../../../shared/utils/dom.utils.js";
 import { renderCard } from "../../../shared/components/Card/card.component.js";
 import { renderBadge } from "../../../shared/components/Badge/badge.component.js";
-import { renderButton } from "../../../shared/components/Button/button.component.js";
-import { extractYouTubeId } from "../../../shared/validators/url.validator.js";
+import { extractYouTubeId, isValidSafeUrl } from "../../../shared/validators/url.validator.js";
 
 /**
  * Returns HTML string for the Student Lesson Card (Student Lesson Library).
@@ -134,107 +133,196 @@ export function renderStudentLessonCard({ lesson, isWatched = false }) {
 
 /**
  * Returns HTML string for the Teacher / Admin Management Card.
+ * Redesigned with generous breathing room, rich media preview, comprehensive specs details,
+ * and an uncrowded 2-tier action toolbar where buttons never overlap.
  * @param {object} params
  * @param {object} params.lesson
  * @returns {string}
  */
 export function renderTeacherLessonCard({ lesson }) {
-  const safeId = escapeHtml(lesson.id);
+  const safeId = escapeHtml(lesson.id || "");
   const safeTitle = escapeHtml(lesson.title || lesson.name || "محاضرة بدون عنوان");
-  const safeDesc = escapeHtml(lesson.description || "لا يوجد وصف للمحاضرة.");
+  const rawDesc = (lesson.description || "").trim();
+  const safeDesc = rawDesc ? escapeHtml(rawDesc) : "لا يوجد وصف مضاف لهذه المحاضرة.";
+  const hasDesc = Boolean(rawDesc);
   const safeDate = escapeHtml(lesson.sessionDate || "—");
-  const safeGroup = escapeHtml(lesson.group || "ALL");
+  const groupName = lesson.group === "ALL" ? "جميع المجموعات" : (lesson.group ? `المجموعة: ${lesson.group}` : "عام للجميع");
+  const safeGroup = escapeHtml(groupName);
   const isActive = lesson.active !== false;
 
+  const ytId = extractYouTubeId(lesson.videoUrl || lesson.videoId || "");
   const hasVideo = Boolean(lesson.videoUrl || lesson.videoId);
   const hasFile = Boolean(lesson.fileUrl);
   const resourceCount = Array.isArray(lesson.resources) ? lesson.resources.length : 0;
 
-  const statusBadge = isActive
-    ? renderBadge({ text: "نشطة", variant: "success", icon: "●" })
-    : renderBadge({ text: "معطلة", variant: "secondary", icon: "○" });
+  const safeFileUrl = (hasFile && isValidSafeUrl(lesson.fileUrl)) ? escapeHtml(lesson.fileUrl) : "";
+  const rawVideoUrl = lesson.videoUrl || (ytId ? `https://www.youtube.com/watch?v=${ytId}` : "");
+  const safeVideoUrl = (rawVideoUrl && isValidSafeUrl(rawVideoUrl)) ? escapeHtml(rawVideoUrl) : "";
 
-  const groupBadge = renderBadge({ text: safeGroup, variant: "gold", icon: "👥" });
-
-  const indicators = [];
-  indicators.push(
-    `<span class="lesson-indicator-chip ${hasVideo ? 'active' : 'muted'}" title="${hasVideo ? 'فيديو متوفر' : 'بدون فيديو'}">
-      <span aria-hidden="true">🎥</span> ${hasVideo ? 'فيديو' : 'بدون فيديو'}
-    </span>`
-  );
-  indicators.push(
-    `<span class="lesson-indicator-chip ${hasFile ? 'active' : 'muted'}" title="${hasFile ? 'ملف مرفق' : 'بدون ملف'}">
-      <span aria-hidden="true">📄</span> ${hasFile ? 'ملف' : 'بدون ملف'}
-    </span>`
-  );
-  if (resourceCount > 0) {
-    indicators.push(
-      `<span class="lesson-indicator-chip active" title="${resourceCount} مصادر إضافية">
-        <span aria-hidden="true">📦</span> ${resourceCount} مصادر
-      </span>`
-    );
+  // 1. Media Preview Banner / Strip
+  let mediaHtml = "";
+  if (ytId) {
+    const thumbUrl = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+    mediaHtml = `
+      <div class="teacher-card-media-banner">
+        <img src="${escapeHtml(thumbUrl)}" alt="${safeTitle}" loading="lazy" class="teacher-card-thumb" />
+        <div class="teacher-card-thumb-overlay" aria-hidden="true">
+          <span class="teacher-card-play-icon">▶</span>
+        </div>
+        <div class="teacher-card-media-badge">
+          <span>🎥 فيديو مسجل</span>
+        </div>
+      </div>
+    `;
+  } else if (hasVideo) {
+    mediaHtml = `
+      <div class="teacher-card-media-strip has-video">
+        <span class="media-strip-icon" aria-hidden="true">🎥</span>
+        <span class="media-strip-text">فيديو تعليمي مسجل</span>
+        ${safeVideoUrl ? `
+          <a href="${safeVideoUrl}" target="_blank" rel="noopener noreferrer" class="teacher-card-link-action" title="مشاهدة رابط الفيديو">
+            <span>مشاهدة</span>
+            <span aria-hidden="true">↗</span>
+          </a>
+        ` : ""}
+      </div>
+    `;
+  } else {
+    mediaHtml = `
+      <div class="teacher-card-media-strip no-video">
+        <span class="media-strip-icon" aria-hidden="true">🎥</span>
+        <span class="media-strip-text">لم يتم إرفاق رابط فيديو للمحاضرة</span>
+      </div>
+    `;
   }
 
-  const contentHtml = `
-    <div class="d-flex items-center justify-between mb-3 gap-2 flex-wrap">
-      <div class="d-flex items-center gap-1">
-        ${groupBadge}
-        ${statusBadge}
-      </div>
-      <span class="text-xs text-muted" style="display:inline-flex;align-items:center;gap:0.25rem;">
-        <span aria-hidden="true">📅</span> ${safeDate}
-      </span>
-    </div>
+  // 2. Status & Group Badges
+  const statusBadge = isActive
+    ? `<span class="badge badge-success teacher-status-pill"><span class="pill-dot">●</span> نشطة</span>`
+    : `<span class="badge badge-secondary teacher-status-pill is-disabled"><span class="pill-dot">○</span> معطلة</span>`;
 
-    <h4 class="font-bold mb-2 text-primary" style="font-size:1.05rem;line-height:1.4;">${safeTitle}</h4>
+  const groupBadge = `<span class="badge badge-gold teacher-group-pill" title="${safeGroup}"><span aria-hidden="true">👥</span> <span class="group-text">${safeGroup}</span></span>`;
 
-    <p class="text-xs text-secondary mb-3" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5;min-height:2.4em;">
-      ${safeDesc}
-    </p>
-
-    <div class="d-flex items-center gap-2 mb-1 flex-wrap">
-      ${indicators.join("")}
-    </div>
-  `;
-
-  const footerHtml = `
-    <div class="d-flex items-center justify-between w-full gap-2 flex-wrap">
-      <div class="d-flex items-center gap-1">
-        ${renderButton({
-          text: "تفاصيل",
-          size: "sm",
-          variant: "outline",
-          extraAttrs: `data-teacher-view-lesson="${safeId}" aria-label="عرض تفاصيل المحاضرة: ${safeTitle}"`
-        })}
-        ${renderButton({
-          text: "تعديل ✏️",
-          size: "sm",
-          variant: "secondary",
-          extraAttrs: `data-teacher-edit-lesson="${safeId}" aria-label="تعديل المحاضرة: ${safeTitle}"`
-        })}
+  // 3. Details & Materials Specs Box (Shows full lecture assets clearly)
+  const specsHtml = `
+    <div class="teacher-card-specs-box" aria-label="تفاصيل المحاضرة والمرفقات">
+      <div class="specs-item ${hasVideo ? 'is-available' : 'is-empty'}">
+        <div class="specs-lead">
+          <span class="specs-icon" aria-hidden="true">🎥</span>
+          <span class="specs-label">الفيديو:</span>
+          <span class="specs-val">${hasVideo ? 'متوفر' : 'بدون فيديو'}</span>
+        </div>
+        ${safeVideoUrl ? `
+          <a href="${safeVideoUrl}" target="_blank" rel="noopener noreferrer" class="specs-link-btn" title="فتح رابط الفيديو">
+            فتح ↗
+          </a>
+        ` : ''}
       </div>
 
-      <div class="d-flex items-center gap-1">
-        ${renderButton({
-          text: isActive ? "تعطيل ⏸" : "تفعيل ▶",
-          size: "sm",
-          variant: isActive ? "ghost" : "success",
-          extraAttrs: `data-teacher-toggle-status="${safeId}" data-current-active="${isActive}" aria-label="تغيير حالة المحاضرة: ${safeTitle}"`
-        })}
-        ${renderButton({
-          text: "حذف 🗑️",
-          size: "sm",
-          variant: "danger",
-          extraAttrs: `data-teacher-delete-lesson="${safeId}" data-lesson-title="${safeTitle}" aria-label="حذف المحاضرة: ${safeTitle}"`
-        })}
+      <div class="specs-item ${hasFile ? 'is-available' : 'is-empty'}">
+        <div class="specs-lead">
+          <span class="specs-icon" aria-hidden="true">📄</span>
+          <span class="specs-label">المرفق:</span>
+          <span class="specs-val">${hasFile ? 'ملف متاح' : 'بدون ملف'}</span>
+        </div>
+        ${safeFileUrl ? `
+          <a href="${safeFileUrl}" target="_blank" rel="noopener noreferrer" class="specs-link-btn" title="تحميل أو فتح الملف المرفق">
+            تحميل 📥
+          </a>
+        ` : ''}
       </div>
+
+      ${resourceCount > 0 ? `
+        <div class="specs-item is-available">
+          <div class="specs-lead">
+            <span class="specs-icon" aria-hidden="true">📦</span>
+            <span class="specs-label">المصادر:</span>
+            <span class="specs-val font-bold">${resourceCount} مصادر إضافية</span>
+          </div>
+        </div>
+      ` : ''}
     </div>
   `;
 
-  return renderCard({
-    content: contentHtml,
-    footer: footerHtml,
-    interactive: true,
-    className: "teacher-lesson-card"
-  });
+  return `
+    <article class="card teacher-lesson-card ${!isActive ? 'is-disabled' : ''}" data-lesson-id="${safeId}">
+      ${mediaHtml}
+
+      <div class="teacher-card-inner-body">
+        <!-- Top Bar: Group + Status Badge + Date -->
+        <div class="teacher-card-header-bar">
+          <div class="teacher-card-pills-wrap">
+            ${groupBadge}
+            ${statusBadge}
+          </div>
+          <div class="teacher-card-date-wrap" title="تاريخ الجلسة">
+            <span aria-hidden="true">📅</span>
+            <span>${safeDate}</span>
+          </div>
+        </div>
+
+        <!-- Title -->
+        <h4 class="teacher-card-title" title="${safeTitle}">
+          ${safeTitle}
+        </h4>
+
+        <!-- Description -->
+        <p class="teacher-card-desc ${!hasDesc ? 'is-fallback' : ''}">
+          ${safeDesc}
+        </p>
+
+        <!-- Detailed Specs Box -->
+        ${specsHtml}
+      </div>
+
+      <!-- Actions Footer: 2-tier layout with zero collision -->
+      <div class="teacher-card-actions-wrap">
+        <!-- Tier 1: Prominent Primary Action -->
+        <button
+          type="button"
+          class="btn btn-primary w-full teacher-view-details-btn"
+          data-teacher-view-lesson="${safeId}"
+          aria-label="عرض تفاصيل المحاضرة: ${safeTitle}"
+        >
+          <span>👁️</span>
+          <span>عرض التفاصيل والمحتوى</span>
+        </button>
+
+        <!-- Tier 2: Management Controls in 3-column Grid -->
+        <div class="teacher-card-management-grid">
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm teacher-action-btn"
+            data-teacher-edit-lesson="${safeId}"
+            aria-label="تعديل المحاضرة: ${safeTitle}"
+          >
+            <span>✏️</span>
+            <span>تعديل</span>
+          </button>
+
+          <button
+            type="button"
+            class="btn ${isActive ? 'btn-ghost' : 'btn-success'} btn-sm teacher-action-btn"
+            data-teacher-toggle-status="${safeId}"
+            data-current-active="${isActive}"
+            aria-label="تغيير حالة المحاضرة: ${safeTitle}"
+          >
+            <span>${isActive ? '⏸️' : '▶️'}</span>
+            <span>${isActive ? 'تعطيل' : 'تفعيل'}</span>
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-danger btn-sm teacher-action-btn"
+            data-teacher-delete-lesson="${safeId}"
+            data-lesson-title="${safeTitle}"
+            aria-label="حذف المحاضرة: ${safeTitle}"
+          >
+            <span>🗑️</span>
+            <span>حذف</span>
+          </button>
+        </div>
+      </div>
+    </article>
+  `;
 }

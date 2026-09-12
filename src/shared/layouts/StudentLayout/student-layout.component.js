@@ -120,6 +120,9 @@ export function mountStudentLayout(container, { onLogout, onTabChange }) {
         </header>
 
         <main class="main-view" role="main">
+          <!-- Interactive Alert Banner Slot (Notifications for Python Challenge, Lectures, Tasks) -->
+          <div id="studentInteractiveAlertSlot" class="student-interactive-alert-slot mb-4"></div>
+
           <!-- Lectures Section -->
           <section id="sec-videos" class="tab-content active" aria-labelledby="heading-videos">
             <div class="page-header student-lessons-header">

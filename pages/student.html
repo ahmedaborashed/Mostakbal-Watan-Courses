@@ -187,6 +187,17 @@
         phone: student.studentPhone
       });
 
+      // Mount Student Interactive Notification Banner (Python Valley Challenge, Lectures, Tasks)
+      let interactiveBannerHandle = null;
+      try {
+        interactiveBannerHandle = NotificationsController.mountStudentInteractiveBanner("studentInteractiveAlertSlot", {
+          student,
+          onNavigate: (tabId) => layout.switchTab(tabId)
+        });
+      } catch (e) {
+        console.warn("Interactive banner mount warning:", e);
+      }
+
       // 3. Mount Video Player Modal into DOM
       if (!document.getElementById("videoPlayerModal")) {
         document.body.insertAdjacentHTML("beforeend", renderVideoPlayerModal());
@@ -264,11 +275,12 @@
               localStorage.setItem(`mw_student_profile_${studentPhone}`, JSON.stringify(student));
             } catch (_) {}
 
-            // Update UI shell
+            // Update UI shell & Interactive Banner
             layout.updateProfile({
               name: resolvedName,
               phone: resolvedPhone
             });
+            interactiveBannerHandle?.updateStudent(student);
 
             // If group or name changed, refresh active tab so student sees real data immediately
             const activeTabBtn = document.querySelector(".sidebar-item.active");
