@@ -25,7 +25,8 @@ console.log("🧪 Starting Student Assignments Redesign & Submission Unit Tests.
   console.log("  1. Testing parseDeadline, isDeadlinePassed & getDeadlineInfo...");
 
   // Scenario A: Date string YYYY-MM-DD for today should NOT be expired during the day
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const todayIso = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
   const parsedToday = parseDeadline(todayIso);
   assert.ok(parsedToday instanceof Date, "parseDeadline must return a Date object for YYYY-MM-DD");
   assert.strictEqual(parsedToday.getHours(), 23, "YYYY-MM-DD must evaluate to 23:59:59.999 end of day");

@@ -165,7 +165,13 @@ export function renderAdminExamsView({
           </div>
         </div>
 
-        <div>
+        <div class="d-flex items-center gap-2 flex-wrap">
+          ${renderButton({
+            id: "printAllExamsSummaryBtn",
+            text: "🖨️ تقرير الامتحانات الشامل",
+            variant: "secondary",
+            className: "btn-md font-bold"
+          })}
           ${renderButton({
             id: "openCreateExamBtn",
             text: "+ إنشاء امتحان",

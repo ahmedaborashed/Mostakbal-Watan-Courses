@@ -129,7 +129,10 @@
       rgba(18, 21, 25, 0.94) 50%,
       rgba(18, 21, 25, 1) 100%
     ),
-    url("../../assets/images/back.png") center center / cover no-repeat;
+    image-set(
+      url("../../assets/images/back.webp") type("image/webp"),
+      url("../../assets/images/back.png") type("image/png")
+    ) center center / cover no-repeat;
 }
 
 .hero-content {
@@ -977,18 +980,29 @@
   inset: 0;
   z-index: 9999;
   background: radial-gradient(circle at 50% 40%, rgba(16, 185, 129, 0.12) 0%, rgba(18, 21, 25, 0.96) 65%, #0a0c0f 100%);
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s ease;
-}
-
-.splash-loading-screen.loading-hide {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+}
+
+.splash-loading-screen.show {
+  display: flex;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.splash-loading-screen.loading-hide {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 /* Atmospheric subtle ambient aura */
@@ -1050,8 +1064,8 @@
   border: 2px solid transparent;
   border-top-color: var(--primary);
   border-right-color: var(--color-primary-light, #34d399);
-  animation: splashOrbit 1.4s linear infinite;
-  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.7));
+  animation: splashOrbit 2s linear infinite;
+  will-change: transform;
 }
 
 /* Inner dashed counter-rotating ring */
@@ -1060,7 +1074,8 @@
   inset: 2px;
   border-radius: 50%;
   border: 1px dashed rgba(255, 255, 255, 0.2);
-  animation: splashReverseOrbit 8s linear infinite;
+  animation: splashReverseOrbit 12s linear infinite;
+  will-change: transform;
 }
 
 /* Central Logo Badge */
@@ -1071,11 +1086,10 @@
   border-radius: 50%;
   overflow: hidden;
   background: var(--surface-primary);
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(52, 211, 153, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   position: relative;
   z-index: 2;
-  animation: splashLogoGlow 3s ease-in-out infinite alternate;
 }
 
 .splash-loading-logo img {
@@ -1180,17 +1194,6 @@
 @keyframes splashReverseOrbit {
   from { transform: rotate(360deg); }
   to { transform: rotate(0deg); }
-}
-
-@keyframes splashLogoGlow {
-  0% {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 12px rgba(16, 185, 129, 0.2);
-    border-color: rgba(255, 255, 255, 0.15);
-  }
-  100% {
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5), 0 0 25px rgba(16, 185, 129, 0.5);
-    border-color: rgba(52, 211, 153, 0.4);
-  }
 }
 
 @keyframes splashAuraPulse {

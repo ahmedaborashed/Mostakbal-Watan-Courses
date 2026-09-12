@@ -19,7 +19,119 @@ import { normalizeError, isCloudFunctionUnavailable } from "../../core/errors.js
 
 export const ExamService = {
   /**
-   * Fetches authorized available exams for student (sanitized metadata, attempt status, and result).
+   * Fetches full academic exams history for student (available, upcoming, completed, and expired).
+   * Ensures student never loses access to their exam grades or past submissions.
+   */
+  async getStudentExams(studentGroup = "ALL", studentUid = "") {
+    const canonicalUid = auth.currentUser?.uid || studentUid || "";
+
+    try {
+      // 1. Fetch all exams
+      const snap = await getDocs(collection(db, COLLECTIONS.EXAMS));
+      const allExams = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+      // 2. Fetch all student results in batch (queries + O(1) lookups)
+      const resultsMap = new Map();
+      if (canonicalUid) {
+        try {
+          const q1 = query(
+            collection(db, COLLECTIONS.RESULTS),
+            where("studentUid", "==", canonicalUid)
+          );
+          const snap1 = await getDocs(q1);
+          snap1.docs.forEach((d) => {
+            const data = d.data();
+            if (data.examId) resultsMap.set(data.examId, { id: d.id, ...data });
+          });
+        } catch (_) {}
+
+        try {
+          const q2 = query(
+            collection(db, COLLECTIONS.RESULTS),
+            where("studentId", "==", canonicalUid)
+          );
+          const snap2 = await getDocs(q2);
+          snap2.docs.forEach((d) => {
+            const data = d.data();
+            if (data.examId && !resultsMap.has(data.examId)) {
+              resultsMap.set(data.examId, { id: d.id, ...data });
+            }
+          });
+        } catch (_) {}
+      }
+
+      // 3. Process each exam for this student
+      const processedExams = await Promise.all(
+        allExams.map(async (exam) => {
+          let res = resultsMap.get(exam.id) || null;
+          if (!res && canonicalUid) {
+            res = await this.getResult(exam.id, canonicalUid);
+          }
+
+          // Check if student has active or previous attempt in subcollection
+          let attempt = null;
+          let attemptStatus = res ? "submitted" : "not_started";
+
+          if (!res && canonicalUid) {
+            try {
+              const attemptRef = doc(db, COLLECTIONS.EXAMS, exam.id, COLLECTIONS.ATTEMPTS, canonicalUid);
+              const attSnap = await getDoc(attemptRef);
+              if (attSnap.exists()) {
+                attempt = attSnap.data();
+                if (attempt.status === "submitted") {
+                  attemptStatus = "submitted";
+                } else if (attempt.status === "in_progress") {
+                  const now = Date.now();
+                  const expiresAtTime = attempt.expiresAt?.toDate
+                    ? attempt.expiresAt.toDate().getTime()
+                    : new Date(attempt.expiresAt).getTime();
+                  if (!isNaN(expiresAtTime) && now < expiresAtTime) {
+                    attemptStatus = "in_progress";
+                  } else {
+                    attemptStatus = "expired";
+                  }
+                }
+              }
+            } catch (_) {}
+          }
+
+          const hasAccess =
+            !exam.group ||
+            exam.group === "ALL" ||
+            exam.group === studentGroup ||
+            res !== null ||
+            attempt !== null;
+
+          if (!hasAccess) return null;
+
+          return {
+            id: exam.id,
+            title: exam.title || "امتحان بدون عنوان",
+            description: exam.description || "",
+            duration: Number(exam.duration || 30),
+            group: exam.group || "ALL",
+            startDate: exam.startDate || exam.startAt || null,
+            deadline: exam.deadline || exam.endAt || null,
+            passDegree: Number(exam.passDegree || 0),
+            totalQuestions: Array.isArray(exam.questions) ? exam.questions.length : Number(exam.questionCount || 0),
+            active: exam.active !== false,
+            attemptStatus,
+            attempt,
+            result: res
+          };
+        })
+      );
+
+      return processedExams.filter(Boolean);
+    } catch (err) {
+      console.error("Failed to load student exams history:", err);
+      // Fallback to getAvailableExamsForStudent if needed
+      return this.getAvailableExamsForStudent(studentGroup, studentUid);
+    }
+  },
+
+  /**
+   * Fetches authorized available exams for student (backward compatibility).
    */
   async getAvailableExamsForStudent(studentGroup = "ALL", studentUid = "") {
     if (FEATURES.USE_CLOUD_FUNCTIONS) {
@@ -368,18 +480,31 @@ export const ExamService = {
 
   /**
    * Reads student's own exam result directly from Firestore.
+   * Checks primary format /results/{examId}_{studentUid}, legacy /results/{studentUid}_{examId},
+   * and canonical auth.currentUser.uid.
    */
   async getResult(examId, studentUid) {
-    try {
-      const docSnap = await getDoc(doc(db, COLLECTIONS.RESULTS, `${examId}_${studentUid}`));
-      if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() };
-      }
-      return null;
-    } catch (err) {
-      console.warn("Could not load exam result:", err);
-      return null;
+    const candidates = new Set();
+    if (studentUid) {
+      candidates.add(`${examId}_${studentUid}`);
+      candidates.add(`${studentUid}_${examId}`);
     }
+    const currentUid = auth.currentUser?.uid;
+    if (currentUid) {
+      candidates.add(`${examId}_${currentUid}`);
+      candidates.add(`${currentUid}_${examId}`);
+    }
+
+    for (const docId of candidates) {
+      try {
+        const docSnap = await getDoc(doc(db, COLLECTIONS.RESULTS, docId));
+        if (docSnap.exists()) {
+          return { id: docSnap.id, ...docSnap.data() };
+        }
+      } catch (_) {}
+    }
+
+    return null;
   },
 
   /**
@@ -407,6 +532,13 @@ export const ExamService = {
     } catch (err) {
       throw normalizeError(err);
     }
+  },
+
+  /**
+   * Alias for getExam to prevent TypeError when callers use getExamById.
+   */
+  async getExamById(examId) {
+    return this.getExam(examId);
   },
 
   /**
@@ -465,16 +597,162 @@ export const ExamService = {
   },
 
   /**
-   * Teacher fetches results for a specific exam.
+   * Teacher fetches results for a specific exam with full normalization.
    */
   async getExamResults(examId) {
     try {
-      const q = query(
-        collection(db, COLLECTIONS.RESULTS),
-        where("examId", "==", examId)
-      );
-      const snap = await getDocs(q);
-      return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const resultsMap = new Map();
+
+      // 1. Direct query where examId == examId
+      try {
+        const q = query(
+          collection(db, COLLECTIONS.RESULTS),
+          where("examId", "==", examId)
+        );
+        const snap = await getDocs(q);
+        snap.docs.forEach((d) => {
+          resultsMap.set(d.id, { id: d.id, ...d.data() });
+        });
+      } catch (_) {}
+
+      // 2. Fallback scan if primary query returned empty (handles legacy or prefixed doc IDs)
+      if (resultsMap.size === 0) {
+        try {
+          const allResultsSnap = await getDocs(collection(db, COLLECTIONS.RESULTS));
+          allResultsSnap.docs.forEach((d) => {
+            const data = d.data();
+            if (data.examId === examId || d.id.startsWith(`${examId}_`) || d.id.endsWith(`_${examId}`)) {
+              resultsMap.set(d.id, { id: d.id, ...data });
+            }
+          });
+        } catch (_) {}
+      }
+
+      // 3. Normalize each result record
+      return Array.from(resultsMap.values()).map((d) => {
+        const score = Number(d.score != null ? d.score : (d.total != null ? d.total : d.mcqScore || 0));
+        const total = Number(d.total != null && d.total > 0 ? d.total : (d.maxDegree || 100));
+        const percentage = total > 0 ? Math.min(100, Math.round((score / total) * 100)) : 0;
+        const essayScores = Array.isArray(d.essayScores) ? d.essayScores : [];
+        const hasPendingEssay = essayScores.some((s) => s === null || s === undefined);
+        const status = hasPendingEssay ? "pending_essay" : (d.status || "graded");
+
+        return {
+          id: d.id,
+          examId: d.examId || examId,
+          studentUid: d.studentUid || d.studentId || (d.id.includes("_") ? d.id.split("_")[1] : ""),
+          studentName: d.studentName || d.name || "طالب مسجل",
+          studentPhone: d.studentPhone || d.phone || "",
+          group: d.group || "ALL",
+          score,
+          total,
+          percentage,
+          mcqScore: Number(d.mcqScore || 0),
+          essayScores,
+          answers: Array.isArray(d.answers) ? d.answers : [],
+          status,
+          submittedAt: d.submittedAt || d.createdAt || null
+        };
+      }).sort((a, b) => b.score - a.score);
+    } catch (err) {
+      throw normalizeError(err);
+    }
+  },
+
+  /**
+   * Aggregates all exam results across all exams to produce the All-Exams Report matrix.
+   *
+   * @returns {Promise<{
+   *   exams: Array<object>,
+   *   studentsSummary: Array<{
+   *     studentUid: string,
+   *     studentName: string,
+   *     studentPhone: string,
+   *     group: string,
+   *     examScores: Record<string, { score: number, total: number, percentage: number, status: string }>,
+   *     averagePercentage: number,
+   *     totalTaken: number
+   *   }>
+   * }>}
+   */
+  async getAllExamsResultsSummary() {
+    try {
+      const [exams, resultsSnap, studentsSnap] = await Promise.all([
+        this.getAllExams(),
+        getDocs(collection(db, COLLECTIONS.RESULTS)),
+        getDocs(collection(db, COLLECTIONS.STUDENTS))
+      ]);
+
+      const studentsMap = new Map();
+
+      // Initialize with registered students
+      studentsSnap.docs.forEach((d) => {
+        const sData = d.data();
+        const uid = d.id;
+        studentsMap.set(uid, {
+          studentUid: uid,
+          studentName: sData.studentName || sData.name || "طالب مسجل",
+          studentPhone: sData.studentPhone || sData.phone || "",
+          group: sData.studentGroup || sData.group || "ALL",
+          examScores: {},
+          totalScoreSum: 0,
+          totalPercentageSum: 0,
+          totalTaken: 0
+        });
+      });
+
+      // Populate results
+      resultsSnap.docs.forEach((d) => {
+        const rData = d.data();
+        const examId = rData.examId || (d.id.includes("_") ? d.id.split("_")[0] : "");
+        const studentUid = rData.studentUid || rData.studentId || (d.id.includes("_") ? d.id.split("_")[1] : "");
+
+        if (!studentUid || !examId) return;
+
+        if (!studentsMap.has(studentUid)) {
+          studentsMap.set(studentUid, {
+            studentUid,
+            studentName: rData.studentName || "طالب مسجل",
+            studentPhone: rData.studentPhone || "",
+            group: rData.group || "ALL",
+            examScores: {},
+            totalScoreSum: 0,
+            totalPercentageSum: 0,
+            totalTaken: 0
+          });
+        }
+
+        const student = studentsMap.get(studentUid);
+        const score = Number(rData.score != null ? rData.score : (rData.total != null ? rData.total : rData.mcqScore || 0));
+        const total = Number(rData.total != null && rData.total > 0 ? rData.total : 100);
+        const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
+        const essayScores = Array.isArray(rData.essayScores) ? rData.essayScores : [];
+        const hasPendingEssay = essayScores.some((s) => s === null || s === undefined);
+        const status = hasPendingEssay ? "pending_essay" : (rData.status || "graded");
+
+        student.examScores[examId] = { score, total, percentage, status };
+        student.totalScoreSum += score;
+        student.totalPercentageSum += percentage;
+        student.totalTaken++;
+      });
+
+      const studentsSummary = Array.from(studentsMap.values()).map((s) => {
+        const averagePercentage = s.totalTaken > 0 ? Math.round(s.totalPercentageSum / s.totalTaken) : 0;
+        return {
+          studentUid: s.studentUid,
+          studentName: s.studentName,
+          studentPhone: s.studentPhone,
+          group: s.group,
+          examScores: s.examScores,
+          averagePercentage,
+          totalTaken: s.totalTaken
+        };
+      }).sort((a, b) => b.averagePercentage - a.averagePercentage);
+
+      return {
+        exams,
+        studentsSummary
+      };
     } catch (err) {
       throw normalizeError(err);
     }

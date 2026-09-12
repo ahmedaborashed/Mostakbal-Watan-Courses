@@ -9,56 +9,104 @@ import { ROLES } from "./constants.js";
  * @param {string|string[]} allowedRoles - 'student', 'teacher', 'admin', or array of roles
  * @returns {Promise<{user: object, role: string, claims: object}>}
  */
-function redirectToLogin() {
+export function redirectToLogin() {
   const isPagesDir = window.location.pathname.includes("/pages/");
   window.location.replace(isPagesDir ? "../index.html" : "index.html");
 }
 
-export function protectRoute(allowedRoles) {
+export function protectRoute(allowedRoles, { timeoutMs = 2800 } = {}) {
   const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
 
   return new Promise((resolve, reject) => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        unsubscribe();
-        redirectToLogin();
-        return;
-      }
+    let settled = false;
 
-      try {
-        // Fetch ID token result to extract Custom Claims
-        const tokenResult = await user.getIdTokenResult();
-        const claims = tokenResult.claims || {};
-        const email = (user.email || "").toLowerCase();
+    // Fail-safe watchdog: Never allow route guard to hang indefinitely
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      console.warn(`[RouteGuard] Auth check timed out after ${timeoutMs}ms. Redirecting to login.`);
+      try { unsubscribe(); } catch (_) {}
+      redirectToLogin();
+      reject(new Error("AUTH_TIMEOUT: تعذر التحقق من الجلسة في الوقت المحدد."));
+    }, timeoutMs);
 
-        // Determine user role
-        let role = claims.role;
-        if (!role) {
-          if (email.endsWith("@admin.local")) role = ROLES.ADMIN;
-          else if (email.endsWith("@system.local")) role = ROLES.TEACHER;
-          else if (email.endsWith("@student.local")) role = ROLES.STUDENT;
-          else role = ROLES.STUDENT;
-        }
+    let unsubscribe = () => {};
 
-        appStore.set("user", user);
-        appStore.set("role", role);
-        appStore.set("claims", claims);
+    try {
+      unsubscribe = onAuthStateChanged(
+        auth,
+        async (user) => {
+          if (settled) return;
 
-        if (!roles.includes(role)) {
-          unsubscribe();
-          await signOut(auth);
+          if (!user) {
+            settled = true;
+            clearTimeout(timer);
+            try { unsubscribe(); } catch (_) {}
+            redirectToLogin();
+            reject(new Error("UNAUTHENTICATED: يرجى تسجيل الدخول أولاً."));
+            return;
+          }
+
+          try {
+            // Fetch ID token result to extract Custom Claims
+            const tokenResult = await user.getIdTokenResult();
+            const claims = tokenResult.claims || {};
+            const email = (user.email || "").toLowerCase();
+
+            // Determine user role
+            let role = claims.role;
+            if (!role) {
+              if (email.endsWith("@admin.local")) role = ROLES.ADMIN;
+              else if (email.endsWith("@system.local")) role = ROLES.TEACHER;
+              else if (email.endsWith("@student.local")) role = ROLES.STUDENT;
+              else role = ROLES.STUDENT;
+            }
+
+            appStore.set("user", user);
+            appStore.set("role", role);
+            appStore.set("claims", claims);
+
+            if (!roles.includes(role)) {
+              settled = true;
+              clearTimeout(timer);
+              try { unsubscribe(); } catch (_) {}
+              await signOut(auth).catch(() => {});
+              redirectToLogin();
+              reject(new Error("UNAUTHORIZED_ROLE: حسابك غير مخول للوصول إلى هذه الصفحة."));
+              return;
+            }
+
+            settled = true;
+            clearTimeout(timer);
+            try { unsubscribe(); } catch (_) {}
+            resolve({ user, role, claims });
+          } catch (err) {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            console.error("Auth guard verification error:", err);
+            try { unsubscribe(); } catch (_) {}
+            redirectToLogin();
+            reject(err);
+          }
+        },
+        (authError) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          console.error("Auth state observer error:", authError);
+          try { unsubscribe(); } catch (_) {}
           redirectToLogin();
-          return;
+          reject(authError);
         }
-
-        unsubscribe();
-        resolve({ user, role, claims });
-      } catch (err) {
-        console.error("Auth guard verification error:", err);
-        unsubscribe();
-        redirectToLogin();
-        reject(err);
-      }
-    });
+      );
+    } catch (initErr) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      console.error("Failed to attach auth observer:", initErr);
+      redirectToLogin();
+      reject(initErr);
+    }
   });
 }

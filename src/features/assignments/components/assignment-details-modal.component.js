@@ -65,11 +65,11 @@ export function renderAssignmentDetailsContent({ assignment, submission, isSubmi
   const { title: displayTitle } = formatAssignmentContent(assignment.title, assignment.description);
   const safeTitle = escapeHtml(displayTitle || assignment.title || "تاسك عملي");
   const rawDesc = (assignment.description || "").trim();
-  const safeDesc = rawDesc ? escapeHtml(rawDesc) : "لا يوجد وصف مختصر مضاف.";
+  const safeDesc = rawDesc ? escapeHtml(rawDesc) : "لا يوجد وصف إضافي مضاف.";
   const groupLabel = assignment.group === "ALL" ? "جميع المجموعات" : (assignment.group || "عام");
   const safeGroup = escapeHtml(groupLabel);
 
-  // 2. Reference Material / File
+  // 2. Reference Material / File from Teacher
   let referenceFileHtml = "";
   if (assignment.fileUrl) {
     referenceFileHtml = `
@@ -117,18 +117,18 @@ export function renderAssignmentDetailsContent({ assignment, submission, isSubmi
         <!-- Teacher Grading Section -->
         <div class="grading-result-box mb-3 ${isGraded ? 'is-graded' : 'is-pending'}">
           <div class="d-flex items-center justify-between mb-2">
-            <strong class="text-sm">حالة التصحيح:</strong>
+            <strong class="text-sm">حالة التقييم:</strong>
             ${
               isGraded
                 ? `<span class="badge badge-success">تم التصحيح والتقييم</span>`
-                : `<span class="badge badge-warning">قيد التصحيح من قبل المعلم</span>`
+                : `<span class="badge badge-warning">قيد التصحيح ⏳</span>`
             }
           </div>
           ${
             isGraded
               ? `
                 <div class="grade-score-row mb-2">
-                  <span class="text-xs text-muted">الدرجة المستحقة:</span>
+                  <span class="text-xs text-muted">الدرجة:</span>
                   <strong class="grade-score-val text-accent">${escapeHtml(String(submission.grade))} / 100</strong>
                 </div>
                 ${
@@ -139,7 +139,11 @@ export function renderAssignmentDetailsContent({ assignment, submission, isSubmi
                         <div class="feedback-text">${escapeHtml(submission.feedback)}</div>
                       </div>
                     `
-                    : ""
+                    : `
+                      <div class="teacher-feedback-note">
+                        <span class="text-xs text-muted">لم تُضف ملاحظات نصية من المعلم.</span>
+                      </div>
+                    `
                 }
               `
               : `

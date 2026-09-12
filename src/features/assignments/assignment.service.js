@@ -9,6 +9,7 @@ import {
   setDoc,
   updateDoc,
   addDoc,
+  deleteDoc,
   query,
   where,
   serverTimestamp
@@ -154,7 +155,7 @@ export const AssignmentService = {
     }
     const cleanText = (answerText || "").trim();
     if (!cleanText && !file) {
-      throw new Error("يجب كتابة نص الإجابة أو إرفاق ملف للحل.");
+      throw new Error("يجب كتابة نص الإجابة أو إرفاق ملف للحل قبل الإرسال.");
     }
 
     let fileUrl = "";
@@ -375,6 +376,18 @@ export const AssignmentService = {
         createdAt: serverTimestamp()
       });
       return { id: docRef.id };
+    } catch (err) {
+      throw normalizeError(err);
+    }
+  },
+
+  /**
+   * Deletes an assignment by ID.
+   */
+  async deleteAssignment(assignmentId) {
+    try {
+      await deleteDoc(doc(db, COLLECTIONS.ASSIGNMENTS, assignmentId));
+      return true;
     } catch (err) {
       throw normalizeError(err);
     }

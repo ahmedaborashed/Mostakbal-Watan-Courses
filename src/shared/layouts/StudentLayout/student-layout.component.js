@@ -113,7 +113,8 @@ export function mountStudentLayout(container, { onLogout, onTabChange }) {
             <strong id="topbarCurrentTab">📚 الداتا والدروس</strong>
           </div>
           <div class="topbar-actions">
-            ${renderBadge({ text: "طالب مسجل", variant: "primary", icon: "🎓" })}
+            <div id="studentNotificationBellSlot"></div>
+            <span id="topbarStudentBadge">${renderBadge({ text: "طالب مسجل", variant: "primary", icon: "🎓" })}</span>
             <div id="topbarUserInitial" class="avatar avatar-sm">ط</div>
           </div>
         </header>
@@ -155,13 +156,7 @@ export function mountStudentLayout(container, { onLogout, onTabChange }) {
           </section>
 
           <!-- Attendance Section -->
-          <section id="sec-attendance" class="tab-content" aria-labelledby="heading-attendance">
-            <div class="page-header">
-              <div>
-                <h2 id="heading-attendance" class="page-title">📊 سجل الحضور والغياب</h2>
-                <p class="page-subtitle">متابعة دقيقة لنسبة التزامك في المحاضرات الأوفلاين والأونلاين.</p>
-              </div>
-            </div>
+          <section id="sec-attendance" class="tab-content" aria-label="سجل الحضور والغياب">
             <div id="attendanceContainer"></div>
           </section>
 
@@ -271,12 +266,16 @@ export function mountStudentLayout(container, { onLogout, onTabChange }) {
       const mobileNameEl = document.getElementById("mobileStudentName");
       const avatarSlot = document.getElementById("sidebarAvatarSlot");
       const topbarAvatar = document.getElementById("topbarUserInitial");
+      const topbarBadge = document.getElementById("topbarStudentBadge");
 
       if (name) {
         if (nameEl) nameEl.textContent = name;
         if (mobileNameEl) mobileNameEl.textContent = name;
         if (avatarSlot) avatarSlot.innerHTML = renderAvatar({ name, size: "md" });
         if (topbarAvatar) topbarAvatar.textContent = name.trim().charAt(0);
+        if (topbarBadge && name !== "طالب مسجل") {
+          topbarBadge.innerHTML = renderBadge({ text: name, variant: "primary", icon: "🎓" });
+        }
       }
       if (phone && phoneEl) {
         phoneEl.textContent = phone;

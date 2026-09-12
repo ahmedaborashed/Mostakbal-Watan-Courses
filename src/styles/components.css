@@ -3140,19 +3140,187 @@ body.is-in-exam-mode .main-view {
   color: var(--text-primary, #f1f5f9);
 }
 
-/* Teacher Assignment Card */
+/* Teacher Assignment Cards & Grid */
+.teacher-assignments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+}
+
+@media (max-width: 640px) {
+  .teacher-assignments-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .teacher-assignment-card {
-  background: var(--surface-primary, #1f242d);
+  background: var(--surface-primary, #1e232e);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
   border-radius: var(--radius-md, 14px);
   padding: 1.35rem;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .teacher-assignment-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.38), 0 0 15px rgba(16, 185, 129, 0.15);
   border-color: var(--primary, #10b981);
+}
+
+.teacher-assignment-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary, #10b981), #3b82f6);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.teacher-assignment-card:hover::before {
+  opacity: 1;
+}
+
+.teacher-task-specs {
+  background: var(--surface-secondary, #151921);
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
+  font-size: var(--font-size-xs, 0.78rem);
+}
+
+.btn-outline-danger-subtle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0.65rem;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.08);
+  color: #f87171;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-outline-danger-subtle:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 2px 10px rgba(239, 68, 68, 0.45) !important;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .form-row-responsive {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+}
+
+/* ========================================================
+   ACADEMIC FILTER TABS & DUAL ACTION BUTTONS (SHARED)
+   ======================================================== */
+
+.academic-tabs-wrapper {
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  padding-bottom: var(--space-2, 0.5rem);
+  -webkit-overflow-scrolling: touch;
+}
+
+.academic-filter-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--surface-secondary, #1a1e26);
+  padding: 0.35rem;
+  border-radius: var(--radius-md, 12px);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+}
+
+.academic-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.95rem;
+  border-radius: var(--radius-sm, 8px);
+  font-size: var(--font-size-sm, 0.875rem);
+  font-weight: 600;
+  color: var(--text-muted, #94a3b8);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast, 0.15s ease);
+  white-space: nowrap;
+}
+
+.academic-filter-btn:hover {
+  color: var(--text-primary, #f1f5f9);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.academic-filter-btn.active {
+  color: var(--text-primary, #ffffff);
+  background: var(--surface-primary, #242b35);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-strong, rgba(255, 255, 255, 0.12));
+}
+
+.filter-badge-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 0.4rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+}
+
+.academic-filter-btn.active .filter-badge-count {
+  background: var(--primary, #10b981);
+  color: #ffffff;
+}
+
+/* Student Exam Actions (Dual buttons on card) */
+.student-exam-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.student-exam-actions .btn {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .student-exam-actions {
+    grid-template-columns: 1fr;
+  }
+  .student-exam-actions .btn {
+    min-height: 44px;
+    width: 100%;
+  }
+  .academic-filter-btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+  }
 }
 

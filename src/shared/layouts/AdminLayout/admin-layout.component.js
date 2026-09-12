@@ -97,6 +97,7 @@ export function mountAdminLayout(container, { onLogout, onTabChange }) {
             <strong id="adminTopbarCurrentTab">📊 الغياب والحضور العام</strong>
           </div>
           <div class="topbar-actions">
+            <div id="adminNotificationBellSlot"></div>
             ${renderBadge({ text: "مدير النظام", variant: "danger", icon: "🛡️" })}
             <div id="adminTopbarUserInitial" class="avatar avatar-sm">أ</div>
           </div>

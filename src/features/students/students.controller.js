@@ -3,7 +3,7 @@ import { StudentsService } from "./students.service.js";
 import { studentsState } from "./students.state.js";
 import { renderStudentListView } from "./components/student-list.component.js";
 import { renderStudentStats } from "./components/student-stats.component.js";
-import { renderStudentDetailModal, renderStudentDetailContent } from "./components/student-detail.component.js";
+import { renderStudentDetailModal, renderStudentDetailContent, renderStudent360Content } from "./components/student-detail.component.js";
 import { renderEditStudentModal, populateEditStudentForm } from "./components/student-edit.component.js";
 import { renderAddStudentModal, renderResetPasswordModal } from "./components/student-form.component.js";
 import { validateStudentData, validateStudentEditData } from "../../shared/validators/student.validator.js";
@@ -53,8 +53,12 @@ export const StudentsController = {
     this._ensureModals();
 
     try {
-      const students = await StudentsService.getAllStudents();
+      const [students, absencesMap] = await Promise.all([
+        StudentsService.getAllStudents(),
+        StudentsService.getStudentAbsencesMap().catch(() => new Map())
+      ]);
       studentsState.set("students", students);
+      studentsState.set("absencesMap", absencesMap);
 
       this.renderFullView(container, canDelete);
       this.bindToolbarEvents(container, canDelete);
@@ -85,6 +89,7 @@ export const StudentsController = {
     const all = studentsState.get("students") || [];
     const groupFilter = studentsState.get("filterGroup") || "ALL";
     const search = (studentsState.get("searchQuery") || "").toLowerCase().trim();
+    const absencesMap = studentsState.get("absencesMap") || new Map();
 
     const filtered = this._filterStudents(all, groupFilter, search);
 
@@ -92,7 +97,8 @@ export const StudentsController = {
     const listHtml = renderStudentListView({
       students: filtered,
       canDelete,
-      totalCount: all.length
+      totalCount: all.length,
+      absencesMap
     });
 
     setHtml(container, statsHtml + listHtml);
@@ -110,6 +116,7 @@ export const StudentsController = {
     const all = studentsState.get("students") || [];
     const groupFilter = studentsState.get("filterGroup") || "ALL";
     const search = (studentsState.get("searchQuery") || "").toLowerCase().trim();
+    const absencesMap = studentsState.get("absencesMap") || new Map();
 
     const filtered = this._filterStudents(all, groupFilter, search);
 
@@ -118,7 +125,8 @@ export const StudentsController = {
     setHtml(tempDiv, renderStudentListView({
       students: filtered,
       canDelete,
-      totalCount: all.length
+      totalCount: all.length,
+      absencesMap
     }));
 
     const newTableWrapper = tempDiv.querySelector("#studentsTableWrapper");
@@ -232,22 +240,58 @@ export const StudentsController = {
   },
 
   // ─────────────────────────────────────────────
-  // STUDENT DETAIL
+  // STUDENT 360 DETAIL
   // ─────────────────────────────────────────────
-  openStudentDetail(uid, canDelete = false) {
+  async openStudentDetail(uid, canDelete = false) {
     const student = this._findStudent(uid);
     if (!student) {
       showToast("لم يتم العثور على بيانات هذا الطالب", "error");
       return;
     }
 
+    this._ensureModals();
+    openModal("studentDetailModal");
+
     const bodyEl = document.getElementById("studentDetailBody");
     if (bodyEl) {
-      setHtml(bodyEl, renderStudentDetailContent(student, { canDelete }));
-      this._bindDetailInternalActions(bodyEl, canDelete);
+      setHtml(bodyEl, renderLoader({ text: "جاري تجميع الملف الشامل للطالب 360°... ⏳" }));
     }
 
-    openModal("studentDetailModal");
+    try {
+      const data360 = await StudentsService.getStudent360Data(uid);
+      if (bodyEl) {
+        setHtml(bodyEl, renderStudent360Content(data360, { canDelete }));
+        this._bindDetailInternalActions(bodyEl, canDelete);
+
+        // Bind 360 Tab Switching
+        bodyEl.querySelectorAll("[data-s360-tab]").forEach((tabBtn) => {
+          tabBtn.addEventListener("click", () => {
+            const target = tabBtn.getAttribute("data-s360-tab");
+            bodyEl.querySelectorAll("[data-s360-tab]").forEach((b) => b.classList.remove("active"));
+            tabBtn.classList.add("active");
+
+            const panes = {
+              overview: bodyEl.querySelector("#s360TabOverview"),
+              exams: bodyEl.querySelector("#s360TabExams"),
+              assignments: bodyEl.querySelector("#s360TabAssignments"),
+              attendance: bodyEl.querySelector("#s360TabAttendance"),
+              game: bodyEl.querySelector("#s360TabGame")
+            };
+
+            Object.entries(panes).forEach(([key, pane]) => {
+              if (pane) {
+                pane.style.display = key === target ? "block" : "none";
+              }
+            });
+          });
+        });
+      }
+    } catch (err) {
+      console.error("Failed to load student 360 data:", err);
+      if (bodyEl) {
+        setHtml(bodyEl, renderErrorState({ title: "تعذر تحميل الملف الشامل", message: err.message }));
+      }
+    }
   },
 
   /**
@@ -323,7 +367,8 @@ export const StudentsController = {
     if (!editForm || editForm._bound) return;
     editForm._bound = true;
 
-    editForm.addEventListener("submit", async () => {
+    editForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
       const uid = document.getElementById("editStudentUid")?.value;
       const name = document.getElementById("editStudentName")?.value;
       const nationalId = document.getElementById("editStudentNationalId")?.value;
@@ -420,7 +465,8 @@ export const StudentsController = {
     const addForm = document.getElementById("addStudentForm");
     if (addForm && !addForm._bound) {
       addForm._bound = true;
-      addForm.addEventListener("submit", async () => {
+      addForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
         const name = document.getElementById("newStudentName")?.value;
         const phone = document.getElementById("newStudentPhone")?.value;
         const nationalId = document.getElementById("newStudentNationalId")?.value;
@@ -460,7 +506,8 @@ export const StudentsController = {
     const resetForm = document.getElementById("resetStudentPasswordForm");
     if (resetForm && !resetForm._bound) {
       resetForm._bound = true;
-      resetForm.addEventListener("submit", async () => {
+      resetForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
         const uid = document.getElementById("resetPasswordStudentUid")?.value;
         const newPass = document.getElementById("resetNewPasswordInput")?.value?.trim();
         const submitBtn = document.getElementById("submitResetPasswordBtn");

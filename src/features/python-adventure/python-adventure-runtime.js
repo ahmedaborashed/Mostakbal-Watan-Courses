@@ -72,7 +72,11 @@ export async function runPythonCode(pythonCode, { timeoutMs = 3500, onOutput = n
   const handleOut = (text) => {
     outputBuffer += text;
     if (typeof onOutput === "function") {
-      onOutput(outputBuffer);
+      try {
+        onOutput(outputBuffer);
+      } catch (streamErr) {
+        console.warn("Python onOutput error:", streamErr);
+      }
     }
   };
 
@@ -158,5 +162,11 @@ function cleanPythonErrorMessage(errStr) {
     return `❌ خطأ رياضي ZeroDivisionError${lineInfo}: لا يمكن القسمة على الصفر.`;
   }
 
-  return `❌ خطأ أثناء التشغيل${lineInfo}: ${errStr}`;
+  // Strip Skulpt wrapper prefixes
+  const cleanStr = errStr
+    .replace(/^ExternalError:\s*/i, "")
+    .replace(/^Error:\s*/i, "")
+    .replace(/^ReferenceError:\s*/i, "");
+
+  return `❌ خطأ أثناء التشغيل${lineInfo}: ${cleanStr}`;
 }

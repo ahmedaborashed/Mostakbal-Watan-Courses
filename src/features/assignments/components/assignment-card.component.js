@@ -234,25 +234,68 @@ export function renderTeacherAssignmentCard({ assignment }) {
   const safeTitle = escapeHtml(displayTitle);
   const safeDesc = escapeHtml(displayDesc);
   const safeGroup = escapeHtml(formatGroupLabel(assignment.group));
+  const isExpired = isDeadlinePassed(assignment.deadline);
+
+  const statusBadge = isExpired
+    ? `<span class="badge badge-danger" style="font-size:0.7rem;padding:0.2rem 0.5rem;"><span class="badge-dot">●</span> منتهي الموعد</span>`
+    : `<span class="badge badge-success" style="font-size:0.7rem;padding:0.2rem 0.5rem;"><span class="badge-dot">●</span> متاح وساري</span>`;
 
   return `
     <div class="teacher-assignment-card" dir="rtl">
-      <div class="d-flex items-center justify-between mb-2">
-        <span class="badge badge-gold">${safeGroup}</span>
-        <span class="text-xs text-muted">الديدلاين: <strong>${formatDate(assignment.deadline)}</strong></span>
+      <div>
+        <div class="d-flex items-center justify-between mb-3">
+          <span class="badge badge-gold font-bold">${safeGroup}</span>
+          ${statusBadge}
+        </div>
+        
+        <h4 class="font-bold mb-2 teacher-task-title" style="font-size:1.15rem;line-height:1.45;color:var(--text-primary);min-height:2.9rem;">
+          ${safeTitle}
+        </h4>
+        
+        <p class="text-sm text-muted mb-3 teacher-task-desc" style="line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.8rem;">
+          ${safeDesc}
+        </p>
+
+        <div class="teacher-task-specs p-3 mb-4">
+          <div class="d-flex items-center justify-between mb-1">
+            <span class="text-muted d-flex items-center gap-1"><span>📅</span><span>الديدلاين:</span></span>
+            <strong style="color:var(--text-primary);">${formatDate(assignment.deadline)}</strong>
+          </div>
+          <div class="d-flex items-center justify-between">
+            <span class="text-muted d-flex items-center gap-1"><span>👥</span><span>الفئة المستهدفة:</span></span>
+            <span style="color:var(--text-secondary);">${safeGroup}</span>
+          </div>
+          ${
+            assignment.fileUrl
+              ? `
+            <div class="d-flex items-center justify-between pt-1 mt-1" style="border-top:1px dashed rgba(255,255,255,0.08);">
+              <span class="text-muted d-flex items-center gap-1"><span>📎</span><span>ملف مرفق:</span></span>
+              <a href="${escapeHtml(assignment.fileUrl)}" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline text-xs">عرض الرابط ↗</a>
+            </div>
+          `
+              : ""
+          }
+        </div>
       </div>
-      <h4 class="font-bold mb-2" style="font-size:1.1rem;line-height:1.4;">${safeTitle}</h4>
-      <p class="text-sm text-muted mb-3" style="line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">
-        ${safeDesc}
-      </p>
-      <div class="d-flex items-center justify-between w-full mt-3 pt-3" style="border-top:1px solid var(--border);">
+
+      <div class="d-flex items-center justify-between w-full pt-3 gap-2" style="border-top:1px solid var(--border);">
         <button
           type="button"
-          class="btn btn-secondary btn-sm"
+          class="btn btn-primary btn-sm flex-1"
           data-teacher-view-submissions="${escapeHtml(assignment.id)}"
           data-task-title="${safeTitle}"
+          style="font-weight:600;"
         >
           <span>استعراض التسليمات والتقييم 📋</span>
+        </button>
+        <button
+          type="button"
+          class="btn-outline-danger-subtle btn-sm"
+          data-teacher-delete-assignment="${escapeHtml(assignment.id)}"
+          data-task-title="${safeTitle}"
+          title="حذف هذا الواجب نهائياً"
+        >
+          <span>🗑️</span>
         </button>
       </div>
     </div>

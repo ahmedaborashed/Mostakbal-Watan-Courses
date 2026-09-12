@@ -31,6 +31,20 @@ export const COLLECTIONS = Object.freeze({
   NOTIFICATIONS: "notifications"
 });
 
+export const NOTIFICATION_TYPES = Object.freeze({
+  EXAM_AVAILABLE: "exam_available",
+  EXAM_RESULT: "exam_result",
+  ASSIGNMENT_NEW: "assignment_new",
+  ASSIGNMENT_GRADED: "assignment_graded",
+  ATTENDANCE_RECORDED: "attendance_recorded",
+  ATTENDANCE_WARNING: "attendance_warning",
+  RANKING_PROMOTED: "ranking_promoted",
+  ACHIEVEMENT_UNLOCKED: "achievement_unlocked",
+  GAME_LEVEL_UP: "game_level_up",
+  COMPETITION_START: "competition_start",
+  GENERAL: "general"
+});
+
 export const STORAGE_PATHS = Object.freeze({
   SUBMISSIONS: "submissions",
   MATERIALS: "course_materials"

@@ -107,9 +107,12 @@ export const AttendanceController = {
   },
 
   /**
-   * Loads attendance taking sheet for Teacher / Admin view.
+   * Loads attendance taking sheet for Teacher / Admin view with session selector,
+   * default absent for new sessions, and live modification of old sessions.
+   * @param {string|HTMLElement} containerId
+   * @param {string} [initialSessionId="NEW"]
    */
-  async loadTeacherAttendance(containerId) {
+  async loadTeacherAttendance(containerId, initialSessionId = "NEW") {
     const container = typeof containerId === "string" ? document.getElementById(containerId) : containerId;
     if (!container) return;
 
@@ -123,91 +126,240 @@ export const AttendanceController = {
 
       attendanceState.set("sessions", sessions);
 
-      setHtml(container, renderAttendanceManagementView({ students, sessions }));
+      let selectedSessionId = initialSessionId;
+      let selectedSession = sessions.find((s) => (s.id || s.sessionId) === selectedSessionId) || null;
+      let sessionRecords = new Map();
 
-      // Bind checkbox label toggling
-      container.querySelectorAll(".attendance-check").forEach((chk) => {
-        chk.addEventListener("change", () => {
-          const label = chk.parentElement.querySelector(".status-label");
-          if (label) {
-            label.textContent = chk.checked ? "حاضر" : "غائب";
-            label.className = `status-label font-bold text-sm ${chk.checked ? "text-success" : "text-danger"}`;
+      if (!selectedSession && selectedSessionId !== "NEW" && sessions.length > 0) {
+        selectedSessionId = "NEW";
+      }
+
+      if (selectedSession) {
+        sessionRecords = await AttendanceService.getSessionRecords(selectedSession.id || selectedSession.sessionId);
+      }
+
+      const renderCurrentSheet = () => {
+        setHtml(
+          container,
+          renderAttendanceManagementView({
+            students,
+            sessions,
+            selectedSessionId,
+            selectedSession,
+            sessionRecords
+          })
+        );
+
+        this.bindTeacherAttendanceEvents(container, {
+          students,
+          sessions,
+          selectedSessionId,
+          selectedSession,
+          sessionRecords,
+          onSessionChange: async (newSessionId) => {
+            await this.loadTeacherAttendance(container, newSessionId);
           }
         });
-      });
+      };
 
-      // Bind select all present
-      document.getElementById("selectAllPresentBtn")?.addEventListener("click", () => {
-        container.querySelectorAll(".attendance-check").forEach((chk) => {
-          chk.checked = true;
-          const label = chk.parentElement.querySelector(".status-label");
-          if (label) {
-            label.textContent = "حاضر";
-            label.className = "status-label font-bold text-sm text-success";
-          }
-        });
-      });
-
-      // Bind filter by group select
-      document.getElementById("sessionGroupSelect")?.addEventListener("change", (e) => {
-        const selGroup = e.target.value;
-        container.querySelectorAll("#attendanceSheetTbody tr").forEach((tr) => {
-          const rowGroup = tr.getAttribute("data-group");
-          const visible = selGroup === "ALL" || rowGroup === selGroup;
-          tr.style.display = visible ? "" : "none";
-        });
-      });
-
-      // Bind batch save
-      document.getElementById("saveAttendanceBatchBtn")?.addEventListener("click", async () => {
-        const name = document.getElementById("sessionNameInput")?.value?.trim();
-        const date = document.getElementById("sessionDateInput")?.value;
-        const group = document.getElementById("sessionGroupSelect")?.value || "ALL";
-
-        if (!name || !date) {
-          showToast("يرجى إدخال عنوان وتاريخ السيشن ⚠️", "warning");
-          return;
-        }
-
-        const saveBtn = document.getElementById("saveAttendanceBatchBtn");
-        if (saveBtn) {
-          saveBtn.disabled = true;
-          saveBtn.classList.add("is-loading");
-          saveBtn.innerText = "جاري الحفظ... ⏳";
-        }
-
-        try {
-          // 1. Create the session
-          const session = await AttendanceService.createSession({ name, date, group });
-
-          // 2. Prepare attendance records from checked states
-          const records = [];
-          container.querySelectorAll(".attendance-check").forEach((chk) => {
-            const studentUid = chk.getAttribute("data-student-uid");
-            records.push({
-              studentUid,
-              studentId: studentUid,
-              present: chk.checked,
-              status: chk.checked ? "present" : "absent"
-            });
-          });
-
-          // 3. Save batch records
-          await AttendanceService.recordBatch(session.sessionId || session.id, records);
-          showToast("تم حفظ واعتماد كشف الحضور بنجاح ✅", "success");
-          this.loadTeacherAttendance(container);
-        } catch (e) {
-          showToast(e.message, "error");
-        } finally {
-          if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.classList.remove("is-loading");
-            saveBtn.innerText = "حفظ واعتماد الكشف 💾";
-          }
-        }
-      });
+      renderCurrentSheet();
     } catch (err) {
+      console.error("Load teacher attendance error:", err);
       setHtml(container, renderErrorState({ title: "خطأ في تحميل كشف الحضور", message: err.message }));
     }
+  },
+
+  /**
+   * Binds interactive events for the teacher/admin attendance sheet.
+   */
+  bindTeacherAttendanceEvents(container, { students, sessions, selectedSessionId, selectedSession, sessionRecords, onSessionChange }) {
+    const isNew = selectedSessionId === "NEW";
+
+    // 1. Helper to update live counters
+    const updateCounters = () => {
+      let totalVisible = 0;
+      let presentCount = 0;
+      let absentCount = 0;
+
+      container.querySelectorAll("#attendanceSheetTbody tr").forEach((tr) => {
+        if (tr.style.display !== "none") {
+          totalVisible++;
+          const chk = tr.querySelector(".attendance-check");
+          if (chk && chk.checked) {
+            presentCount++;
+          } else {
+            absentCount++;
+          }
+        }
+      });
+
+      const totalEl = container.querySelector("#sheetStudentsCount");
+      const presentEl = container.querySelector("#sheetPresentCount");
+      const absentEl = container.querySelector("#sheetAbsentCount");
+
+      if (totalEl) totalEl.textContent = totalVisible;
+      if (presentEl) presentEl.textContent = presentCount;
+      if (absentEl) absentEl.textContent = absentCount;
+    };
+
+    updateCounters();
+
+    // 2. Session Selector Change
+    container.querySelector("#sessionSelector")?.addEventListener("change", async (e) => {
+      const newSessionId = e.target.value;
+      if (typeof onSessionChange === "function") {
+        onSessionChange(newSessionId);
+      }
+    });
+
+    // 3. Checkbox toggling
+    container.querySelectorAll(".attendance-check").forEach((chk) => {
+      chk.addEventListener("change", () => {
+        const label = chk.parentElement.querySelector(".status-label");
+        if (label) {
+          label.textContent = chk.checked ? "حاضر ✓" : "غائب ✗";
+          label.className = `status-label font-bold text-sm ${chk.checked ? "text-success" : "text-danger"}`;
+        }
+        updateCounters();
+      });
+    });
+
+    // 4. Select All Present
+    container.querySelector("#selectAllPresentBtn")?.addEventListener("click", () => {
+      container.querySelectorAll("#attendanceSheetTbody tr").forEach((tr) => {
+        if (tr.style.display !== "none") {
+          const chk = tr.querySelector(".attendance-check");
+          if (chk) {
+            chk.checked = true;
+            const label = chk.parentElement.querySelector(".status-label");
+            if (label) {
+              label.textContent = "حاضر ✓";
+              label.className = "status-label font-bold text-sm text-success";
+            }
+          }
+        }
+      });
+      updateCounters();
+    });
+
+    // 5. Select All Absent
+    container.querySelector("#selectAllAbsentBtn")?.addEventListener("click", () => {
+      container.querySelectorAll("#attendanceSheetTbody tr").forEach((tr) => {
+        if (tr.style.display !== "none") {
+          const chk = tr.querySelector(".attendance-check");
+          if (chk) {
+            chk.checked = false;
+            const label = chk.parentElement.querySelector(".status-label");
+            if (label) {
+              label.textContent = "غائب ✗";
+              label.className = "status-label font-bold text-sm text-danger";
+            }
+          }
+        }
+      });
+      updateCounters();
+    });
+
+    // 6. Filter by group select
+    container.querySelector("#sessionGroupSelect")?.addEventListener("change", (e) => {
+      const selGroup = e.target.value;
+      const searchVal = (container.querySelector("#attendanceStudentSearchInput")?.value || "").trim().toLowerCase();
+
+      container.querySelectorAll("#attendanceSheetTbody tr").forEach((tr) => {
+        const rowGroup = tr.getAttribute("data-group") || "ALL";
+        const rowName = tr.getAttribute("data-student-name") || "";
+        const matchesGroup = selGroup === "ALL" || rowGroup === selGroup;
+        const matchesSearch = !searchVal || rowName.includes(searchVal);
+        tr.style.display = matchesGroup && matchesSearch ? "" : "none";
+      });
+      updateCounters();
+    });
+
+    // 7. Search by student name
+    container.querySelector("#attendanceStudentSearchInput")?.addEventListener("input", (e) => {
+      const searchVal = (e.target.value || "").trim().toLowerCase();
+      const selGroup = container.querySelector("#sessionGroupSelect")?.value || "ALL";
+
+      container.querySelectorAll("#attendanceSheetTbody tr").forEach((tr) => {
+        const rowGroup = tr.getAttribute("data-group") || "ALL";
+        const rowName = tr.getAttribute("data-student-name") || "";
+        const matchesGroup = selGroup === "ALL" || rowGroup === selGroup;
+        const matchesSearch = !searchVal || rowName.includes(searchVal);
+        tr.style.display = matchesGroup && matchesSearch ? "" : "none";
+      });
+      updateCounters();
+    });
+
+    // 8. Batch Save Button
+    container.querySelector("#saveAttendanceBatchBtn")?.addEventListener("click", async () => {
+      if (this._isSavingAttendance) return;
+
+      const nameInput = container.querySelector("#sessionNameInput");
+      const dateInput = container.querySelector("#sessionDateInput");
+      const groupInput = container.querySelector("#sessionGroupSelect");
+
+      const name = nameInput?.value?.trim();
+      const date = dateInput?.value;
+      const group = groupInput?.value || "ALL";
+
+      if (!name || !date) {
+        showToast("يرجى إدخال عنوان وتاريخ الجلسة ⚠️", "warning");
+        nameInput?.focus();
+        return;
+      }
+
+      this._isSavingAttendance = true;
+      const saveBtn = container.querySelector("#saveAttendanceBatchBtn");
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.classList.add("is-loading");
+        saveBtn.innerText = "جاري الحفظ والاعتماد... ⏳";
+      }
+
+      try {
+        let targetSessionId = selectedSessionId;
+
+        if (isNew) {
+          // Rule 37: Create new session
+          const created = await AttendanceService.createSession({ name, date, group });
+          targetSessionId = created.sessionId || created.id;
+        } else {
+          // Rule 40: Update existing session metadata without creating duplicates
+          await AttendanceService.updateSession(targetSessionId, { name, date, group });
+        }
+
+        // Prepare attendance records
+        const records = [];
+        container.querySelectorAll(".attendance-check").forEach((chk) => {
+          const studentUid = chk.getAttribute("data-student-uid");
+          records.push({
+            studentUid,
+            studentId: studentUid,
+            studentName: chk.getAttribute("data-student-name") || "",
+            studentPhone: chk.getAttribute("data-student-phone") || "",
+            group: chk.getAttribute("data-student-group") || "ALL",
+            present: chk.checked,
+            status: chk.checked ? "present" : "absent"
+          });
+        });
+
+        // Save batch records to subcollection
+        await AttendanceService.recordBatch(targetSessionId, records);
+        showToast("تم حفظ واعتماد كشف الحضور والغياب بنجاح ✅", "success");
+
+        // Reload sheet targeting this session
+        await this.loadTeacherAttendance(container, targetSessionId);
+      } catch (e) {
+        console.error("Save attendance batch error:", e);
+        showToast(e.message || "تعذر حفظ كشف الحضور.", "error");
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.classList.remove("is-loading");
+          saveBtn.innerText = isNew ? "حفظ واعتماد الكشف 💾" : "حفظ التعديلات 💾";
+        }
+      } finally {
+        this._isSavingAttendance = false;
+      }
+    });
   }
 };

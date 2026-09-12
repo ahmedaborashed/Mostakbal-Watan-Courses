@@ -482,7 +482,7 @@
   background: linear-gradient(90deg, var(--primary), var(--color-primary-light, #34d399));
   border-radius: var(--radius-full);
   animation: portalProgressAnim 1.6s ease-in-out infinite;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  will-change: transform;
 }
 
 @keyframes portalProgressAnim {

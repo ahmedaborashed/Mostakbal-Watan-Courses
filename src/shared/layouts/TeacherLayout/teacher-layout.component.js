@@ -107,6 +107,7 @@ export function mountTeacherLayout(container, { onLogout, onTabChange }) {
             <strong id="teacherTopbarCurrentTab">📚 الداتا والدروس</strong>
           </div>
           <div class="topbar-actions">
+            <div id="teacherNotificationBellSlot"></div>
             ${renderBadge({ text: "معلم معتمد", variant: "gold", icon: "👨‍🏫" })}
             <div id="teacherTopbarUserInitial" class="avatar avatar-sm">م</div>
           </div>

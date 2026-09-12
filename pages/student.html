@@ -10,7 +10,7 @@
   <!-- Google Fonts: Cairo -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 
   <!-- Modular Design System Styles -->
   <link rel="stylesheet" href="../src/styles/variables.css">
@@ -55,40 +55,100 @@
     import { renderVideoPlayerModal } from "../src/features/lectures/components/video-player-modal.component.js";
     import { StudentsService } from "../src/features/students/students.service.js";
     import { LecturesController } from "../src/features/lectures/lectures.controller.js";
-    import { ExamController } from "../src/features/exams/exam.controller.js";
-    import { AssignmentController } from "../src/features/assignments/assignment.controller.js";
     import { AttendanceController } from "../src/features/attendance/attendance.controller.js";
-    import { AttendanceService } from "../src/features/attendance/attendance.service.js";
-    import { renderProfileAttendanceCard } from "../src/features/attendance/components/profile-attendance-card.component.js";
-    import { ProfileController } from "../src/features/profile/profile.controller.js";
     import { AuthController } from "../src/features/auth/auth.controller.js";
-    import { PythonAdventureController } from "../src/features/python-adventure/python-adventure.controller.js";
+    import { NotificationsController } from "../src/features/notifications/notifications.controller.js";
     import { bootstrapApp } from "../src/app/bootstrap.js";
 
     bootstrapApp();
 
+    const root = document.getElementById("appRoot");
+
+    function renderPortalFallback(message = "تعذر التحقق من الجلسة أو انتهت صلاحيتها.") {
+      if (!root) return;
+      root.innerHTML = `
+        <div class="portal-initial-loader">
+          <div class="portal-loader-card" style="border-color: rgba(239, 68, 68, 0.4);">
+            <div class="portal-loader-emblem-wrap">
+              <span style="font-size: 3rem; line-height: 1;">🔐</span>
+            </div>
+            <h3 class="portal-loader-title">مستقبل وطن - تسجيل الدخول</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem;">
+              ${message}
+            </p>
+            <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+              <a href="../index.html" class="btn btn-primary" style="padding: 0.6rem 1.25rem;">
+                <span>الانتقال لتسجيل الدخول 🚀</span>
+              </a>
+              <button id="portalRetryBtn" class="btn btn-secondary" style="padding: 0.6rem 1.25rem;">
+                <span>إعادة المحاولة 🔄</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById("portalRetryBtn")?.addEventListener("click", () => {
+        window.location.reload();
+      });
+    }
+
+    // Safety Watchdog: Never allow infinite loading card to stay stuck on screen
+    const watchdogTimer = setTimeout(() => {
+      const activeLoader = document.querySelector("#appRoot .portal-initial-loader");
+      if (activeLoader) {
+        console.warn("[Watchdog] Initial loader still present after 4s. Showing fallback action.");
+        renderPortalFallback("استغرق التحقق وقتاً طويلاً. يرجى تسجيل الدخول مرة أخرى.");
+      }
+    }, 4000);
+
     try {
-      // 1. Enforce Role Protection
+      // 1. Enforce Role Protection (fails safe after 2.8s max)
       const { user } = await Router.guard(ROLES.STUDENT);
 
-      // 2. Fetch Student Profile with Direct O(1) & Scoped Fallback
-      let student = await StudentsService.getStudentProfile(user.uid);
-      if (!student) {
-        const phone = (user.email || "").split("@")[0];
-        student = await StudentsService.getStudentByPhone(phone);
-      }
-      if (!student) {
-        student = {
-          id: user.uid,
-          firestoreId: user.uid,
-          studentName: "طالب مسجل",
-          studentPhone: (user.email || "").split("@")[0],
-          studentGroup: "ALL"
-        };
-      }
+      clearTimeout(watchdogTimer);
 
-      // 3. Mount UI Layout Shell
-      const root = document.getElementById("appRoot");
+      const studentPhone = (user.email || "").split("@")[0];
+
+      // Retrieve cached student profile for instantaneous paint
+      let cachedStudent = null;
+      try {
+        const raw = sessionStorage.getItem(`mw_student_profile_${studentPhone}`) || localStorage.getItem(`mw_student_profile_${studentPhone}`);
+        if (raw) cachedStudent = JSON.parse(raw);
+      } catch (_) {}
+
+      // Default baseline student info (populated immediately from cache if available)
+      let student = {
+        id: user.uid,
+        firestoreId: cachedStudent?.firestoreId || user.uid,
+        name: cachedStudent?.name || "",
+        studentName: cachedStudent?.name || cachedStudent?.studentName || "",
+        studentPhone: studentPhone,
+        phone: studentPhone,
+        group: cachedStudent?.group || "",
+        studentGroup: cachedStudent?.group || cachedStudent?.studentGroup || "",
+        nationalId: cachedStudent?.nationalId || cachedStudent?.studentNationalId || "",
+        studentNationalId: cachedStudent?.nationalId || cachedStudent?.studentNationalId || "",
+        address: cachedStudent?.address || cachedStudent?.studentAddress || "",
+        studentAddress: cachedStudent?.address || cachedStudent?.studentAddress || ""
+      };
+
+      // Lazy feature loaders with promise caching
+      const lazyLoaders = {
+        exams: () => import("../src/features/exams/exam.controller.js").then((m) => m.ExamController),
+        tasks: () => import("../src/features/assignments/assignment.controller.js").then((m) => m.AssignmentController),
+        adventure: () => import("../src/features/python-adventure/python-adventure.controller.js").then((m) => m.PythonAdventureController),
+        profile: () => Promise.all([
+          import("../src/features/profile/profile.controller.js"),
+          import("../src/features/attendance/attendance.service.js"),
+          import("../src/features/attendance/components/profile-attendance-card.component.js")
+        ]).then(([p, a, c]) => ({
+          ProfileController: p.ProfileController,
+          AttendanceService: a.AttendanceService,
+          renderProfileAttendanceCard: c.renderProfileAttendanceCard
+        }))
+      };
+
+      // 2. Mount UI Layout Shell IMMEDIATELY (no waiting for slow network queries)
       const layout = mountStudentLayout(root, {
         onLogout: () => AuthController.logout(),
         onTabChange: (tabId) => {
@@ -96,49 +156,169 @@
             LecturesController.loadStudentLectures("videoListContainer", student);
             AttendanceController.loadDashboardWidget("attendanceDashboardWidgetContainer", student, (tab) => layout.switchTab(tab));
           } else if (tabId === "exams") {
-            ExamController.loadStudentExams("examListContainer", student);
+            lazyLoaders.exams().then((ctrl) => ctrl.loadStudentExams("examListContainer", student));
           } else if (tabId === "tasks") {
-            AssignmentController.loadStudentAssignments("taskListContainer", student);
+            lazyLoaders.tasks().then((ctrl) => ctrl.loadStudentAssignments("taskListContainer", student));
           } else if (tabId === "attendance") {
             AttendanceController.loadStudentAttendance("attendanceContainer", student);
           } else if (tabId === "python-adventure") {
-            PythonAdventureController.init("pythonAdventureContainer", student);
+            lazyLoaders.adventure().then((ctrl) => ctrl.init("pythonAdventureContainer", student));
           } else if (tabId === "profile") {
-            ProfileController.loadProfileView("profileContainer", student);
-            AttendanceService.getStudentAttendance(student).then((data) => {
-              const profAtt = document.getElementById("profileAttendanceContainer");
-              if (profAtt && data) {
-                profAtt.innerHTML = renderProfileAttendanceCard({ attendanceData: data });
-              }
-            }).catch(console.warn);
+            lazyLoaders.profile().then(({ ProfileController, AttendanceService, renderProfileAttendanceCard }) => {
+              ProfileController.loadProfileView("profileContainer", student);
+              AttendanceService.getStudentAttendance(student).then((data) => {
+                const profAtt = document.getElementById("profileAttendanceContainer");
+                if (profAtt && data) {
+                  profAtt.innerHTML = renderProfileAttendanceCard({ attendanceData: data });
+                }
+              }).catch(console.warn);
+            });
           } else if (tabId === "settings") {
-            ProfileController.loadSettingsView("settingsContainer");
+            lazyLoaders.profile().then(({ ProfileController }) => {
+              ProfileController.loadSettingsView("settingsContainer");
+            });
           }
         }
       });
 
+      const initialDisplayName = student.name || student.studentName || "طالب مسجل";
       layout.updateProfile({
-        name: student.studentName || student.name,
-        phone: student.studentPhone || student.phone
+        name: initialDisplayName,
+        phone: student.studentPhone
       });
 
-      // 4. Mount Video Player Modal into DOM
-      document.body.insertAdjacentHTML("beforeend", renderVideoPlayerModal());
+      // 3. Mount Video Player Modal into DOM
+      if (!document.getElementById("videoPlayerModal")) {
+        document.body.insertAdjacentHTML("beforeend", renderVideoPlayerModal());
+      }
 
-      // 5. Initial Tab Activation (Check query param or default to videos)
+      // 4. Initial Tab Activation (Instant response)
       const urlParams = new URLSearchParams(window.location.search);
       const targetTab = urlParams.get("tab");
       if (targetTab === "attendance") {
         layout.switchTab("attendance");
       } else if (targetTab === "python-adventure") {
         layout.switchTab("python-adventure");
+      } else if (targetTab === "exams") {
+        layout.switchTab("exams");
+      } else if (targetTab === "tasks") {
+        layout.switchTab("tasks");
       } else {
         LecturesController.loadStudentLectures("videoListContainer", student);
         AttendanceController.loadDashboardWidget("attendanceDashboardWidgetContainer", student, (tab) => layout.switchTab(tab));
       }
 
+      // 5. In Background: Fetch Enriched Student Profile & Update UI without blocking
+      (async () => {
+        try {
+          const withTimeout = (promise, ms = 4500) =>
+            Promise.race([
+              promise,
+              new Promise((res) => setTimeout(() => res(null), ms))
+            ]);
+
+          let enrichedStudent = await withTimeout(StudentsService.getStudentProfile(user.uid), 3500);
+
+          if (!enrichedStudent) {
+            enrichedStudent = await withTimeout(StudentsService.getStudentByPhone(studentPhone), 4500);
+          }
+
+          if (enrichedStudent) {
+            const resolvedName = (enrichedStudent.name && enrichedStudent.name !== "طالب مسجل")
+              ? enrichedStudent.name
+              : (enrichedStudent.studentName && enrichedStudent.studentName !== "طالب مسجل"
+                  ? enrichedStudent.studentName
+                  : (student.name || student.studentName || "طالب مسجل"));
+
+            const resolvedGroup = (enrichedStudent.group && enrichedStudent.group !== "ALL")
+              ? enrichedStudent.group
+              : (enrichedStudent.studentGroup && enrichedStudent.studentGroup !== "ALL"
+                  ? enrichedStudent.studentGroup
+                  : (student.group || student.studentGroup || "ALL"));
+
+            const resolvedPhone = enrichedStudent.studentPhone || enrichedStudent.phone || studentPhone;
+            const resolvedNatId = enrichedStudent.nationalId || enrichedStudent.studentNationalId || student.nationalId || "";
+            const resolvedAddress = enrichedStudent.address || enrichedStudent.studentAddress || student.address || "";
+
+            const prevGroup = student.group || student.studentGroup;
+            const prevName = student.name || student.studentName;
+
+            student = {
+              ...student,
+              ...enrichedStudent,
+              name: resolvedName,
+              studentName: resolvedName,
+              group: resolvedGroup,
+              studentGroup: resolvedGroup,
+              phone: resolvedPhone,
+              studentPhone: resolvedPhone,
+              nationalId: resolvedNatId,
+              studentNationalId: resolvedNatId,
+              address: resolvedAddress,
+              studentAddress: resolvedAddress
+            };
+
+            // Cache in storage for instant paint on subsequent visits
+            try {
+              sessionStorage.setItem(`mw_student_profile_${studentPhone}`, JSON.stringify(student));
+              localStorage.setItem(`mw_student_profile_${studentPhone}`, JSON.stringify(student));
+            } catch (_) {}
+
+            // Update UI shell
+            layout.updateProfile({
+              name: resolvedName,
+              phone: resolvedPhone
+            });
+
+            // If group or name changed, refresh active tab so student sees real data immediately
+            const activeTabBtn = document.querySelector(".sidebar-item.active");
+            const activeSection = activeTabBtn ? activeTabBtn.getAttribute("data-section") : "videos";
+
+            if (activeSection === "videos" || prevGroup !== resolvedGroup) {
+              LecturesController.loadStudentLectures("videoListContainer", student);
+              AttendanceController.loadDashboardWidget("attendanceDashboardWidgetContainer", student, (tab) => layout.switchTab(tab));
+            }
+            if (activeSection === "profile" || prevName !== resolvedName) {
+              lazyLoaders.profile().then(({ ProfileController, AttendanceService, renderProfileAttendanceCard }) => {
+                ProfileController.loadProfileView("profileContainer", student);
+                AttendanceService.getStudentAttendance(student).then((data) => {
+                  const profAtt = document.getElementById("profileAttendanceContainer");
+                  if (profAtt && data) {
+                    profAtt.innerHTML = renderProfileAttendanceCard({ attendanceData: data });
+                  }
+                }).catch(console.warn);
+              });
+            }
+          }
+        } catch (profileErr) {
+          console.warn("Background profile fetch non-blocking error:", profileErr);
+        }
+      })();
+
+      // 6. In Background: Mount Notifications Bell (Non-blocking)
+      NotificationsController.init({
+        bellMountPoint: "studentNotificationBellSlot",
+        onNavigate: (section) => {
+          if (!section) return;
+          if (section === "assignments" || section === "assignment") {
+            layout.switchTab("tasks");
+          } else if (section === "lectures" || section === "data" || section === "lessons") {
+            layout.switchTab("videos");
+          } else if (section === "adventure" || section === "game") {
+            layout.switchTab("python-adventure");
+          } else {
+            layout.switchTab(section);
+          }
+        }
+      }).catch((err) => console.warn("Notifications non-blocking init warning:", err));
+
     } catch (err) {
+      clearTimeout(watchdogTimer);
       console.error("Student page initialization error:", err);
+      renderPortalFallback("يرجى تسجيل الدخول للوصول إلى منصة الطلاب.");
+      setTimeout(() => {
+        window.location.replace("../index.html");
+      }, 1200);
     }
   </script>
 </body>

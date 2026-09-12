@@ -13,7 +13,7 @@ import { GROUPS } from "../../../core/constants.js";
  * @param {boolean} options.canDelete - Whether delete is allowed
  * @param {number} options.totalCount - Total student count (before filter)
  */
-export function renderStudentListView({ students = [], canDelete = false, totalCount = 0 }) {
+export function renderStudentListView({ students = [], canDelete = false, totalCount = 0, absencesMap = new Map() }) {
   const filteredCount = students.length;
   const countLabel = totalCount > 0
     ? `عرض <strong>${filteredCount}</strong> طالب من أصل <strong>${totalCount}</strong>`
@@ -63,11 +63,36 @@ export function renderStudentListView({ students = [], canDelete = false, totalC
     // Row number
     const rowNum = `<span class="text-muted font-bold">${index + 1}</span>`;
 
-    // Student cell with avatar
+    // Absence stats check (Rule 30: 4 or more absences -> Highlight student in RED)
+    const absInfo = typeof absencesMap?.get === "function"
+      ? (absencesMap.get(studentUid) || absencesMap.get(studentPhone))
+      : (absencesMap?.[studentUid] || absencesMap?.[studentPhone]);
+    const absenceCount = typeof absInfo === "number" ? absInfo : (absInfo?.count || 0);
+    const isHighAbsence = absenceCount >= 4;
+
+    // Student cell with avatar & high absence warning badge
     const studentCell = `
       <div class="d-flex items-center gap-3">
         ${renderAvatar({ name: studentName, size: "sm" })}
-        <strong>${escapeHtml(studentName)}</strong>
+        <div class="d-flex flex-col">
+          <strong style="color: ${isHighAbsence ? 'var(--color-danger)' : 'var(--color-text-primary)'}; font-weight: 800;">
+            ${escapeHtml(studentName)}
+          </strong>
+          ${
+            isHighAbsence
+              ? `
+            <span
+              class="badge badge-danger text-xs font-bold mt-1"
+              style="width: fit-content; display: inline-flex; align-items: center; gap: 4px;"
+              title="تجاوز الطالب الحد المسموح به للغياب (أكثر من 3 غيابات)"
+            >
+              <span aria-hidden="true">🔴</span>
+              <span>${absenceCount} غيابات (إنذار غياب مرتفع)</span>
+            </span>
+          `
+              : ""
+          }
+        </div>
       </div>
     `;
 

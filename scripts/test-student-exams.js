@@ -256,12 +256,46 @@ console.log("🧪 Starting Comprehensive Student Exams Unit Tests...");
     totalQuestions: 15,
     active: true
   };
+  // Scenario A: Available exam card (MUST have both Details and Start Exam buttons)
   const cardHtml = renderStudentExamCard({ exam });
   assert(cardHtml.includes("اختبار البرمجة الأول"), "Card should display title");
   assert(cardHtml.includes("45"), "Card should display duration number");
   assert(cardHtml.includes("دقيقة"), "Card should display duration unit");
   assert(cardHtml.includes("15"), "Card should display question count");
   assert(cardHtml.includes("data-open-exam-details"), "Card should have action to view details");
+  assert(cardHtml.includes('data-start-exam="exam_101"'), "Card MUST have direct Start Exam button");
+  assert(cardHtml.includes("بدء الامتحان"), "Direct start button label must be 'بدء الامتحان'");
+
+  // Scenario B: Completed exam card with official grade
+  const completedExam = {
+    ...exam,
+    id: "exam_102",
+    result: { score: 18, total: 20 }
+  };
+  const completedCardHtml = renderStudentExamCard({ exam: completedExam, attempt: { status: "submitted" } });
+  assert(completedCardHtml.includes("data-open-exam-details"), "Completed card should have details button");
+  assert(completedCardHtml.includes('data-view-exam-result="exam_102"'), "Completed card must have View Result button");
+  assert(completedCardHtml.includes("عرض النتيجة"), "View Result button label must be 'عرض النتيجة'");
+  assert(completedCardHtml.includes("18 / 20"), "Card must display official score 18 / 20");
+
+  // Scenario C: Expired exam card
+  const expiredExam = {
+    ...exam,
+    id: "exam_103",
+    endDate: new Date(Date.now() - 86400000).toISOString()
+  };
+  const expiredCardHtml = renderStudentExamCard({ exam: expiredExam });
+  assert(expiredCardHtml.includes("data-open-exam-details"), "Expired card should have details button");
+  assert(expiredCardHtml.includes("منتهي"), "Expired card must indicate expired state");
+
+  // Scenario D: Active in-progress attempt
+  const inProgressExam = {
+    ...exam,
+    id: "exam_104"
+  };
+  const inProgressCardHtml = renderStudentExamCard({ exam: inProgressExam, attempt: { status: "in_progress" } });
+  assert(inProgressCardHtml.includes('data-resume-exam="exam_104"'), "Active attempt card must have resume button");
+  assert(inProgressCardHtml.includes("متابعة الامتحان"), "Resume button label must be 'متابعة الامتحان'");
 
   const detailsHtml = renderStudentExamDetailsContent({ exam });
   assert(detailsHtml.includes("45 دقيقة"), "Details should show duration");
@@ -273,7 +307,7 @@ console.log("🧪 Starting Comprehensive Student Exams Unit Tests...");
   assert(preExamModalHtml.includes(PRE_EXAM_CONFIRM_MODAL_ID), "Pre-exam modal must have expected ID");
   assert(preExamModalHtml.includes("confirmStartExamOfficialBtn"), "Pre-exam modal must have confirm start button");
 
-  console.log("  ✅ Exam Card, Details & Pre-Exam Confirmation passed!");
+  console.log("  ✅ Exam Card dual-action buttons, Details & Pre-Exam Confirmation passed!");
 }
 
 console.log("\n🎉 ALL STUDENT EXAM UNIT TESTS PASSED SUCCESSFULLY!");

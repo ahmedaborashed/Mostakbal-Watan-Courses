@@ -11,7 +11,7 @@
   <!-- Google Fonts: Cairo -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap"
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap"
     rel="stylesheet">
 
   <!-- Modular Design System Styles -->
@@ -80,6 +80,14 @@
           المنصة التعليمية الرقمية الرسمية لأمانة شباب أول المحلة الكبرى.
           رحلة تعلم تفاعلية تبدأ معك من الصفر وحتى احتراف البرمجة وبناء المشاريع الحقيقية.
         </p>
+
+        <!-- Hero CTA Button -->
+        <div class="hero-actions" style="margin-top: 1.75rem; margin-bottom: 2rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+          <button class="landing-login-btn" type="button" onclick="showLogin()" style="padding: 0.9rem 2.2rem; font-size: 1.1rem; border-radius: 9999px; box-shadow: 0 6px 24px rgba(16, 185, 129, 0.45); cursor: pointer;" aria-label="الدخول إلى المنصة التعليمية">
+            <span>🔐</span>
+            <span>الدخول إلى المنصة التعليمية</span>
+          </button>
+        </div>
 
         <!-- قيادات الإشراف -->
         <div class="supervision-section">
@@ -471,7 +479,7 @@
   <!-- ============================================================
        SPLASH LOADING SCREEN (Ultra-Modern & Professional)
        ============================================================ -->
-  <div id="loadingScreen" class="splash-loading-screen" aria-hidden="true">
+  <div id="loadingScreen" class="splash-loading-screen loading-hide" aria-hidden="true" style="display: none;">
     <div class="splash-loading-content">
       <div class="splash-loading-emblem">
         <div class="splash-orbital-ring" aria-hidden="true"></div>
@@ -486,8 +494,8 @@
       
       <div class="splash-status-chip">
         <span class="splash-pulse-dot" aria-hidden="true"></span>
-        <span id="loadingStatusDesc">جاري إعداد المنصة...</span>
-        <span id="loadingCount" class="splash-loading-count">3s</span>
+        <span id="loadingStatusDesc">جاري التوجيه...</span>
+        <span id="loadingCount" class="splash-loading-count"></span>
       </div>
 
       <div class="splash-progress-track" aria-hidden="true">
@@ -500,10 +508,10 @@
        CLIENT SCRIPTS
        ============================================================ -->
   <script>
-    /* Splash Screen Logic */
+    /* Splash Screen Logic (Only active during explicit actions like login) */
     let loadingTimer = null;
 
-    function showLoading(text = "أهلاً بيك 🚀", seconds = 3) {
+    function showLoading(text = "أهلاً بيك 🚀", seconds = 2) {
       const screen = document.getElementById("loadingScreen");
       const title = document.getElementById("loadingText");
       const count = document.getElementById("loadingCount");
@@ -513,10 +521,12 @@
       if (loadingTimer) clearInterval(loadingTimer);
 
       if (title) title.textContent = text;
+      screen.style.display = "flex";
       screen.classList.remove("loading-hide");
+      screen.classList.add("show");
       screen.setAttribute("aria-hidden", "false");
 
-      let remaining = Math.max(1, Number(seconds) || 3);
+      let remaining = Math.max(1, Number(seconds) || 2);
       if (count) count.textContent = `${remaining}s`;
 
       if (progress) {
@@ -544,13 +554,12 @@
       if (!screen) return;
       if (loadingTimer) clearInterval(loadingTimer);
 
+      screen.classList.remove("show");
       screen.classList.add("loading-hide");
+      screen.style.display = "none";
       screen.setAttribute("aria-hidden", "true");
     }
 
-    window.addEventListener("load", () => {
-      setTimeout(() => showLoading("أهلاً بيك 🚀", 2), 100);
-    });
 
     /* Modal Triggers */
     function showLogin() {

@@ -10,7 +10,7 @@
   <!-- Google Fonts: Cairo -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 
   <!-- Modular Design System Styles -->
   <link rel="stylesheet" href="../src/styles/variables.css">
@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="../src/styles/components.css">
   <link rel="stylesheet" href="../src/styles/layouts.css">
   <link rel="stylesheet" href="../src/styles/utilities.css">
+  <link rel="stylesheet" href="../src/styles/print.css">
 </head>
 <body>
 
@@ -52,37 +53,82 @@
     import { mountTeacherLayout } from "../src/shared/layouts/TeacherLayout/teacher-layout.component.js";
     import { renderVideoPlayerModal } from "../src/features/lectures/components/video-player-modal.component.js";
     import { LecturesController } from "../src/features/lectures/lectures.controller.js";
-    import { ExamController } from "../src/features/exams/exam.controller.js";
-    import { AssignmentController } from "../src/features/assignments/assignment.controller.js";
-    import { StudentsController } from "../src/features/students/students.controller.js";
-    import { AttendanceController } from "../src/features/attendance/attendance.controller.js";
-    import { ProfileController } from "../src/features/profile/profile.controller.js";
+    import { NotificationsController } from "../src/features/notifications/notifications.controller.js";
     import { AuthController } from "../src/features/auth/auth.controller.js";
     import { bootstrapApp } from "../src/app/bootstrap.js";
 
     bootstrapApp();
 
+    const root = document.getElementById("appRoot");
+
+    function renderPortalFallback(message = "تعذر التحقق من صلاحيات المعلم.") {
+      if (!root) return;
+      root.innerHTML = `
+        <div class="portal-initial-loader">
+          <div class="portal-loader-card" style="border-color: rgba(239, 68, 68, 0.4);">
+            <div class="portal-loader-emblem-wrap">
+              <span style="font-size: 3rem; line-height: 1;">🔐</span>
+            </div>
+            <h3 class="portal-loader-title">مستقبل وطن - بوابة المعلم</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem;">
+              ${message}
+            </p>
+            <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+              <a href="../index.html" class="btn btn-primary" style="padding: 0.6rem 1.25rem;">
+                <span>الانتقال لتسجيل الدخول 🚀</span>
+              </a>
+              <button id="portalRetryBtn" class="btn btn-secondary" style="padding: 0.6rem 1.25rem;">
+                <span>إعادة المحاولة 🔄</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById("portalRetryBtn")?.addEventListener("click", () => {
+        window.location.reload();
+      });
+    }
+
+    // Safety Watchdog: Never allow infinite loading card to stay stuck on screen
+    const watchdogTimer = setTimeout(() => {
+      const activeLoader = document.querySelector("#appRoot .portal-initial-loader");
+      if (activeLoader) {
+        console.warn("[Watchdog] Initial loader still present after 4s. Showing fallback action.");
+        renderPortalFallback("استغرق التحقق وقتاً طويلاً. يرجى تسجيل الدخول مرة أخرى.");
+      }
+    }, 4000);
+
     try {
       // 1. Guard Teacher / Admin Route
       const { user, role } = await Router.guard([ROLES.TEACHER, ROLES.ADMIN]);
 
-      // 2. Mount Teacher Layout
-      const root = document.getElementById("appRoot");
+      clearTimeout(watchdogTimer);
+
+      // Lazy feature loaders with promise caching
+      const lazyLoaders = {
+        exams: () => import("../src/features/exams/exam.controller.js").then((m) => m.ExamController),
+        assignments: () => import("../src/features/assignments/assignment.controller.js").then((m) => m.AssignmentController),
+        students: () => import("../src/features/students/students.controller.js").then((m) => m.StudentsController),
+        attendance: () => import("../src/features/attendance/attendance.controller.js").then((m) => m.AttendanceController),
+        profile: () => import("../src/features/profile/profile.controller.js").then((m) => m.ProfileController)
+      };
+
+      // 2. Mount Teacher Layout Immediately
       const layout = mountTeacherLayout(root, {
         onLogout: () => AuthController.logout(),
         onTabChange: (tabId) => {
           if (tabId === "data") {
             LecturesController.loadTeacherLectures("teacherDataContainer");
           } else if (tabId === "exams") {
-            ExamController.loadTeacherExams("teacherExamsContainer");
+            lazyLoaders.exams().then((c) => c.loadTeacherExams("teacherExamsContainer"));
           } else if (tabId === "assignments") {
-            AssignmentController.loadTeacherAssignments("teacherAssignmentsContainer");
+            lazyLoaders.assignments().then((c) => c.loadTeacherAssignments("teacherAssignmentsContainer"));
           } else if (tabId === "students") {
-            StudentsController.loadStudentsList("teacherStudentsContainer", { canDelete: false });
+            lazyLoaders.students().then((c) => c.loadStudentsList("teacherStudentsContainer", { canDelete: false }));
           } else if (tabId === "attendance") {
-            AttendanceController.loadTeacherAttendance("teacherAttendanceContainer");
+            lazyLoaders.attendance().then((c) => c.loadTeacherAttendance("teacherAttendanceContainer"));
           } else if (tabId === "settings") {
-            ProfileController.loadSettingsView("teacherSettingsContainer");
+            lazyLoaders.profile().then((c) => c.loadSettingsView("teacherSettingsContainer"));
           }
         }
       });
@@ -93,13 +139,28 @@
       });
 
       // 3. Mount Video Preview Modal into DOM
-      document.body.insertAdjacentHTML("beforeend", renderVideoPlayerModal());
+      if (!document.getElementById("videoPlayerModal")) {
+        document.body.insertAdjacentHTML("beforeend", renderVideoPlayerModal());
+      }
 
-      // 4. Initial Tab Activation
+      // 4. Initial Tab Activation (Instant response)
       LecturesController.loadTeacherLectures("teacherDataContainer");
 
+      // 5. In Background: Mount Notifications Bell (Non-blocking)
+      NotificationsController.init({
+        bellMountPoint: "teacherNotificationBellSlot",
+        onNavigate: (section) => {
+          if (section) layout.switchTab(section);
+        }
+      }).catch((err) => console.warn("Notifications non-blocking init warning:", err));
+
     } catch (err) {
+      clearTimeout(watchdogTimer);
       console.error("Teacher page initialization error:", err);
+      renderPortalFallback("يرجى تسجيل الدخول بحساب المعلم أو الإدارة.");
+      setTimeout(() => {
+        window.location.replace("../index.html");
+      }, 1200);
     }
   </script>
 </body>

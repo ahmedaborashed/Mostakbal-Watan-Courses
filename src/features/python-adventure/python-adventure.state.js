@@ -26,9 +26,11 @@ class PythonAdventureStore {
     return this.state;
   }
 
-  setState(partial) {
+  setState(partial, { notify = true } = {}) {
     this.state = { ...this.state, ...partial };
-    this.notify();
+    if (notify) {
+      this.notify();
+    }
   }
 
   subscribe(fn) {

@@ -27,6 +27,16 @@ import {
   PRE_EXAM_CONFIRM_MODAL_ID
 } from "./components/exam-details.component.js";
 import {
+  renderExamEssayGradingModal,
+  renderEssayGradingContent,
+  ESSAY_GRADING_MODAL_ID
+} from "./components/exam-essay-grading-modal.component.js";
+import {
+  renderSingleExamPrintableReport,
+  renderAllExamsSummaryPrintableReport,
+  triggerPrintReport
+} from "./components/exam-report.component.js";
+import {
   renderQuestionsContainer,
   renderQuestionRow
 } from "./components/exam-question-editor.component.js";
@@ -90,6 +100,9 @@ export const ExamController = {
   /**
    * Loads exams for student dashboard (authorized available exams only).
    */
+  /**
+   * Loads exams for student dashboard (available, upcoming, completed, and expired).
+   */
   async loadStudentExams(containerId, currentStudent) {
     const container = typeof containerId === "string" ? document.getElementById(containerId) : containerId;
     if (!container) return;
@@ -102,51 +115,196 @@ export const ExamController = {
 
     try {
       const studentUid = currentStudent?.firestoreId || currentStudent?.id || "";
-      const studentGroup = currentStudent?.studentGroup || currentStudent?.group || "ALL";
+      const studentGroup = (currentStudent?.group && currentStudent.group !== "ALL")
+        ? currentStudent.group
+        : (currentStudent?.studentGroup && currentStudent.studentGroup !== "ALL"
+            ? currentStudent.studentGroup
+            : (currentStudent?.group || currentStudent?.studentGroup || "ALL"));
 
-      const availableExams = await ExamService.getAvailableExamsForStudent(studentGroup, studentUid);
-      examState.set("availableExams", availableExams);
+      // Fetch complete academic exams history (all, available, upcoming, completed, expired)
+      const allExams = await ExamService.getStudentExams(studentGroup, studentUid);
+      examState.set("allStudentExams", allExams);
+      examState.set("availableExams", allExams);
 
-      if (availableExams.length === 0) {
+      if (allExams.length === 0) {
         setHtml(
           container,
           renderEmptyState({
             icon: "📝",
-            title: "لا توجد امتحانات متاحة حاليًا.",
-            description: "سيتم عرض الامتحانات هنا عند توفرها."
+            title: "لا توجد امتحانات مسجلة حاليًا.",
+            description: "سيتم عرض الامتحانات هنا فور تعيينها لمجموعتك من قِبل المعلم."
           })
         );
         return;
       }
 
-      const gridHtml = `
-        <div class="grid-3">
-          ${availableExams.map((exam) => renderStudentExamCard({ exam, result: exam.result })).join("")}
+      // Compute categories
+      const availableExams = allExams.filter((e) => {
+        const info = getExamStatusInfo(e, e.result);
+        return info.status === "available" || info.status === "in_progress";
+      });
+
+      const upcomingExams = allExams.filter((e) => {
+        const info = getExamStatusInfo(e, e.result);
+        return info.status === "upcoming";
+      });
+
+      const pastExams = allExams.filter((e) => {
+        const info = getExamStatusInfo(e, e.result);
+        return (
+          info.status === "graded" ||
+          info.status === "pending_essay" ||
+          info.status === "submitted" ||
+          info.status === "expired"
+        );
+      });
+
+      // Render tab bar shell
+      const shellHtml = `
+        <div class="student-exams-shell" dir="rtl">
+          <!-- Category Tabs Navigation -->
+          <div class="academic-tabs-wrapper mb-4">
+            <div class="academic-filter-tabs" role="tablist" aria-label="أقسام الامتحانات">
+              <button
+                type="button"
+                class="academic-filter-btn active"
+                data-exam-filter="all"
+                role="tab"
+                aria-selected="true"
+              >
+                <span>الكل</span>
+                <span class="filter-badge-count">${allExams.length}</span>
+              </button>
+
+              <button
+                type="button"
+                class="academic-filter-btn"
+                data-exam-filter="available"
+                role="tab"
+                aria-selected="false"
+              >
+                <span>متاحة</span>
+                <span class="filter-badge-count">${availableExams.length}</span>
+              </button>
+
+              <button
+                type="button"
+                class="academic-filter-btn"
+                data-exam-filter="upcoming"
+                role="tab"
+                aria-selected="false"
+              >
+                <span>قادمة</span>
+                <span class="filter-badge-count">${upcomingExams.length}</span>
+              </button>
+
+              <button
+                type="button"
+                class="academic-filter-btn"
+                data-exam-filter="past"
+                role="tab"
+                aria-selected="false"
+              >
+                <span>سابقة</span>
+                <span class="filter-badge-count">${pastExams.length}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Exams Grid Container Slot -->
+          <div id="studentExamsCardsSlot"></div>
         </div>
       `;
-      setHtml(container, gridHtml);
+      setHtml(container, shellHtml);
 
-      // Bind open exam details
-      container.querySelectorAll("[data-open-exam-details]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const examId = btn.getAttribute("data-open-exam-details");
-          this.openStudentExamDetails(examId, currentStudent);
+      const slot = document.getElementById("studentExamsCardsSlot");
+
+      const renderGridForCategory = (category) => {
+        if (!slot) return;
+        let list = allExams;
+        let emptyTitle = "لا توجد امتحانات في هذا القسم";
+        let emptyDesc = "سيتم تحديث هذه القائمة فور توفر اختبارات جديدة.";
+
+        if (category === "available") {
+          list = availableExams;
+          emptyTitle = "لا توجد امتحانات متاحة للبدء حاليًا";
+          emptyDesc = "يمكنك مراجعة الامتحانات السابقة أو متابعة مواعيد الامتحانات القادمة.";
+        } else if (category === "upcoming") {
+          list = upcomingExams;
+          emptyTitle = "لا توجد امتحانات قادمة مجدولة";
+          emptyDesc = "سيظهر هنا أي امتحان محدد موعده في تاريخ لاحق.";
+        } else if (category === "past") {
+          list = pastExams;
+          emptyTitle = "لا توجد امتحانات سابقة حتى الآن";
+          emptyDesc = "الامتحانات التي تم تسليمها أو انتهى موعدها ستظهر هنا مع النتائج.";
+        }
+
+        if (list.length === 0) {
+          setHtml(
+            slot,
+            renderEmptyState({
+              icon: "📭",
+              title: emptyTitle,
+              description: emptyDesc
+            })
+          );
+          return;
+        }
+
+        const gridHtml = `
+          <div class="grid-3" dir="rtl">
+            ${list.map((exam) => renderStudentExamCard({ exam, result: exam.result })).join("")}
+          </div>
+        `;
+        setHtml(slot, gridHtml);
+
+        // Bind open exam details
+        slot.querySelectorAll("[data-open-exam-details]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const examId = btn.getAttribute("data-open-exam-details");
+            this.openStudentExamDetails(examId, currentStudent);
+          });
         });
-      });
 
-      // Bind view result buttons
-      container.querySelectorAll("[data-view-exam-result]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const examId = btn.getAttribute("data-view-exam-result");
-          this.showExamResult(examId, currentStudent);
+        // Bind view result buttons
+        slot.querySelectorAll("[data-view-exam-result]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const examId = btn.getAttribute("data-view-exam-result");
+            this.showExamResult(examId, currentStudent);
+          });
         });
-      });
 
-      // Bind direct start buttons if any
-      container.querySelectorAll("[data-start-exam]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const examId = btn.getAttribute("data-start-exam");
-          this.confirmStartExam(examId, currentStudent);
+        // Bind direct start buttons from card with duplicate click locking
+        slot.querySelectorAll("[data-start-exam]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const examId = btn.getAttribute("data-start-exam");
+            btn.disabled = true;
+            btn.classList.add("is-loading");
+            try {
+              this.confirmStartExam(examId, currentStudent);
+            } finally {
+              btn.disabled = false;
+              btn.classList.remove("is-loading");
+            }
+          });
+        });
+      };
+
+      // Initial render: All exams
+      renderGridForCategory("all");
+
+      // Bind category tab switching
+      container.querySelectorAll("[data-exam-filter]").forEach((tabBtn) => {
+        tabBtn.addEventListener("click", () => {
+          container.querySelectorAll("[data-exam-filter]").forEach((b) => {
+            b.classList.remove("active");
+            b.setAttribute("aria-selected", "false");
+          });
+          tabBtn.classList.add("active");
+          tabBtn.setAttribute("aria-selected", "true");
+
+          const filter = tabBtn.getAttribute("data-exam-filter") || "all";
+          renderGridForCategory(filter);
         });
       });
 
@@ -186,7 +344,7 @@ export const ExamController = {
       let exam = availableExams.find((e) => e.id === examId);
 
       if (!exam) {
-        exam = await ExamService.getExamById(examId);
+        exam = await ExamService.getExam(examId);
       }
 
       let result = exam?.result;
@@ -262,9 +420,15 @@ export const ExamController = {
    * Initiates student exam taking session in distraction-free Exam Mode.
    */
   async startExamSession(examId, currentStudent) {
+    if (this._isStartingExam) return;
+    this._isStartingExam = true;
+
     const listContainer = document.getElementById("examListContainer");
     const activeContainer = document.getElementById("activeExamContainer");
-    if (!activeContainer) return;
+    if (!activeContainer) {
+      this._isStartingExam = false;
+      return;
+    }
 
     if (listContainer) listContainer.classList.add("d-none");
     activeContainer.classList.remove("d-none");
@@ -315,6 +479,8 @@ export const ExamController = {
         listContainer.classList.remove("d-none");
         this.loadStudentExams(listContainer, currentStudent);
       }
+    } finally {
+      this._isStartingExam = false;
     }
   },
 
@@ -870,13 +1036,19 @@ export const ExamController = {
    * Submits student exam answers for server evaluation.
    */
   async submitExamSession(examId, currentStudent, isAuto = false) {
+    if (this._isSubmittingExam) return;
+    this._isSubmittingExam = true;
+
     if (timerInterval) {
       clearInterval(timerInterval);
       timerInterval = null;
     }
 
     const activeContainer = document.getElementById("activeExamContainer");
-    if (!activeContainer) return;
+    if (!activeContainer) {
+      this._isSubmittingExam = false;
+      return;
+    }
 
     // Lock UI completely
     const allInputs = activeContainer.querySelectorAll("input, textarea, button");
@@ -942,6 +1114,8 @@ export const ExamController = {
 
       // Re-render exam view to allow retry without losing student answers
       this.renderExamModeView(activeContainer, examId, currentStudent);
+    } finally {
+      this._isSubmittingExam = false;
     }
   },
 
@@ -966,7 +1140,7 @@ export const ExamController = {
       const availableExams = examState.get("availableExams") || [];
       let exam = availableExams.find((e) => e.id === examId);
       if (!exam) {
-        exam = await ExamService.getExamById(examId);
+        exam = await ExamService.getExam(examId);
       }
 
       setHtml(activeContainer, renderExamResult({ exam, result }));
@@ -1025,85 +1199,11 @@ export const ExamController = {
   },
 
   /**
-   * Loads teacher exams management view.
+   * Loads teacher exams management view (delegating to unified staff exams workflow).
+   * @param {string|HTMLElement} containerId
    */
   async loadTeacherExams(containerId) {
-    const container = typeof containerId === "string" ? document.getElementById(containerId) : containerId;
-    if (!container) return;
-
-    setHtml(container, renderLoader({ text: "جاري تحميل قائمة الامتحانات..." }));
-
-    try {
-      const exams = await ExamService.getAllExams();
-      examState.set("exams", exams);
-
-      if (exams.length === 0) {
-        setHtml(container, renderEmptyState({
-          icon: "📝",
-          title: "لا توجد امتحانات مضافة",
-          description: "لم يتم إنشاء أي امتحانات دراسية حتى الآن."
-        }));
-        return;
-      }
-
-      const gridHtml = `
-        <div class="grid-3">
-          ${exams.map((exam) => renderTeacherExamCard({ exam })).join("")}
-        </div>
-      `;
-      setHtml(container, gridHtml);
-
-      // Bind toggle active buttons
-      container.querySelectorAll("[data-teacher-toggle-exam]").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          const examId = btn.getAttribute("data-teacher-toggle-exam");
-          const currentActive = btn.getAttribute("data-current-active") === "true";
-          try {
-            await ExamService.updateExam(examId, { active: !currentActive });
-            showToast(currentActive ? "تم تعطيل الامتحان للطلاب" : "تم تفعيل الامتحان بنجاح ✅", "success");
-            this.loadTeacherExams(container);
-          } catch (e) {
-            showToast(e.message, "error");
-          }
-        });
-      });
-
-      // Bind delete exam buttons
-      container.querySelectorAll("[data-teacher-delete-exam]").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          const examId = btn.getAttribute("data-teacher-delete-exam");
-          const title = btn.getAttribute("data-exam-title") || "هذا الامتحان";
-
-          const confirmed = await showConfirmDialog({
-            title: "حذف الامتحان",
-            message: `هل أنت متأكد من رغبتك في حذف "${title}"؟ ستفقد جميع الأسئلة المرتبطة به.`,
-            confirmText: "حذف نهائي",
-            variant: "danger"
-          });
-
-          if (confirmed) {
-            try {
-              await ExamService.deleteExam(examId);
-              showToast("تم حذف الامتحان بنجاح", "info");
-              this.loadTeacherExams(container);
-            } catch (e) {
-              showToast(e.message, "error");
-            }
-          }
-        });
-      });
-
-      // Bind view results buttons
-      container.querySelectorAll("[data-teacher-view-results]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const examId = btn.getAttribute("data-teacher-view-results");
-          const title = btn.getAttribute("data-exam-title") || "الامتحان";
-          showToast(`عرض نتائج "${title}" متاح في تقرير الطلاب`, "info");
-        });
-      });
-    } catch (err) {
-      setHtml(container, renderErrorState({ title: "خطأ في تحميل الامتحانات", message: err.message }));
-    }
+    return this.loadAdminExams(containerId);
   },
 
   // ========================================================
@@ -1222,6 +1322,19 @@ export const ExamController = {
     container.querySelector("#openCreateExamBtn")?.addEventListener("click", handleOpenCreate);
     container.querySelector("#emptyStateCreateExamBtn")?.addEventListener("click", handleOpenCreate);
 
+    // 1.1 Print All Exams Summary Report
+    container.querySelector("#printAllExamsSummaryBtn")?.addEventListener("click", async () => {
+      try {
+        showToast("جاري إعداد تقرير الامتحانات الشامل... ⏳", "info");
+        const { exams, matrix } = await ExamService.getAllExamsResultsSummary();
+        const reportHtml = renderAllExamsSummaryPrintableReport({ exams, matrix });
+        triggerPrintReport(reportHtml);
+      } catch (err) {
+        console.error("Print summary report error:", err);
+        showToast("تعذر استخراج تقرير الامتحانات الشامل.", "error");
+      }
+    });
+
     // 2. Debounced Search
     const searchInput = container.querySelector("#adminExamSearchInput");
     if (searchInput) {
@@ -1325,6 +1438,9 @@ export const ExamController = {
     }
     if (!document.getElementById(EXAM_DETAILS_MODAL_ID)) {
       document.body.insertAdjacentHTML("beforeend", renderExamDetailsModal());
+    }
+    if (!document.getElementById(ESSAY_GRADING_MODAL_ID)) {
+      document.body.insertAdjacentHTML("beforeend", renderExamEssayGradingModal());
     }
     this.bindAdminModalEvents();
   },
@@ -1681,10 +1797,64 @@ export const ExamController = {
       if (bodySlot) {
         setHtml(bodySlot, renderExamDetailsContent({ exam, results }));
 
-        // Bind inner edit button
+        // 1. Bind inner edit button
         bodySlot.querySelector("[data-details-edit-exam]")?.addEventListener("click", () => {
           closeModal(EXAM_DETAILS_MODAL_ID);
           this.openEditExamModal(examId);
+        });
+
+        // 2. Bind print single exam report
+        bodySlot.querySelector("[data-details-print-exam]")?.addEventListener("click", () => {
+          const reportHtml = renderSingleExamPrintableReport({ exam, results });
+          triggerPrintReport(reportHtml);
+        });
+
+        // 3. Bind tabs switching
+        bodySlot.querySelectorAll("[data-exam-details-tab]").forEach((tabBtn) => {
+          tabBtn.addEventListener("click", () => {
+            const tab = tabBtn.getAttribute("data-exam-details-tab");
+            bodySlot.querySelectorAll("[data-exam-details-tab]").forEach((b) => b.classList.remove("active"));
+            tabBtn.classList.add("active");
+
+            const tabResults = bodySlot.querySelector("#examDetailsTabResults");
+            const tabQuestions = bodySlot.querySelector("#examDetailsTabQuestions");
+
+            if (tab === "results") {
+              if (tabResults) tabResults.style.display = "block";
+              if (tabQuestions) tabQuestions.style.display = "none";
+            } else {
+              if (tabResults) tabResults.style.display = "none";
+              if (tabQuestions) tabQuestions.style.display = "block";
+            }
+          });
+        });
+
+        // 4. Bind results search input
+        const searchInput = bodySlot.querySelector("#examResultsSearchInput");
+        if (searchInput) {
+          searchInput.addEventListener("input", (e) => {
+            const q = (e.target.value || "").trim().toLowerCase();
+            const rows = bodySlot.querySelectorAll("#examResultsTableBody tr[data-result-row]");
+            rows.forEach((row) => {
+              const name = row.getAttribute("data-student-name") || "";
+              const phone = row.getAttribute("data-student-phone") || "";
+              const matches = !q || name.includes(q) || phone.includes(q);
+              row.style.display = matches ? "" : "none";
+            });
+          });
+        }
+
+        // 5. Bind essay grading buttons
+        bodySlot.querySelectorAll("[data-grade-essay-result]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const resultId = btn.getAttribute("data-grade-essay-result");
+            const targetResult = results.find((r) => r.id === resultId);
+            if (!targetResult) {
+              showToast("لم يتم العثور على نتيجة الطالب.", "error");
+              return;
+            }
+            this.openEssayGradingModal({ exam, result: targetResult });
+          });
         });
       }
     } catch (err) {
@@ -1692,6 +1862,82 @@ export const ExamController = {
       if (bodySlot) {
         setHtml(bodySlot, renderErrorState({ title: "خطأ في عرض التفاصيل", message: err.message }));
       }
+    }
+  },
+
+  /**
+   * Opens the essay grading modal for a student's submission.
+   * @param {object} params
+   * @param {object} params.exam
+   * @param {object} params.result
+   */
+  async openEssayGradingModal({ exam, result }) {
+    this.ensureAdminModals();
+    const bodySlot = document.getElementById("essayGradingModalBodySlot");
+    if (!bodySlot) return;
+
+    const questions = Array.isArray(exam.questions) ? exam.questions : [];
+    const essayQuestions = questions
+      .map((q, idx) => ({ ...q, originalIndex: idx }))
+      .filter((q) => q.type === "essay");
+
+    if (essayQuestions.length === 0) {
+      showToast("لا يحتوي هذا الامتحان على أسئلة مقالية.", "info");
+      return;
+    }
+
+    const targetQ = essayQuestions.find((q) => {
+      const s = result.essayScores?.[q.originalIndex];
+      return s == null;
+    }) || essayQuestions[0];
+
+    const studentAnswer = result.answers?.[targetQ.originalIndex] || "";
+    const currentScore = result.essayScores?.[targetQ.originalIndex] ?? null;
+
+    setHtml(
+      bodySlot,
+      renderEssayGradingContent({
+        exam,
+        result,
+        questionIndex: targetQ.originalIndex,
+        question: targetQ,
+        studentAnswer,
+        currentScore
+      })
+    );
+
+    openModal(ESSAY_GRADING_MODAL_ID);
+
+    const submitBtn = document.getElementById("submitEssayGradeBtn");
+    if (submitBtn) {
+      const newSubmitBtn = submitBtn.cloneNode(true);
+      submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
+
+      newSubmitBtn.addEventListener("click", async () => {
+        const input = document.getElementById("essayGradeInput");
+        const val = input ? parseFloat(input.value) : NaN;
+        const maxDegree = Number(targetQ.degree) || 1;
+
+        if (isNaN(val) || val < 0 || val > maxDegree) {
+          showToast(`يرجى إدخال درجة صالحة بين 0 و ${maxDegree}.`, "error");
+          input?.focus();
+          return;
+        }
+
+        newSubmitBtn.disabled = true;
+        newSubmitBtn.textContent = "جاري الحفظ والاعتماد... ⏳";
+
+        try {
+          await ExamService.gradeEssay(result.id, targetQ.originalIndex, val);
+          showToast("تم اعتماد درجة المقالي وتحديث نتيجة الطالب بنجاح ✅", "success");
+          closeModal(ESSAY_GRADING_MODAL_ID);
+          this.openExamDetailsModal(exam.id);
+        } catch (err) {
+          showToast(err.message || "فشل في حفظ درجة السؤال المقالي.", "error");
+          newSubmitBtn.disabled = false;
+          newSubmitBtn.textContent = "اعتماد الدرجة وحفظ النتيجة ✅";
+        }
+      });
     }
   },
 

@@ -9,8 +9,14 @@ import { renderExamStatusBadge, getExamStatusInfo } from "./exam-status-badge.co
 /**
  * Returns HTML string for student exam card.
  */
-export function renderStudentExamCard({ exam, result = null }) {
-  const statusInfo = getExamStatusInfo(exam, result);
+export function renderStudentExamCard({ exam, attempt = null, result = null }) {
+  const activeResult = result || exam?.result || null;
+  const activeAttempt = attempt || exam?.attempt || null;
+  const examWithAttempt = activeAttempt?.status && !exam?.attemptStatus
+    ? { ...exam, attemptStatus: activeAttempt.status }
+    : exam;
+
+  const statusInfo = getExamStatusInfo(examWithAttempt, activeResult);
   const durationMin = Number(exam.duration) || 30;
   const questionsCount =
     exam.totalQuestions !== undefined
@@ -21,8 +27,8 @@ export function renderStudentExamCard({ exam, result = null }) {
 
   // Format schedule dates (Start time and End time)
   let scheduleDisplay = "متاح للمشاركين";
-  const startRaw = exam.startDate || exam.startAt;
-  const endRaw = exam.deadline || exam.endAt;
+  const startRaw = exam.startDate || exam.startAt || exam.beginDate;
+  const endRaw = exam.deadline || exam.endAt || exam.endDate;
 
   if (startRaw && endRaw) {
     scheduleDisplay = `يبدأ ${formatDate(startRaw)} · ينتهي ${formatDate(endRaw)}`;
@@ -38,7 +44,7 @@ export function renderStudentExamCard({ exam, result = null }) {
     statusInfo.status === "graded" ||
     statusInfo.status === "pending_essay" ||
     statusInfo.status === "submitted";
-  const isInProgress = statusInfo.status === "in_progress" || exam.attemptStatus === "in_progress";
+  const isInProgress = statusInfo.status === "in_progress" || examWithAttempt.attemptStatus === "in_progress";
 
   const contentHtml = `
     <div class="student-exam-card-inner">
@@ -76,13 +82,17 @@ export function renderStudentExamCard({ exam, result = null }) {
       </div>
 
       ${
-        isCompleted && result && result.score !== undefined
+        isCompleted && activeResult
           ? `
-        <div class="result-quick-bar p-2 px-3 mt-2 d-flex items-center justify-between">
-          <span class="text-xs text-muted font-bold">النتيجة المسجلة:</span>
-          <strong class="text-accent font-black">
-            ${result.score} <span class="text-xs text-muted">/ ${result.total || result.totalQuestions || 100}</span>
-          </strong>
+        <div class="result-quick-bar p-2 px-3 mt-2 d-flex items-center justify-between" dir="rtl">
+          <span class="text-xs text-muted font-bold">
+            ${activeResult.status === "pending_essay" ? "حالة النتيجة:" : "النتيجة المسجلة:"}
+          </span>
+          ${
+            activeResult.status === "pending_essay"
+              ? `<span class="badge badge-warning text-xs font-bold">قيد التصحيح ⏳</span>`
+              : `<strong class="text-accent font-black">${activeResult.score ?? "—"} / ${activeResult.total || activeResult.totalQuestions || 100}</strong>`
+          }
         </div>
       `
           : ""
@@ -90,34 +100,61 @@ export function renderStudentExamCard({ exam, result = null }) {
     </div>
   `;
 
-  let footerHtml = "";
+  // Determine State-Aware Primary Action Button
+  let actionButtonHtml = "";
   if (isCompleted) {
-    footerHtml = renderButton({
+    actionButtonHtml = renderButton({
       text: "عرض النتيجة 📊",
-      variant: "secondary",
-      className: "w-full btn-md",
-      extraAttrs: `data-view-exam-result="${escapeHtml(exam.id)}"`
+      variant: "primary",
+      className: "flex-1 btn-md",
+      extraAttrs: `data-view-exam-result="${escapeHtml(exam.id)}" aria-label="عرض النتيجة: ${escapeHtml(exam.title || '')}"`
     });
   } else if (isInProgress) {
-    footerHtml = renderButton({
+    actionButtonHtml = renderButton({
       text: "متابعة الامتحان ⏳",
       variant: "primary",
-      className: "w-full btn-md",
-      extraAttrs: `data-open-exam-details="${escapeHtml(exam.id)}"`
+      className: "flex-1 btn-md",
+      extraAttrs: `data-start-exam="${escapeHtml(exam.id)}" data-resume-exam="${escapeHtml(exam.id)}" aria-label="متابعة الامتحان: ${escapeHtml(exam.title || '')}"`
     });
+  } else if (statusInfo.status === "upcoming") {
+    actionButtonHtml = `
+      <button type="button" class="btn btn-secondary btn-md flex-1" disabled aria-disabled="true" title="لم يبدأ وقت الامتحان بعد">
+        الامتحان لم يبدأ ⏰
+      </button>
+    `;
+  } else if (statusInfo.status === "expired") {
+    actionButtonHtml = `
+      <button type="button" class="btn btn-secondary btn-md flex-1" disabled aria-disabled="true" title="انتهى موعد هذا الامتحان">
+        منتهي ⌛
+      </button>
+    `;
   } else {
-    footerHtml = renderButton({
-      text: "عرض التفاصيل ℹ️",
+    // Available to start
+    actionButtonHtml = renderButton({
+      text: "بدء الامتحان 🚀",
       variant: "primary",
-      className: "w-full btn-md",
-      extraAttrs: `data-open-exam-details="${escapeHtml(exam.id)}"`
+      className: "flex-1 btn-md font-bold",
+      extraAttrs: `data-start-exam="${escapeHtml(exam.id)}" aria-label="بدء الامتحان: ${escapeHtml(exam.title || '')}"`
     });
   }
+
+  // Dual Action Footer: [ عرض التفاصيل ] + [ الزر التفاعلي حسب الحالة ]
+  const footerHtml = `
+    <div class="student-exam-actions d-flex items-center gap-2 w-full flex-wrap">
+      ${renderButton({
+        text: "عرض التفاصيل ℹ️",
+        variant: "secondary",
+        className: "flex-1 btn-md",
+        extraAttrs: `data-open-exam-details="${escapeHtml(exam.id)}" aria-label="عرض تفاصيل: ${escapeHtml(exam.title || '')}"`
+      })}
+      ${actionButtonHtml}
+    </div>
+  `;
 
   return renderCard({
     content: contentHtml,
     footer: footerHtml,
-    className: "student-exam-card",
+    className: `student-exam-card ${isCompleted ? 'is-completed' : ''} ${statusInfo.status === 'expired' ? 'is-expired' : ''}`,
     interactive: true
   });
 }

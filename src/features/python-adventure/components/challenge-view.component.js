@@ -79,58 +79,8 @@ export function renderChallengeView({
           </div>
 
           <!-- Progressive Hint System -->
-          <div class="challenge-card hints-system-card">
-            <div class="card-header-mini">
-              <div class="d-flex items-center gap-2">
-                <span class="icon">💡</span>
-                <h3>نظام التلميحات الذكي</h3>
-              </div>
-              <span class="hints-penalty-badge text-xs">${penaltyLabel}</span>
-            </div>
-
-            <!-- Revealed Hints List -->
-            <div class="hints-container">
-              ${revealedHints.length === 0 ? `
-                <p class="no-hints-msg text-xs text-muted">
-                  حاول حل المهمة بنفسك أولاً للحصول على الدرجة الكاملة و 3 نجوم! كل تلميح تفتحه يخصم جزءاً بسيطاً من الـ XP.
-                </p>
-              ` : `
-                <div class="revealed-hints-list">
-                  ${revealedHints.map((hint, idx) => `
-                    <div class="hint-bubble">
-                      <strong class="hint-num">تلميح ${idx + 1}:</strong>
-                      <span>${escapeHtml(hint)}</span>
-                    </div>
-                  `).join("")}
-                </div>
-              `}
-            </div>
-
-            <!-- Hint Actions -->
-            <div class="hint-actions-row">
-              ${hasMoreHints ? `
-                <button type="button" class="btn btn-sm btn-secondary w-100" id="revealNextHintBtn">
-                  <span>💡 فتح تلميح جديد (${hintsRevealed + 1} من ${hints.length})</span>
-                </button>
-              ` : `
-                <div class="all-hints-used text-xs text-muted text-center py-1">
-                  تم فتح جميع التلميحات المتاحة لهذه المهمة.
-                </div>
-              `}
-
-              ${attempts >= 3 && !solutionRevealed ? `
-                <button type="button" class="btn btn-sm btn-outline-warning w-100 mt-2" id="revealSolutionPromptBtn">
-                  <span>🔓 عرض الحل النموذجي مع الشرح</span>
-                </button>
-              ` : ""}
-            </div>
-
-            ${solutionRevealed ? `
-              <div class="solution-revealed-box mt-3">
-                <div class="solution-title">الكود النموذجي مع التفسير:</div>
-                <pre class="solution-pre" dir="ltr"><code>${escapeHtml(challenge.starterCode)}</code></pre>
-              </div>
-            ` : ""}
+          <div class="challenge-card hints-system-card" id="hintsSystemCard">
+            ${renderHintsCardContent({ challenge, hintsRevealed, attempts, solutionRevealed })}
           </div>
         </aside>
 
@@ -182,5 +132,77 @@ export function renderChallengeView({
         </main>
       </div>
     </div>
+  `;
+}
+
+/**
+ * Renders only the inner HTML of the hints card for surgical, lag-free updates.
+ */
+export function renderHintsCardContent({ challenge, hintsRevealed = 0, attempts = 1, solutionRevealed = false }) {
+  if (!challenge) return "";
+
+  const hints = challenge.hints || [];
+  const revealedHints = hints.slice(0, hintsRevealed);
+  const hasMoreHints = hintsRevealed < hints.length;
+
+  // XP discount label
+  let penaltyLabel = "100% XP (كامل المكافأة)";
+  if (solutionRevealed) penaltyLabel = "20% XP (تم عرض الحل)";
+  else if (hintsRevealed === 1) penaltyLabel = "90% XP (-10% لاستخدام مساعدة)";
+  else if (hintsRevealed === 2) penaltyLabel = "75% XP (-25% لمساعدتين)";
+  else if (hintsRevealed >= 3) penaltyLabel = "50% XP (-50% لـ 3 مساعدات)";
+
+  return `
+    <div class="card-header-mini">
+      <div class="d-flex items-center gap-2">
+        <span class="icon">💡</span>
+        <h3>نظام التلميحات الذكي</h3>
+      </div>
+      <span class="hints-penalty-badge text-xs">${penaltyLabel}</span>
+    </div>
+
+    <!-- Revealed Hints List -->
+    <div class="hints-container">
+      ${revealedHints.length === 0 ? `
+        <p class="no-hints-msg text-xs text-muted">
+          حاول حل المهمة بنفسك أولاً للحصول على الدرجة الكاملة و 3 نجوم! كل تلميح تفتحه يخصم جزءاً بسيطاً من الـ XP.
+        </p>
+      ` : `
+        <div class="revealed-hints-list">
+          ${revealedHints.map((hint, idx) => `
+            <div class="hint-bubble">
+              <strong class="hint-num">تلميح ${idx + 1}:</strong>
+              <span>${escapeHtml(hint)}</span>
+            </div>
+          `).join("")}
+        </div>
+      `}
+    </div>
+
+    <!-- Hint Actions -->
+    <div class="hint-actions-row">
+      ${hasMoreHints ? `
+        <button type="button" class="btn btn-sm btn-secondary w-100" id="revealNextHintBtn">
+          <span>💡 فتح تلميح جديد (${hintsRevealed + 1} من ${hints.length})</span>
+        </button>
+      ` : `
+        <div class="all-hints-used text-xs text-muted text-center py-1">
+          تم فتح جميع التلميحات المتاحة لهذه المهمة.
+        </div>
+      `}
+
+      ${attempts >= 3 && !solutionRevealed ? `
+        <button type="button" class="btn btn-sm btn-outline-warning w-100 mt-2" id="revealSolutionPromptBtn">
+          <span>🔓 عرض الحل النموذجي مع الشرح</span>
+        </button>
+      ` : ""}
+    </div>
+
+    ${solutionRevealed ? `
+      <div class="solution-revealed-box mt-3">
+        <div class="solution-title">الكود النموذجي مع التفسير:</div>
+        <pre class="solution-pre" dir="ltr"><code>${escapeHtml(challenge.solutionCode || challenge.hints?.[challenge.hints?.length - 1] || challenge.expectedOutput)}</code></pre>
+      </div>
+    ` : ""}
   `;
 }

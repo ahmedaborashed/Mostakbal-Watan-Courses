@@ -9,11 +9,19 @@ import { renderAvatar } from "../../../shared/components/Avatar/avatar.component
  * Returns HTML string for student profile details view.
  */
 export function renderProfileCard({ student }) {
-  const name = student?.studentName || student?.name || "طالب";
+  const name = (student?.name && student?.name !== "طالب مسجل")
+    ? student.name
+    : (student?.studentName && student?.studentName !== "طالب مسجل"
+        ? student.studentName
+        : (student?.name || student?.studentName || "طالب مسجل"));
   const phone = student?.studentPhone || student?.phone || "—";
   const natId = student?.studentNationalId || student?.nationalId || "—";
   const address = student?.studentAddress || student?.address || "—";
-  const group = student?.studentGroup || student?.group || "ALL";
+  const group = (student?.group && student?.group !== "ALL")
+    ? student.group
+    : (student?.studentGroup && student?.studentGroup !== "ALL"
+        ? student.studentGroup
+        : (student?.group || student?.studentGroup || "ALL"));
 
   const contentHtml = `
     <div class="d-flex items-center gap-4 mb-6 p-4" style="background:var(--color-bg-secondary);border-radius:var(--radius-lg);border:1px solid var(--color-border-subtle);">

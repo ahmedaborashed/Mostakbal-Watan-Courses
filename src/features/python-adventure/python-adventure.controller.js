@@ -3,11 +3,12 @@ import { adventureStore } from "./python-adventure.state.js";
 import { PythonAdventureService } from "./python-adventure.service.js";
 import { runPythonCode } from "./python-adventure-runtime.js";
 import { CHALLENGES_CLIENT_DATA, WORLDS_DATA } from "./python-adventure-data.js";
+import { escapeHtml } from "../../shared/utils/dom.utils.js";
 
 import { renderAdventureHome } from "./components/adventure-home.component.js";
 import { renderWorldMap } from "./components/world-map.component.js";
 import { renderMissionModal } from "./components/mission-modal.component.js";
-import { renderChallengeView } from "./components/challenge-view.component.js";
+import { renderChallengeView, renderHintsCardContent } from "./components/challenge-view.component.js";
 import { wireCodeEditorEvents } from "./components/code-editor.component.js";
 import { renderResultModal } from "./components/result-modal.component.js";
 import { renderSkillTree } from "./components/skill-tree.component.js";
@@ -17,6 +18,8 @@ import { renderProfileStats } from "./components/profile-stats.component.js";
 
 let containerElement = null;
 let currentStudent = null;
+let currentRenderedView = null;
+let currentRenderedChallengeId = null;
 
 export const PythonAdventureController = {
   /**
@@ -39,7 +42,8 @@ export const PythonAdventureController = {
     `;
 
     try {
-      const progress = await PythonAdventureService.getStudentProgress(student?.id || student?.firestoreId);
+      const studentId = student?.uid || student?.id || student?.firestoreId;
+      const progress = await PythonAdventureService.getStudentProgress(studentId);
       adventureStore.setState({
         progress,
         activeView: "home",
@@ -75,6 +79,14 @@ export const PythonAdventureController = {
     if (!containerElement) return;
 
     const { activeView, progress, student, selectedWorldId, activeChallenge } = state;
+
+    // Guard against unnecessary full DOM wipes of the active challenge workspace
+    if (activeView === "challenge" && currentRenderedView === "challenge" && currentRenderedChallengeId === state.activeChallengeId) {
+      return;
+    }
+
+    currentRenderedView = activeView;
+    currentRenderedChallengeId = activeView === "challenge" ? state.activeChallengeId : null;
 
     switch (activeView) {
       case "home":
@@ -284,7 +296,7 @@ export const PythonAdventureController = {
       textareaEl,
       lineNumbersEl,
       onChange: (code) => {
-        adventureStore.setState({ editorCode: code });
+        adventureStore.setState({ editorCode: code }, { notify: false });
       },
       onRunShortcut: () => {
         this.runCurrentCode();
@@ -303,9 +315,9 @@ export const PythonAdventureController = {
     });
 
     document.getElementById("pyCopyCodeBtn")?.addEventListener("click", async () => {
-      const { editorCode } = adventureStore.getState();
-      if (navigator.clipboard && editorCode) {
-        await navigator.clipboard.writeText(editorCode);
+      const currentCode = textareaEl ? textareaEl.value : adventureStore.getState().editorCode;
+      if (navigator.clipboard && currentCode) {
+        await navigator.clipboard.writeText(currentCode);
         const btn = document.getElementById("pyCopyCodeBtn");
         if (btn) btn.innerHTML = "<span>✓ تم النسخ</span>";
         setTimeout(() => {
@@ -317,13 +329,28 @@ export const PythonAdventureController = {
     document.getElementById("pyResetCodeBtn")?.addEventListener("click", () => {
       const { activeChallenge } = adventureStore.getState();
       if (activeChallenge && confirm("هل تريد استعادة الكود الأصلي للقالب؟")) {
-        adventureStore.setState({ editorCode: activeChallenge.starterCode || "" });
-        if (textareaEl) textareaEl.value = activeChallenge.starterCode || "";
+        const starter = activeChallenge.starterCode || "";
+        adventureStore.setState({ editorCode: starter }, { notify: false });
+        if (textareaEl) {
+          textareaEl.value = starter;
+          if (lineNumbersEl) {
+            const lines = Math.max(1, starter.split("\n").length);
+            lineNumbersEl.innerHTML = Array.from({ length: lines }, (_, i) => `<span>${i + 1}</span>`).join("");
+          }
+        }
+        const terminalEl = document.getElementById("pyTerminalOutput");
+        if (terminalEl) {
+          terminalEl.innerHTML = `<div class="terminal-placeholder text-muted"># اضغط "تشغيل الكود" لمعاينة المخرجات هنا...</div>`;
+        }
       }
     });
 
     document.getElementById("pyClearTerminalBtn")?.addEventListener("click", () => {
-      adventureStore.setState({ terminalOutput: "", terminalError: null });
+      adventureStore.setState({ terminalOutput: "", terminalError: null }, { notify: false });
+      const terminalEl = document.getElementById("pyTerminalOutput");
+      if (terminalEl) {
+        terminalEl.innerHTML = `<div class="terminal-placeholder text-muted"># اضغط "تشغيل الكود" لمعاينة المخرجات هنا...</div>`;
+      }
     });
 
     document.getElementById("pyRunBtn")?.addEventListener("click", () => {
@@ -344,39 +371,70 @@ export const PythonAdventureController = {
   },
 
   /**
-   * Safe in-browser execution with real-time output.
+   * Safe in-browser execution with real-time output (butter-smooth, no page re-renders).
    */
   async runCurrentCode() {
     const state = adventureStore.getState();
     if (state.isRunning || state.isSubmitting) return;
 
-    adventureStore.setState({ isRunning: true, terminalError: null });
+    const textareaEl = document.getElementById("pyCodeTextarea");
+    const code = textareaEl ? textareaEl.value : state.editorCode;
+
+    adventureStore.setState({ isRunning: true, terminalError: null }, { notify: false });
     const runBtn = document.getElementById("pyRunBtn");
-    if (runBtn) runBtn.innerHTML = "<span>⏳ جاري التشغيل...</span>";
+    if (runBtn) {
+      runBtn.disabled = true;
+      runBtn.innerHTML = "<span>⏳ جاري التشغيل...</span>";
+    }
+
+    const terminalEl = document.getElementById("pyTerminalOutput");
+    if (terminalEl) {
+      terminalEl.innerHTML = `<div class="terminal-running text-muted">⏳ جاري تشغيل الكود في بايثون...</div>`;
+    }
 
     try {
-      const result = await runPythonCode(state.editorCode, {
+      const result = await runPythonCode(code, {
         onOutput: (stream) => {
-          const terminalEl = document.getElementById("pyTerminalOutput");
           if (terminalEl) {
             terminalEl.innerHTML = `<div class="terminal-stdout">${escapeHtml(stream)}</div>`;
           }
         }
       });
 
+      if (terminalEl) {
+        if (result.error) {
+          terminalEl.innerHTML = `
+            ${result.output ? `<div class="terminal-stdout">${escapeHtml(result.output)}</div>` : ""}
+            <div class="terminal-error">${escapeHtml(result.error)}</div>
+          `;
+        } else if (result.output) {
+          terminalEl.innerHTML = `<div class="terminal-stdout">${escapeHtml(result.output)}</div>`;
+        } else {
+          terminalEl.innerHTML = `<div class="terminal-placeholder text-muted"># تم تنفيذ الكود بنجاح (لا توجد مخرجات للطباعة).</div>`;
+        }
+      }
+
       adventureStore.setState({
+        editorCode: code,
         terminalOutput: result.output,
         terminalError: result.error,
         isRunning: false
-      });
+      }, { notify: false });
 
     } catch (err) {
+      if (terminalEl) {
+        terminalEl.innerHTML = `<div class="terminal-error">${escapeHtml(err.message || "حدث خطأ غير متوقع أثناء التشغيل")}</div>`;
+      }
       adventureStore.setState({
+        editorCode: code,
         terminalError: err.message,
         isRunning: false
-      });
+      }, { notify: false });
     } finally {
-      if (runBtn) runBtn.innerHTML = "<span>▶ تشغيل الكود</span>";
+      if (runBtn) {
+        runBtn.disabled = false;
+        runBtn.innerHTML = "<span>▶ تشغيل الكود</span>";
+      }
     }
   },
 
@@ -387,20 +445,36 @@ export const PythonAdventureController = {
     const state = adventureStore.getState();
     if (state.isSubmitting || !state.activeChallenge) return;
 
-    adventureStore.setState({ isSubmitting: true });
+    const textareaEl = document.getElementById("pyCodeTextarea");
+    const code = textareaEl ? textareaEl.value : state.editorCode;
+
+    adventureStore.setState({ isSubmitting: true }, { notify: false });
     const submitBtn = document.getElementById("pySubmitBtn");
-    if (submitBtn) submitBtn.innerHTML = "<span>⏳ جاري التحقق...</span>";
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = "<span>⏳ جاري التحقق...</span>";
+    }
+
+    const terminalEl = document.getElementById("pyTerminalOutput");
 
     try {
       // 1. Run local syntax & runtime check first
-      const runCheck = await runPythonCode(state.editorCode);
+      const runCheck = await runPythonCode(code);
       if (runCheck.error) {
+        if (terminalEl) {
+          terminalEl.innerHTML = `
+            ${runCheck.output ? `<div class="terminal-stdout">${escapeHtml(runCheck.output)}</div>` : ""}
+            <div class="terminal-error">${escapeHtml(runCheck.error)}</div>
+          `;
+        }
         adventureStore.setState({
+          editorCode: code,
           terminalError: runCheck.error,
           terminalOutput: runCheck.output,
           isSubmitting: false,
           attemptsCount: state.attemptsCount + 1
-        });
+        }, { notify: false });
+
         this.showResultModal({
           passed: false,
           feedback: "الكود يحتوي على أخطاء برمجية تمنع تنفيذه.",
@@ -412,18 +486,19 @@ export const PythonAdventureController = {
       // 2. Submit to Authoritative Service
       const result = await PythonAdventureService.submitChallenge({
         challengeId: state.activeChallenge.id,
-        code: state.editorCode,
+        code,
         hintsUsed: state.hintsRevealed,
         attempts: state.attemptsCount,
         currentProgress: state.progress
       });
 
-      adventureStore.setState({ isSubmitting: false });
+      adventureStore.setState({ isSubmitting: false }, { notify: false });
 
       if (result.passed) {
         // Update local state progress
-        const updatedProgress = await PythonAdventureService.getStudentProgress(currentStudent?.id || currentStudent?.firestoreId);
-        adventureStore.setState({ progress: updatedProgress });
+        const studentId = currentStudent?.uid || currentStudent?.id || currentStudent?.firestoreId;
+        const updatedProgress = await PythonAdventureService.getStudentProgress(studentId);
+        adventureStore.setState({ progress: updatedProgress }, { notify: false });
 
         this.showResultModal({
           passed: true,
@@ -439,10 +514,13 @@ export const PythonAdventureController = {
         });
 
       } else {
+        if (terminalEl && result.testResults?.stdout) {
+          terminalEl.innerHTML = `<div class="terminal-stdout">${escapeHtml(result.testResults.stdout)}</div>`;
+        }
         adventureStore.setState({
           attemptsCount: state.attemptsCount + 1,
           terminalOutput: result.testResults?.stdout || state.terminalOutput
-        });
+        }, { notify: false });
 
         this.showResultModal({
           passed: false,
@@ -453,10 +531,13 @@ export const PythonAdventureController = {
 
     } catch (err) {
       console.error("Submission failed:", err);
-      adventureStore.setState({ isSubmitting: false });
+      adventureStore.setState({ isSubmitting: false }, { notify: false });
       alert("حدث خطأ أثناء إرسال الحل. حاول مرة أخرى.");
     } finally {
-      if (submitBtn) submitBtn.innerHTML = "<span>🚀 تسليم الحل والتحقق</span>";
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = "<span>🚀 تسليم الحل والتحقق</span>";
+      }
     }
   },
 
@@ -493,18 +574,38 @@ export const PythonAdventureController = {
     });
   },
 
+  updateHintsCardInChallengeView() {
+    const cardEl = document.getElementById("hintsSystemCard");
+    if (!cardEl) return;
+    const state = adventureStore.getState();
+    cardEl.innerHTML = renderHintsCardContent({
+      challenge: state.activeChallenge,
+      hintsRevealed: state.hintsRevealed,
+      attempts: state.attemptsCount,
+      solutionRevealed: state.solutionRevealed
+    });
+    document.getElementById("revealNextHintBtn")?.addEventListener("click", () => {
+      this.revealNextHint();
+    });
+    document.getElementById("revealSolutionPromptBtn")?.addEventListener("click", () => {
+      this.promptRevealSolution();
+    });
+  },
+
   revealNextHint() {
     const { activeChallenge, hintsRevealed } = adventureStore.getState();
     const hints = activeChallenge?.hints || [];
     if (hintsRevealed < hints.length) {
-      adventureStore.setState({ hintsRevealed: hintsRevealed + 1 });
+      adventureStore.setState({ hintsRevealed: hintsRevealed + 1 }, { notify: false });
+      this.updateHintsCardInChallengeView();
     }
   },
 
   promptRevealSolution() {
     const confirmed = confirm("⚠️ تنبيه:\nعرض الحل النموذجي سيقلل المكافأة إلى 20% XP ونجمة واحدة لهذه المهمة.\n\nهل أنت متأكد من رغبتك في عرض الحل؟");
     if (confirmed) {
-      adventureStore.setState({ solutionRevealed: true, hintsRevealed: 4 });
+      adventureStore.setState({ solutionRevealed: true, hintsRevealed: 4 }, { notify: false });
+      this.updateHintsCardInChallengeView();
     }
   },
 

@@ -75,7 +75,7 @@ export function getExamStatusInfo(exam, result = null) {
   }
 
   // 4. Expired by Deadline
-  const deadline = exam.deadline || exam.endAt;
+  const deadline = exam.deadline || exam.endAt || exam.endDate;
   if (deadline && isDeadlinePassed(deadline)) {
     return {
       status: "expired",
@@ -87,7 +87,7 @@ export function getExamStatusInfo(exam, result = null) {
   }
 
   // 5. Upcoming by Start Date
-  const startDate = exam.startDate || exam.startAt;
+  const startDate = exam.startDate || exam.startAt || exam.beginDate;
   if (startDate) {
     let startTimestamp = 0;
     if (typeof startDate?.toDate === "function") {

@@ -3,7 +3,7 @@ import { LecturesService } from "./lectures.service.js";
 import { lecturesState } from "./lectures.state.js";
 import { renderStudentLessonCard, renderTeacherLessonCard } from "./components/lesson-card.component.js";
 import { renderLessonFormModal, renderResourceFormRow } from "./components/lesson-form-modal.component.js";
-import { renderLessonDetailsModal, renderLessonDetailsContent } from "./components/lesson-details-modal.component.js";
+import { renderLessonDetailsModal, renderLessonDetailsContent, renderEngagementContent } from "./components/lesson-details-modal.component.js";
 import { renderVideoPlayerModal } from "./components/video-player-modal.component.js";
 import { renderLessonFilters, renderStudentLessonFilters } from "./components/lesson-filters.component.js";
 import { renderStudentLessonSkeletonGrid } from "./components/lesson-skeleton.component.js";
@@ -617,8 +617,12 @@ export const LecturesController = {
 
     try {
       const studentUid = currentStudent?.firestoreId || currentStudent?.id || "";
-      const studentPhone = currentStudent?.studentPhone || "";
-      const studentGroup = currentStudent?.studentGroup || currentStudent?.group || "ALL";
+      const studentPhone = currentStudent?.studentPhone || currentStudent?.phone || "";
+      const studentGroup = (currentStudent?.group && currentStudent.group !== "ALL")
+        ? currentStudent.group
+        : (currentStudent?.studentGroup && currentStudent.studentGroup !== "ALL"
+            ? currentStudent.studentGroup
+            : (currentStudent?.group || currentStudent?.studentGroup || "ALL"));
 
       const [lectures, watchedIds] = await Promise.all([
         LecturesService.getAllLectures(),
@@ -653,7 +657,11 @@ export const LecturesController = {
     const searchQuery = lecturesState.get("searchQuery") || "";
     const statusFilter = lecturesState.get("statusFilter") || "ALL"; // ALL | NEW | WATCHED
     const sortOrder = lecturesState.get("sortOrder") || "newest";
-    const studentGroup = currentStudent?.studentGroup || currentStudent?.group || "ALL";
+    const studentGroup = (currentStudent?.group && currentStudent.group !== "ALL")
+      ? currentStudent.group
+      : (currentStudent?.studentGroup && currentStudent.studentGroup !== "ALL"
+          ? currentStudent.studentGroup
+          : (currentStudent?.group || currentStudent?.studentGroup || "ALL"));
 
     // Audience filtering: Only active lessons & matching student's group
     const relevantLectures = allLectures.filter((l) => {
@@ -843,6 +851,54 @@ export const LecturesController = {
       watchedIds.add(lesson.id);
       if (lesson.videoId) watchedIds.add(lesson.videoId);
       lecturesState.set("watchedIds", watchedIds);
+    } else if (!isStudent) {
+      // Staff Engagement Insights
+      const engagementSlot = document.getElementById("lessonEngagementContentSlot");
+      if (engagementSlot) {
+        let currentEngagement = null;
+        let currentActiveTab = "watched";
+        let currentSearchQuery = "";
+
+        const updateEngagementSlot = () => {
+          if (!currentEngagement) return;
+          engagementSlot.innerHTML = renderEngagementContent({
+            engagement: currentEngagement,
+            searchQuery: currentSearchQuery,
+            activeTab: currentActiveTab,
+          });
+
+          // Bind tabs
+          engagementSlot.querySelectorAll("[data-engagement-tab]").forEach((tabBtn) => {
+            tabBtn.addEventListener("click", () => {
+              currentActiveTab = tabBtn.getAttribute("data-engagement-tab");
+              updateEngagementSlot();
+            });
+          });
+
+          // Bind search input
+          const searchInput = engagementSlot.querySelector("#lessonEngagementSearchInput");
+          if (searchInput) {
+            searchInput.value = currentSearchQuery;
+            searchInput.focus();
+            searchInput.setSelectionRange(currentSearchQuery.length, currentSearchQuery.length);
+            searchInput.addEventListener(
+              "input",
+              debounce((e) => {
+                currentSearchQuery = e.target.value;
+                updateEngagementSlot();
+              }, 250)
+            );
+          }
+        };
+
+        try {
+          currentEngagement = await LecturesService.getLessonEngagement(lesson.id, lesson.group, lesson.videoId);
+          updateEngagementSlot();
+        } catch (err) {
+          console.error("Failed to load engagement data:", err);
+          engagementSlot.innerHTML = `<div class="p-3 text-center text-danger text-sm">تعذر تحميل بيانات تفاعل الطلاب لهذه المحاضرة.</div>`;
+        }
+      }
     }
   },
 

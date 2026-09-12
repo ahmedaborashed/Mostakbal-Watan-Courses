@@ -39,11 +39,11 @@ export function on(element, event, handler, options = {}) {
 }
 
 /**
- * Sets innerHTML safely after converting or passing string.
+ * Sets innerHTML safely after resolving element from ID or selector string.
  */
 export function setHtml(element, htmlString) {
   if (typeof element === "string") {
-    element = qs(element);
+    element = document.getElementById(element) || qs(element);
   }
   if (element) {
     element.innerHTML = htmlString;

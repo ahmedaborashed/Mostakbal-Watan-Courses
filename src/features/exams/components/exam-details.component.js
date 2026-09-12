@@ -71,6 +71,12 @@ export function renderExamDetailsContent({ exam, results = [] }) {
           </div>
           <div class="d-flex items-center gap-2">
             ${renderButton({
+              text: "🖨️ طباعة تقرير الامتحان",
+              size: "sm",
+              variant: "primary",
+              extraAttrs: `data-details-print-exam="${escapeHtml(exam.id)}"`
+            })}
+            ${renderButton({
               text: "تعديل الامتحان ✏️",
               size: "sm",
               variant: "secondary",
@@ -129,13 +135,127 @@ export function renderExamDetailsContent({ exam, results = [] }) {
         </div>
       </div>
 
-      <!-- Full Questions Breakdown (ADMIN ONLY) -->
-      <div class="exam-questions-breakdown">
+      <!-- Segmented View Tabs (Results vs Questions) -->
+      <div class="academic-filter-tabs mb-3" style="margin-inline:0;">
+        <button type="button" class="academic-filter-btn active" data-exam-details-tab="results">
+          <span>🎓 نتائج ومحاولات الطلاب (${attemptsCount})</span>
+        </button>
+        <button type="button" class="academic-filter-btn" data-exam-details-tab="questions">
+          <span>📝 الأسئلة والمفتاح النموذجي (${totalQuestions})</span>
+        </button>
+      </div>
+
+      <!-- TAB 1: Student Results Table -->
+      <div id="examDetailsTabResults" class="exam-details-tab-pane">
+        <div class="d-flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h4 class="font-extrabold text-sm m-0" style="color: var(--color-text-primary);">
+            قائمة درجات الطلاب الفعلية (${attemptsCount}):
+          </h4>
+          <div class="search-input-wrap" style="max-width:280px;">
+            <input
+              type="search"
+              id="examResultsSearchInput"
+              class="form-control form-control-sm"
+              placeholder="🔍 بحث باسم الطالب أو الهاتف..."
+              aria-label="بحث في نتائج الامتحان"
+            />
+          </div>
+        </div>
+
+        <div class="table-wrapper mb-4" style="border: 1px solid var(--color-border-subtle); border-radius: var(--radius-md); overflow-x: auto;">
+          <table class="table-modern w-full" style="font-size: var(--font-size-xs);" id="examResultsTable">
+            <thead>
+              <tr>
+                <th scope="col" style="width: 35px; text-align: center;">#</th>
+                <th scope="col" style="text-align: start;">الطالب</th>
+                <th scope="col">المجموعة</th>
+                <th scope="col" style="text-align: center;">الدرجة</th>
+                <th scope="col" style="text-align: center;">النسبة</th>
+                <th scope="col" style="text-align: center;">الحالة</th>
+                <th scope="col" style="text-align: center;">وقت التسليم</th>
+                <th scope="col" style="text-align: center;">الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="examResultsTableBody">
+              ${
+                results.length === 0
+                  ? `<tr><td colspan="8" class="text-center p-5 text-muted">لا توجد محاولات تسليم لهذا الامتحان حتى الآن.</td></tr>`
+                  : results
+                      .map((r, idx) => {
+                        const score = Number(r.score || r.total || 0);
+                        const percent = totalScore > 0 ? Math.round((score / totalScore) * 100) : 0;
+                        const isPendingEssay = r.status === "pending_essay";
+                        const passThreshold = passDegree > 0 ? passDegree : totalScore * 0.5;
+                        const isPassed = score >= passThreshold;
+                        const statusBadge = isPendingEssay
+                          ? `<span class="badge badge-warning text-xs font-bold">قيد تصحيح المقالي ⏳</span>`
+                          : isPassed
+                          ? `<span class="badge badge-success text-xs font-bold">ناجح ✓</span>`
+                          : `<span class="badge badge-danger text-xs font-bold">راسب</span>`;
+
+                        const hasEssay = questions.some((q) => q.type === "essay");
+
+                        return `
+                          <tr data-result-row data-student-name="${escapeHtml((r.studentName || "").toLowerCase())}" data-student-phone="${escapeHtml(r.studentPhone || r.studentUid || "")}">
+                            <td style="text-align: center;">${idx + 1}</td>
+                            <td>
+                              <div class="d-flex flex-col">
+                                <strong class="font-bold" style="color: var(--color-text-primary);">${escapeHtml(r.studentName || "طالب")}</strong>
+                                <span class="text-muted text-xs font-mono">${escapeHtml(r.studentPhone || r.studentUid || "—")}</span>
+                              </div>
+                            </td>
+                            <td>
+                              <span class="badge badge-gold text-xs">${escapeHtml(r.group || exam.group || "—")}</span>
+                            </td>
+                            <td style="text-align: center;">
+                              <strong class="text-accent font-extrabold" style="font-size: 0.95rem;">${score}</strong>
+                              <span class="text-muted"> / ${totalScore}</span>
+                            </td>
+                            <td style="text-align: center;">
+                              <span class="font-bold ${percent >= 50 ? "text-success" : "text-danger"}">${percent}%</span>
+                            </td>
+                            <td style="text-align: center;">
+                              ${statusBadge}
+                            </td>
+                            <td style="text-align: center; font-size: 0.75rem; color: var(--color-text-secondary);">
+                              ${r.submittedAt ? formatDate(r.submittedAt) : "—"}
+                            </td>
+                            <td style="text-align: center;">
+                              ${
+                                hasEssay
+                                  ? `
+                                <button
+                                  type="button"
+                                  class="btn btn-primary btn-sm font-bold"
+                                  data-grade-essay-result="${escapeHtml(r.id)}"
+                                  data-grade-exam-id="${escapeHtml(exam.id)}"
+                                  title="تصحيح أو مراجعة الأسئلة المقالية"
+                                >
+                                  ✏️ تصحيح المقالي
+                                </button>
+                              `
+                                  : `
+                                <span class="text-muted text-xs">تصحيح تلقائي ✓</span>
+                              `
+                              }
+                            </td>
+                          </tr>
+                        `;
+                      })
+                      .join("")
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 2: Full Questions Breakdown (Initially Hidden) -->
+      <div id="examDetailsTabQuestions" class="exam-details-tab-pane" style="display:none;">
         <div class="d-flex items-center justify-between mb-3">
           <h4 class="font-extrabold text-sm" style="color: var(--color-text-primary);">
             📝 تفاصيل الأسئلة ومفاتيح الإجابات النموذجية (${totalQuestions}):
           </h4>
-          <span class="badge badge-neutral text-xs">🔐 عرض مخصص للمدير</span>
+          <span class="badge badge-neutral text-xs">🔐 عرض مخصص للمدير والمعلم</span>
         </div>
 
         <div class="d-flex flex-col gap-3">

@@ -15,7 +15,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { COLLECTIONS } from "../../core/constants.js";
 import { normalizeError, NotFoundError } from "../../core/errors.js";
-import { formatDate } from "../../shared/utils/date.utils.js";
+import { formatDate, formatDateTime } from "../../shared/utils/date.utils.js";
 import { extractYouTubeId } from "../../shared/validators/url.validator.js";
 
 /**
@@ -298,6 +298,154 @@ export const LecturesService = {
     try {
       await deleteDoc(doc(db, COLLECTIONS.VIDEOS, lectureId));
       return true;
+    } catch (err) {
+      throw normalizeError(err);
+    }
+  },
+
+  /**
+   * Fetches comprehensive student engagement breakdown for a lecture.
+   * Compares eligible students in lesson group against actual video_logs.
+   *
+   * @param {string} lectureId
+   * @param {string} [group="ALL"]
+   * @param {string} [videoId=""]
+   * @returns {Promise<{
+   *   totalCount: number,
+   *   watchedCount: number,
+   *   unwatchedCount: number,
+   *   watchPercentage: number,
+   *   watchedList: Array<object>,
+   *   unwatchedList: Array<object>
+   * }>}
+   */
+  async getLessonEngagement(lectureId, group = "ALL", videoId = "") {
+    try {
+      // 1. Fetch students for the target group
+      const studentsSnap = await getDocs(collection(db, COLLECTIONS.STUDENTS));
+      const allStudents = studentsSnap.docs.map((d) => ({
+        id: d.id,
+        firestoreId: d.id,
+        ...d.data()
+      }));
+
+      const eligibleStudents = allStudents.filter((s) => {
+        const sGroup = s.studentGroup || s.group || "ALL";
+        if (group === "ALL" || sGroup === "ALL") return true;
+        return sGroup === group;
+      });
+
+      // 2. Fetch watch logs for this lecture/video
+      const logsMap = new Map(); // key: studentUid or phone -> log info
+
+      const candidateIds = new Set([String(lectureId)]);
+      if (videoId && videoId !== lectureId) {
+        candidateIds.add(String(videoId));
+      }
+
+      for (const id of candidateIds) {
+        try {
+          const qLog = query(
+            collection(db, COLLECTIONS.VIDEO_LOGS),
+            where("lectureId", "==", id)
+          );
+          const snapLog = await getDocs(qLog);
+          snapLog.docs.forEach((d) => {
+            const data = d.data();
+            const studentKey = data.studentId || data.studentPhone;
+            if (studentKey) {
+              const existing = logsMap.get(studentKey);
+              const watchedAtDate = data.watchedAt?.toDate ? data.watchedAt.toDate() : new Date(data.watchedAt || 0);
+              if (!existing) {
+                logsMap.set(studentKey, {
+                  firstOpened: watchedAtDate,
+                  lastOpened: watchedAtDate,
+                  watchCount: 1,
+                  watchedAt: watchedAtDate
+                });
+              } else {
+                existing.watchCount++;
+                if (watchedAtDate > existing.lastOpened) existing.lastOpened = watchedAtDate;
+                if (watchedAtDate < existing.firstOpened) existing.firstOpened = watchedAtDate;
+              }
+            }
+          });
+        } catch (_) {}
+
+        try {
+          const qVid = query(
+            collection(db, COLLECTIONS.VIDEO_LOGS),
+            where("videoId", "==", id)
+          );
+          const snapVid = await getDocs(qVid);
+          snapVid.docs.forEach((d) => {
+            const data = d.data();
+            const studentKey = data.studentId || data.studentPhone;
+            if (studentKey && !logsMap.has(studentKey)) {
+              const watchedAtDate = data.watchedAt?.toDate ? data.watchedAt.toDate() : new Date(data.watchedAt || 0);
+              logsMap.set(studentKey, {
+                firstOpened: watchedAtDate,
+                lastOpened: watchedAtDate,
+                watchCount: 1,
+                watchedAt: watchedAtDate
+              });
+            }
+          });
+        } catch (_) {}
+      }
+
+      // 3. Partition eligible students into watched and unwatched
+      const watchedList = [];
+      const unwatchedList = [];
+
+      eligibleStudents.forEach((student) => {
+        const uid = student.id || student.firestoreId;
+        const phone = student.studentPhone || student.phone || "";
+        const name = student.studentName || student.name || "طالب مسجل";
+        const studentGroup = student.studentGroup || student.group || "ALL";
+
+        const log = (uid && logsMap.get(uid)) || (phone && logsMap.get(phone));
+
+        if (log) {
+          watchedList.push({
+            studentUid: uid,
+            studentName: name,
+            studentPhone: phone,
+            group: studentGroup,
+            watched: true,
+            watchCount: log.watchCount,
+            firstOpenedFormatted: formatDateTime(log.firstOpened),
+            lastOpenedFormatted: formatDateTime(log.lastOpened),
+            watchedAtFormatted: formatDateTime(log.watchedAt)
+          });
+        } else {
+          unwatchedList.push({
+            studentUid: uid,
+            studentName: name,
+            studentPhone: phone,
+            group: studentGroup,
+            watched: false
+          });
+        }
+      });
+
+      // Sort watched by latest first, unwatched alphabetically
+      watchedList.sort((a, b) => (b.lastOpened?.getTime?.() || 0) - (a.lastOpened?.getTime?.() || 0));
+      unwatchedList.sort((a, b) => a.studentName.localeCompare(b.studentName, "ar"));
+
+      const totalCount = eligibleStudents.length;
+      const watchedCount = watchedList.length;
+      const unwatchedCount = unwatchedList.length;
+      const watchPercentage = totalCount > 0 ? Math.round((watchedCount / totalCount) * 100) : 0;
+
+      return {
+        totalCount,
+        watchedCount,
+        unwatchedCount,
+        watchPercentage,
+        watchedList,
+        unwatchedList
+      };
     } catch (err) {
       throw normalizeError(err);
     }

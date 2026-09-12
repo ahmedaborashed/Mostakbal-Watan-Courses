@@ -163,7 +163,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "في لغة بايثون، نستخدم الدالة print() لعرض النصوص والأرقام على الشاشة.\nنكتب النصوص دائماً بين علامتي تنصيص '...' أو \"...\".",
       exampleCode: 'print("مرحباً بك!")\nprint(100)'
     },
-    starterCode: '# اكتب كود الطباعة أدناه\nprint("Hello Python")\n',
+    starterCode: '# اكتب كود الطباعة أدناه لعرض عبارة تحتوي على كلمة Python\n\n',
     requirements: [
       "استخدم أمر print()",
       "اطبع عبارة تحتوي على كلمة Python (مثال: Hello Python)"
@@ -195,7 +195,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "بايثون آلة حاسبة فائقة الذكاء:\n+ للجمع، - للطرح، * للضرب، / للقسمة.\nالأولوية دائماً للأقواس ثم الضرب والقسمة قبل الجمع والطرح.",
       exampleCode: 'print(5 + 3)\nprint(10 * 2)'
     },
-    starterCode: '# احسب واطبع الناتج المباشر: (3 * 25) + 15\nprint(3 * 25 + 15)\n',
+    starterCode: '# احسب واطبع الناتج المباشر: 3 صناديق في كل صندوق 25 عملة + 15 مكافأة\n\n',
     requirements: [
       "احسب التعبير الرياضي: (3 * 25) + 15",
       "اطبع الناتج مباشرة (الناتج هو 90)"
@@ -287,7 +287,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "المتغير مساحة في الذاكرة لتخزين قيمة باسم رمزي يسهل الرجوع إليه وتعديله في أي وقت:\nx = 10\nprint(x)",
       exampleCode: "coins = 100\nprint(coins)"
     },
-    starterCode: '# عرف المتغير gold واطبعه\ngold = 50\nprint(gold)\n',
+    starterCode: '# عرف المتغير gold بقيمة 50 ثم اطبعه أدناه\n\n',
     requirements: [
       "عرف متغير باسم gold بقيمة 50",
       "اطبع قيمة المتغير gold"
@@ -345,7 +345,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "نضع حرف f قبل علامة التنصيص ونضع اسم المتغير داخل أقواس معقوفة {variable}:\nprice = 100\nprint(f'Price: {price}')",
       exampleCode: "name = 'Ali'\nprint(f'Hello {name}')"
     },
-    starterCode: "total = 250\n# استبدل _____ بالمتغير total\nprint(f'Total: {total} Coins')\n",
+    starterCode: "total = 250\n# استبدل _____ بالمتغير total\nprint(f'Total: {_____} Coins')\n",
     requirements: [
       "ضع اسم المتغير total داخل الأقواس المعقوفة",
       "اطبع العبارة: Total: 250 Coins"
@@ -406,7 +406,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "تتيح لك if تنفيذ أوامر معينة فقط إذا تحقق شرط معين. لاحظ وضع : في نهاية السطر والمسافة البادئة للسطر التالي.",
       exampleCode: "x = 10\nif x > 5:\n    print('Greater than 5')"
     },
-    starterCode: "age = 20\n# اكتب شرط if لفحص السن واطبع Access Granted\nif age >= 18:\n    print('Access Granted')\n",
+    starterCode: "age = 20\n# اكتب شرط if لفحص السن واطبع Access Granted\n",
     requirements: [
       "استخدم if age >= 18:",
       "اطبع: Access Granted"
@@ -465,7 +465,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "= تستخدم لتعيين قيمة لمتغير: x = 5\nبينما == تستخدم للمقارنة وفحص التساوي: if x == 5:",
       exampleCode: "x = 5\nif x == 5:\n    print('Equal')"
     },
-    starterCode: "magic_number = 7\n# أصلح الخطأ في السطر التالي:\nif magic_number == 7:\n    print('Unlocked')\n",
+    starterCode: "magic_number = 7\n# أصلح الخطأ في السطر التالي:\nif magic_number = 7:\n    print('Unlocked')\n",
     requirements: [
       "استبدل = بـ == في سطر الشرط",
       "اطبع: Unlocked"
@@ -525,7 +525,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "تستخدم for لتكرار تنفيذ مجموعة من الأوامر لعدد محدد من المرات باستخدام range(n):\nfor i in range(5):\n    print(i)",
       exampleCode: "for i in range(3):\n    print('Hello')"
     },
-    starterCode: '# استخدم for مع range(5) لطباعة الأرقام 0 إلى 4\nfor i in range(5):\n    print(i)\n',
+    starterCode: '# استخدم for مع range(5) لطباعة الأرقام 0 إلى 4\n',
     requirements: [
       "استخدم for loop",
       "استخدم range(5)",
@@ -586,7 +586,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "حلقة while تستمر طالما الشرط True. لذلك يجب تعديل المتغير في كل دورة حتى يتوقف الشرط.",
       exampleCode: "i = 0\nwhile i < 2:\n    print(i)\n    i += 1"
     },
-    starterCode: "count = 1\nwhile count <= 3:\n    print(count)\n    count += 1\n",
+    starterCode: "count = 1\nwhile count <= 3:\n    print(count)\n    # أضف السطر الناقص لزيادة عداد count ومنع التكرار اللانهائي\n",
     requirements: [
       "أضف زيادة للعداد: count += 1",
       "تأكد أن الكود يطبع: 1 ثم 2 ثم 3 ويتوقف"
@@ -614,7 +614,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "يمكنك العد تنازلياً باستخدام range(3, 0, -1) أو باستخدام حلقة while تنقص 1 في كل مرة.",
       exampleCode: "for i in range(3, 0, -1):\n    print(i)\nprint('Go!')"
     },
-    starterCode: "for i in [3, 2, 1]:\n    print(i)\nprint('Monster Defeated!')\n",
+    starterCode: "# اطبع 3 ثم 2 ثم 1 باستخدام loop، ثم اطبع Monster Defeated!\n",
     requirements: [
       "استخدم loop للعد التنازلي 3, 2, 1",
       "اطبع في النهاية: Monster Defeated!"
@@ -647,7 +647,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "القوائم تحفظ عدة عناصر بين أقواس مربعة []، ويبدأ ترقيم العناصر دائماً من الصفر 0:\nmy_list = ['A', 'B', 'C']\nprint(my_list[0])  # 'A'",
       exampleCode: "heroes = ['Omar', 'Sara']\nprint(heroes[0])"
     },
-    starterCode: "items = ['sword', 'shield', 'potion']\nprint(items[0])\n",
+    starterCode: "# أنشئ قائمة items = ['sword', 'shield', 'potion'] واطبع العنصر الأول sword\n",
     requirements: [
       "أنشئ items = ['sword', 'shield', 'potion']",
       "اطبع items[0] فقط (sword)"
@@ -676,7 +676,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "نستخدم .append() لإضافة عنصر جديد في نهاية القائمة، ونستخدم len() لمعرفة عدد عناصرها الإجمالي.",
       exampleCode: "nums = [1, 2]\nnums.append(3)\nprint(len(nums))"
     },
-    starterCode: "spells = ['fire', 'ice']\nspells.append('thunder')\nprint(len(spells))\n",
+    starterCode: "spells = ['fire', 'ice']\n# أضف 'thunder' ثم اطبع طول القائمة بواسطة len\n",
     requirements: [
       "استخدم spells.append('thunder')",
       "اطبع len(spells) (الناتج هو 3)"
@@ -705,7 +705,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "إذا كانت القائمة تحتوي 3 عناصر، فإن الفهارس المتاحة هي 0 و 1 و 2 فقط. العنصر الأخير يكون دائماً عند الفهرس 2 أو [-1]!",
       exampleCode: "lst = ['A', 'B']\n# lst[2] يسبب خطأ\n# lst[1] أو lst[-1] صحيح"
     },
-    starterCode: "rewards = ['Bronze', 'Silver', 'Gold']\nprint(rewards[2])\n",
+    starterCode: "rewards = ['Bronze', 'Silver', 'Gold']\n# أصلح الفهرس في السطر التالي لطباعة Gold\nprint(rewards[3])\n",
     requirements: [
       "أصلح الفهرس ليكون 2 أو -1",
       "تأكد أن الكود يطبع: Gold"
@@ -733,7 +733,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "نمر على القائمة بحلقة for، ونفحص كل عنصر بجملة if، ونزيد عداد الناجحين.",
       exampleCode: "nums = [1, 10, 3, 20]\nbig = 0\nfor n in nums:\n    if n > 5:\n        big += 1\nprint(big)"
     },
-    starterCode: "scores = [45, 80, 95, 30, 88]\npass_count = 0\nfor s in scores:\n    if s >= 50:\n        pass_count += 1\nprint(pass_count)\n",
+    starterCode: "scores = [45, 80, 95, 30, 88]\npass_count = 0\n# مر على الدرجات وزد pass_count للدرجات >= 50 ثم اطبعه\n",
     requirements: [
       "مر على القائمة وافحص الدرجات >= 50",
       "اطبع عدد الدرجات الناجحة فقط (3)"
@@ -766,7 +766,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "الدالة هي كتلة برمجية يعاد استخدامها تأخذ مدخلات وتنفذ مهمة محددة:\ndef say_hi(name):\n    print(f'Hi {name}')\nsay_hi('Ali')",
       exampleCode: "def add_one(x):\n    print(x + 1)\nadd_one(5)"
     },
-    starterCode: "def greet(name):\n    print(f'Hello {name}')\n\ngreet('Hero')\n",
+    starterCode: "# عرف دالة greet(name) واستدعها بـ Hero\n",
     requirements: [
       "عرف دالة: def greet(name):",
       "استدعها: greet('Hero')",
@@ -797,7 +797,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "print تعرض النتيجة على الشاشة فقط، أما return فتعيد القيمة المحسوبة لاستخدامها في حسابات أو متغيرات أخرى.",
       exampleCode: "def mult(a, b):\n    return a * b\nprint(mult(3, 4))"
     },
-    starterCode: "def calculate_area(width, height):\n    return width * height\n\nprint(calculate_area(5, 4))\n",
+    starterCode: "# عرف calculate_area واجعلها ترجع width * height ثم اطبع ناتج 5 و 4\n",
     requirements: [
       "استخدم كلمة return",
       "اطبع الناتج: 20"
@@ -826,7 +826,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "إذا لم تستخدم كلمة return داخل الدالة في بايثون، فإن الدالة ترجع القيمة الخاصة None تلقائياً!",
       exampleCode: "def good():\n    return 10"
     },
-    starterCode: "def double_number(x):\n    return x * 2\n\nval = double_number(50)\nprint(val)\n",
+    starterCode: "def double_number(x):\n    # أصلح السطر التالي بإرجاع القيمة بدلاً من نسيان return\n    result = x * 2\n\nval = double_number(50)\nprint(val)\n",
     requirements: [
       "أضف return x * 2 داخل الدالة",
       "تأكد أن الناتج المطبوع هو 100"
@@ -854,7 +854,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "الرقم الزوجي يقبل القسمة على 2 بدون باقٍ، أي n % 2 == 0:\ndef is_even(n):\n    return n % 2 == 0",
       exampleCode: "print(4 % 2 == 0) # True\nprint(5 % 2 == 0) # False"
     },
-    starterCode: "def is_even(n):\n    return n % 2 == 0\n\nprint(is_even(10))\nprint(is_even(7))\n",
+    starterCode: "# عرف الدالة is_even واطبع نتيجة 10 ثم 7\n",
     requirements: [
       "عرف دالة is_even(n)",
       "اطبع نتيجة is_even(10) في سطر (True)",
@@ -888,7 +888,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "الفئة هي قالب لبناء كائنات ذات خصائص محددة:\nclass Cat:\n    def __init__(self, name):\n        self.name = name\nc = Cat('Kitty')\nprint(c.name)",
       exampleCode: "class Car:\n    def __init__(self, model):\n        self.model = model\nmy_car = Car('Toyota')\nprint(my_car.model)"
     },
-    starterCode: "class Player:\n    def __init__(self, name, health):\n        self.name = name\n        self.health = health\n\np1 = Player('Knight', 100)\nprint(p1.name)\n",
+    starterCode: "# أنشئ class Player واطبع اسم اللاعب Knight\n",
     requirements: [
       "عرف class Player:",
       "عرف def __init__(self, name, health):",
@@ -923,7 +923,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "الدوال داخل الفئات تسمى Methods ويجب أن يكون معامِلها الأول دائماً هو self للإشارة للكائن الحالي:\nclass Dog:\n    def bark(self):\n        print('Woof!')",
       exampleCode: "class Bot:\n    def ping(self):\n        print('Pong')\nb = Bot()\nb.ping()"
     },
-    starterCode: "class Player:\n    def __init__(self, name):\n        self.name = name\n    def attack(self):\n        print(f'{self.name} attacks!')\n\np = Player('Wizard')\np.attack()\n",
+    starterCode: "class Player:\n    def __init__(self, name):\n        self.name = name\n    # أضف دالة attack(self)\n\np = Player('Wizard')\np.attack()\n",
     requirements: [
       "أضف دالة attack تطبع: Wizard attacks!",
       "تأكد من استخدام self.name داخل النص"
@@ -952,7 +952,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "المتغيرات داخل __init__ تكون محلية وتنتهي عند انتهاء الدالة، ما لم نربطها بالكائن باستخدام self.property = value!",
       exampleCode: "def __init__(self, x):\n    # خطأ: x = x\n    # صحيح:\n    self.x = x"
     },
-    starterCode: "class Weapon:\n    def __init__(self, power):\n        self.power = power\n\nw = Weapon(50)\nprint(w.power)\n",
+    starterCode: "class Weapon:\n    def __init__(self, power):\n        # أصلح السطر التالي ليربط الخاصية بـ self\n        power = power\n\nw = Weapon(50)\n# الكود التالي يجب أن يطبع 50 بعد الإصلاح\nprint(w.power)\n",
     requirements: [
       "استبدل power = power بـ self.power = power",
       "تأكد أن الكود يطبع: 50"
@@ -980,7 +980,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "تستطيع دوال الكائنات تعديل خصائص الكائن نفسه:\ndef take_damage(self, amount):\n    self.health -= amount",
       exampleCode: "class Account:\n    def __init__(self, bal):\n        self.bal = bal\n    def withdraw(self, m):\n        self.bal -= m"
     },
-    starterCode: "class Dragon:\n    def __init__(self):\n        self.health = 100\n    def take_damage(self, amount):\n        self.health -= amount\n        print(f'Dragon Health: {self.health}')\n\nd = Dragon()\nd.take_damage(30)\n",
+    starterCode: "# أنشئ class Dragon ونفذ المعركة\n",
     requirements: [
       "عرف class Dragon مع health = 100",
       "أضف دالة take_damage(self, amount) تنقص الصحة وتطبع: Dragon Health: 70",
@@ -1018,7 +1018,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "تطبيق عملي يجمع القوائم وحساب المجموع sum أو التكرار مع القسمة لإخراج المتوسط الإحصائي بدقة.",
       exampleCode: "nums = [10, 20]\navg = sum(nums) / len(nums)\nprint(f'Average: {avg}')"
     },
-    starterCode: "grades = [70, 85, 90, 75]\navg = sum(grades) / len(grades)\nprint(f'Average: {avg}')\n",
+    starterCode: "grades = [70, 85, 90, 75]\n# احسب واطبع Average: 80.0\n",
     requirements: [
       "احسب المتوسط = مجموع grades / عدد grades",
       "اطبع: Average: 80.0"
@@ -1047,7 +1047,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "يمكنك استخدام عداد يبدأ من 1 أو enumerate(tasks, 1) لترقيم العناصر أثناء الدوران:",
       exampleCode: "items = ['A', 'B']\nfor idx, val in enumerate(items, 1):\n    print(f'{idx}. {val}')"
     },
-    starterCode: "def display_tasks(tasks):\n    for i, t in enumerate(tasks, 1):\n        print(f'{i}. {t}')\n\ndisplay_tasks(['Study', 'Code', 'Play'])\n",
+    starterCode: "# عرف دالة display_tasks واستدعها بقائمة المهام\n",
     requirements: [
       "اطبع كل مهمة في سطر:",
       "1. Study",
@@ -1080,7 +1080,7 @@ export const CHALLENGES_CLIENT_DATA = {
       summary: "لقد أتقنت المتغيرات، والشروط، والحلقات، والقوائم، والدوال، والكائنات البرمجية! اجمع كل مهاراتك لاجتياز التحدي الأخير وتتويجك بلقب Python Hero.",
       exampleCode: "class Hero:\n    # بناء الفئة والدوال واستدعاؤها"
     },
-    starterCode: "class Hero:\n    def __init__(self, name, health):\n        self.name = name\n        self.health = health\n    def heal(self, amount):\n        self.health += amount\n    def status(self):\n        print(f'{self.name} - HP: {self.health}')\n\nh = Hero('Python Hero', 80)\nh.heal(20)\nh.status()\n",
+    starterCode: "# تحدي التخرج النهائي: ابنِ فئة Hero ونفذ متطلبات المعركة الختامية\n",
     requirements: [
       "عرف class Hero مع دالة __init__ ودالة heal ودالة status",
       "أنشئ بطلاً بالاسم 'Python Hero' وصحة 80",

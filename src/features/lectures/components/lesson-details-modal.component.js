@@ -202,6 +202,193 @@ export function renderLessonDetailsContent(lesson, { isStudent = false, isWatche
       </div>
 
       ${resourcesSectionHtml}
+
+      <!-- Staff Student Engagement Section (Staff Only) -->
+      ${
+        !isStudent
+          ? `
+        <hr class="lesson-details-divider" />
+        <div class="lesson-detail-section" id="lessonEngagementSection">
+          <div class="d-flex items-center justify-between mb-3 flex-wrap gap-2">
+            <h4 class="lesson-section-title m-0">
+              <span aria-hidden="true">📊</span>
+              <span>تفاعل ومشاهدات الطلاب</span>
+            </h4>
+            <span class="badge badge-gold text-xs">مؤشرات حقيقية من سجلات المشاهدة</span>
+          </div>
+          <div id="lessonEngagementContentSlot">
+            <div class="p-4 text-center text-muted" style="background:var(--color-bg-secondary);border-radius:var(--radius-sm);border:1px solid var(--color-border-subtle);">
+              <div class="spinner mb-2"></div>
+              <div>جاري تحميل بيانات تفاعل الطلاب... ⏳</div>
+            </div>
+          </div>
+        </div>
+      `
+          : ""
+      }
+    </div>
+  `;
+}
+
+/**
+ * Returns HTML string for the Student Engagement content inside lesson details.
+ * @param {object} options
+ * @param {object} options.engagement
+ * @param {string} [options.searchQuery=""]
+ * @param {"watched"|"unwatched"} [options.activeTab="watched"]
+ * @returns {string}
+ */
+export function renderEngagementContent({ engagement, searchQuery = "", activeTab = "watched" }) {
+  if (!engagement) {
+    return `<div class="p-4 text-center text-muted">تعذر جلب بيانات التفاعل.</div>`;
+  }
+
+  const { totalCount, watchedCount, unwatchedCount, watchPercentage, watchedList = [], unwatchedList = [] } = engagement;
+
+  const q = (searchQuery || "").trim().toLowerCase();
+
+  const filteredWatched = watchedList.filter((s) => {
+    if (!q) return true;
+    return (s.studentName || "").toLowerCase().includes(q) || (s.studentPhone || "").includes(q);
+  });
+
+  const filteredUnwatched = unwatchedList.filter((s) => {
+    if (!q) return true;
+    return (s.studentName || "").toLowerCase().includes(q) || (s.studentPhone || "").includes(q);
+  });
+
+  return `
+    <div class="lesson-engagement-wrapper">
+      <!-- Top Metrics KPIs -->
+      <div class="grid-4 gap-2 mb-4" style="font-size:var(--font-size-xs);">
+        <div class="stat-card p-3" style="background:var(--color-bg-secondary);border:1px solid var(--color-border-subtle);border-radius:var(--radius-sm);flex-direction:column;gap:0.25rem;">
+          <span class="stat-label text-xs">إجمالي الطلاب</span>
+          <span class="stat-value font-black text-primary" style="font-size:1.3rem;">${totalCount}</span>
+        </div>
+        <div class="stat-card p-3" style="background:var(--color-bg-secondary);border:1px solid var(--color-border-subtle);border-radius:var(--radius-sm);flex-direction:column;gap:0.25rem;">
+          <span class="stat-label text-xs">✅ شاهدوا المحاضرة</span>
+          <span class="stat-value font-black text-success" style="font-size:1.3rem;">${watchedCount}</span>
+        </div>
+        <div class="stat-card p-3" style="background:var(--color-bg-secondary);border:1px solid var(--color-border-subtle);border-radius:var(--radius-sm);flex-direction:column;gap:0.25rem;">
+          <span class="stat-label text-xs">❌ لم يشاهدوا</span>
+          <span class="stat-value font-black text-danger" style="font-size:1.3rem;">${unwatchedCount}</span>
+        </div>
+        <div class="stat-card p-3" style="background:var(--color-bg-secondary);border:1px solid var(--color-border-subtle);border-radius:var(--radius-sm);flex-direction:column;gap:0.25rem;">
+          <span class="stat-label text-xs">نسبة المشاهدة</span>
+          <span class="stat-value font-black text-accent" style="font-size:1.3rem;">${watchPercentage}%</span>
+        </div>
+      </div>
+
+      <!-- Search & Tabs Bar -->
+      <div class="d-flex items-center justify-between gap-3 flex-wrap mb-3">
+        <div class="academic-filter-tabs" style="margin:0;">
+          <button
+            type="button"
+            class="academic-filter-btn ${activeTab === 'watched' ? 'active' : ''}"
+            data-engagement-tab="watched"
+          >
+            <span>شاهدوا المحاضرة</span>
+            <span class="filter-badge-count text-success">${watchedCount}</span>
+          </button>
+          <button
+            type="button"
+            class="academic-filter-btn ${activeTab === 'unwatched' ? 'active' : ''}"
+            data-engagement-tab="unwatched"
+          >
+            <span>لم يشاهدوا بعد</span>
+            <span class="filter-badge-count text-danger">${unwatchedCount}</span>
+          </button>
+        </div>
+
+        <div style="min-width:200px;flex:1;max-width:320px;">
+          <input
+            type="search"
+            id="lessonEngagementSearchInput"
+            class="form-input form-input-sm"
+            placeholder="🔍 بحث باسم الطالب..."
+            value="${escapeHtml(searchQuery)}"
+            aria-label="بحث في قائمة المشاهدات"
+          />
+        </div>
+      </div>
+
+      <!-- Lists -->
+      ${
+        activeTab === "watched"
+          ? `
+        <div class="engagement-list-container">
+          ${
+            filteredWatched.length === 0
+              ? `<div class="card p-4 text-center text-muted text-xs">
+                  ${q ? 'لا يوجد طلاب مطابقون لبحثك في قائمة المشاهدين.' : 'لم يقم أي طالب بمشاهدة هذه المحاضرة بعد.'}
+                 </div>`
+              : `
+              <div class="table-wrapper" style="max-height:260px;overflow-y:auto;border:1px solid var(--color-border-subtle);border-radius:var(--radius-sm);">
+                <table class="table-modern" style="margin:0;font-size:var(--font-size-xs);">
+                  <thead>
+                    <tr>
+                      <th>الطالب</th>
+                      <th>المجموعة</th>
+                      <th>عدد المرات</th>
+                      <th>آخر مشاهدة</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${filteredWatched
+                      .map((s) => `
+                      <tr>
+                        <td>
+                          <strong>${escapeHtml(s.studentName)}</strong>
+                          <span class="text-muted d-block" style="font-size:0.75rem;direction:ltr;text-align:right;">${escapeHtml(s.studentPhone || '')}</span>
+                        </td>
+                        <td><span class="badge badge-gold">${escapeHtml(s.group)}</span></td>
+                        <td><span class="badge badge-neutral">${s.watchCount || 1} مرات</span></td>
+                        <td><span class="text-muted">${escapeHtml(s.lastOpenedFormatted || '—')}</span></td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `
+          }
+        </div>
+      `
+          : `
+        <div class="engagement-list-container">
+          ${
+            filteredUnwatched.length === 0
+              ? `<div class="card p-4 text-center text-success text-xs font-bold">
+                  ${q ? 'لا يوجد طلاب مطابقون لبحثك في قائمة غير المشاهدين.' : '🎉 جميع الطلاب المؤهلين شاهدوا هذه المحاضرة!'}
+                 </div>`
+              : `
+              <div class="table-wrapper" style="max-height:260px;overflow-y:auto;border:1px solid var(--color-border-subtle);border-radius:var(--radius-sm);">
+                <table class="table-modern" style="margin:0;font-size:var(--font-size-xs);">
+                  <thead>
+                    <tr>
+                      <th>الطالب</th>
+                      <th>المجموعة</th>
+                      <th>رقم الهاتف</th>
+                      <th>الحالة</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${filteredUnwatched
+                      .map((s) => `
+                      <tr>
+                        <td><strong>${escapeHtml(s.studentName)}</strong></td>
+                        <td><span class="badge badge-gold">${escapeHtml(s.group)}</span></td>
+                        <td><span style="direction:ltr;display:inline-block;">${escapeHtml(s.studentPhone || '—')}</span></td>
+                        <td><span class="badge badge-danger">لم يشاهد ❌</span></td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `
+          }
+        </div>
+      `
+      }
     </div>
   `;
 }
@@ -221,6 +408,7 @@ export function renderLessonDetailsModal() {
         <button type="button" class="btn btn-secondary" data-modal-close="lessonDetailsModal">إغلاق</button>
       </div>
     `,
-    maxWidth: "720px"
+    maxWidth: "760px"
   });
 }
+
